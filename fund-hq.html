@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fund HQ</title>
+<!-- Firebase SDK (compat mode — no build tools needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117; --bg2: #1a1d27; --bg3: #242836; --bg4: #2e3345;
+  --text: #e8eaed; --text2: #9aa0b0; --text3: #6b7280;
+  --accent: #6366f1; --accent2: #818cf8; --accent-bg: rgba(99,102,241,0.12);
+  --green: #10b981; --green-bg: rgba(16,185,129,0.12);
+  --yellow: #f59e0b; --yellow-bg: rgba(245,158,11,0.12);
+  --red: #ef4444; --red-bg: rgba(239,68,68,0.12);
+  --blue: #3b82f6; --blue-bg: rgba(59,130,246,0.12);
+  --orange: #f97316; --orange-bg: rgba(249,115,22,0.12);
+  --purple: #a855f7; --purple-bg: rgba(168,85,247,0.12);
+  --border: #2e3345; --radius: 10px; --radius-sm: 6px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+a { color: var(--accent2); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+
+/* ===== LAYOUT ===== */
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 240px; background: var(--bg2); border-right: 1px solid var(--border); padding: 24px 16px; flex-shrink: 0; display: flex; flex-direction: column; }
+.main { flex: 1; padding: 32px; overflow-y: auto; max-height: 100vh; }
+
+/* ===== SIDEBAR ===== */
+.logo { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.logo-sub { font-size: 11px; color: var(--text3); margin-bottom: 28px; letter-spacing: 0.5px; text-transform: uppercase; }
+.nav-section { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 8px; font-weight: 600; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text2); font-size: 14px; font-weight: 500; transition: all 0.15s; cursor: pointer; margin-bottom: 2px; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--accent-bg); color: var(--accent2); }
+.nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+.nav-item .badge { margin-left: auto; background: var(--bg4); color: var(--text2); font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+
+/* ===== CONNECTION STATUS ===== */
+.conn-status { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg3); }
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.conn-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.conn-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.conn-dot.connecting { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.conn-text { color: var(--text2); font-weight: 500; }
+.conn-user { font-size: 11px; color: var(--text3); padding: 0 4px; }
+
+/* ===== HEADER ===== */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+.page-header p { color: var(--text2); font-size: 14px; }
+.header-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+/* ===== BUTTONS ===== */
+.btn { padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-danger { background: var(--red); color: white; }
+.btn-danger:hover { opacity: 0.85; }
+
+/* ===== CARDS ===== */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+/* ===== STATS ===== */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+.stat-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600; }
+.stat-value { font-size: 28px; font-weight: 700; }
+.stat-value.green { color: var(--green); }
+.stat-value.yellow { color: var(--yellow); }
+.stat-value.accent { color: var(--accent2); }
+.stat-value.blue { color: var(--blue); }
+
+/* ===== PIPELINE (Kanban) ===== */
+.pipeline { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; min-height: 400px; }
+.pipeline-col { min-width: 280px; flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; }
+.pipeline-col-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.pipeline-col-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+.pipeline-col-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+.pipeline-col-count { font-size: 12px; color: var(--text3); background: var(--bg3); padding: 2px 8px; border-radius: 10px; }
+.pipeline-col-body { padding: 12px; flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 80px; }
+.deal-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; cursor: pointer; transition: all 0.15s; }
+.deal-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.deal-card-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.deal-card-sector { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.deal-card-meta { display: flex; justify-content: space-between; align-items: center; }
+.deal-card-size { font-size: 12px; color: var(--green); font-weight: 600; }
+.deal-card-date { font-size: 11px; color: var(--text3); }
+.deal-card-tags { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+.tag-stocks { background: var(--blue-bg); color: var(--blue); }
+.tag-ai { background: var(--yellow-bg); color: var(--yellow); }
+.tag-defi { background: var(--purple-bg); color: var(--purple); }
+.tag-aicrypto { background: var(--green-bg); color: var(--green); }
+.tag-privacy { background: var(--orange-bg); color: var(--orange); }
+.tag-other { background: var(--red-bg); color: var(--red); }
+
+/* ===== TABLE ===== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th { text-align: left; padding: 12px 16px; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; border-bottom: 1px solid var(--border); background: var(--bg2); position: sticky; top: 0; }
+tbody td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+tbody tr { transition: background 0.1s; }
+tbody tr:hover { background: var(--bg3); }
+.status-pill { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.status-active { background: var(--green-bg); color: var(--green); }
+.status-review { background: var(--yellow-bg); color: var(--yellow); }
+.status-passed { background: var(--red-bg); color: var(--red); }
+.status-closed { background: var(--accent-bg); color: var(--accent2); }
+
+/* ===== MODAL ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow); }
+.modal h2 { font-size: 18px; margin-bottom: 20px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px; outline: none; transition: border 0.15s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+.form-group textarea { min-height: 80px; resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+/* ===== RESEARCH TEMPLATE ===== */
+.research-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+.research-card h3 { font-size: 16px; margin-bottom: 4px; }
+.research-card .meta { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+.research-section { margin-bottom: 14px; }
+.research-section h4 { font-size: 12px; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600; }
+.research-section p { font-size: 13px; color: var(--text2); line-height: 1.6; white-space: pre-wrap; }
+.score-bar { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+.score-dot { width: 20px; height: 20px; border-radius: 4px; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.score-dot.filled { background: var(--accent); color: white; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state p { font-size: 14px; margin-bottom: 16px; }
+
+/* ===== TABS ===== */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg2); border-radius: var(--radius-sm); padding: 4px; width: fit-content; }
+.tab { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; color: var(--text3); cursor: pointer; transition: all 0.15s; border: none; background: none; }
+.tab:hover { color: var(--text2); }
+.tab.active { background: var(--bg4); color: var(--text); }
+
+/* ===== SEARCH ===== */
+.search-bar { position: relative; margin-bottom: 20px; }
+.search-bar input { width: 100%; max-width: 360px; padding: 10px 14px 10px 38px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px; outline: none; }
+.search-bar input:focus { border-color: var(--accent); }
+.search-bar .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 16px; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ===== SETUP SCREEN ===== */
+.setup-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+.setup-box { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; width: 480px; max-width: 90vw; text-align: center; }
+.setup-box h1 { font-size: 24px; margin-bottom: 8px; }
+.setup-box p { color: var(--text2); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+.setup-box .error { color: var(--red); font-size: 13px; margin-top: 12px; }
+
+/* ===== TEMPLATE CARDS ===== */
+.template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }
+.template-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; transition: border 0.15s; }
+.template-card:hover { border-color: var(--accent); }
+.template-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.template-card .template-type { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 10px; display: inline-block; margin-bottom: 12px; }
+.template-type-stock { background: var(--blue-bg); color: var(--blue); }
+.template-type-crypto { background: var(--purple-bg); color: var(--purple); }
+.template-sections { list-style: none; padding: 0; margin: 16px 0; }
+.template-sections li { font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+.template-sections li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+/* ===== REPORT CARDS ===== */
+.report-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.15s; }
+.report-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.report-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.report-card .report-meta { font-size: 12px; color: var(--text3); }
+.report-card .report-preview { font-size: 12px; color: var(--text2); margin-top: 8px; max-height: 40px; overflow: hidden; line-height: 1.5; }
+
+/* ===== WIDE MODAL FOR REPORTS ===== */
+.modal.modal-wide { width: 900px; max-width: 95vw; max-height: 90vh; }
+.modal.modal-wide textarea { min-height: 500px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
+
+/* ===== TASK CARDS (Kanban) ===== */
+.task-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; cursor: pointer; transition: all 0.15s; }
+.task-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.task-card-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; line-height: 1.4; }
+.task-card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.priority-pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+.priority-high { background: var(--red-bg); color: var(--red); }
+.priority-medium { background: var(--yellow-bg); color: var(--yellow); }
+.priority-low { background: var(--green-bg); color: var(--green); }
+.assignee-badge { width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.assignee-j { background: var(--accent-bg); color: var(--accent2); }
+.assignee-t { background: var(--orange-bg); color: var(--orange); }
+.assignee-jt { background: var(--purple-bg); color: var(--purple); }
+.task-due { font-size: 11px; color: var(--text3); }
+.task-due.overdue { color: var(--red); font-weight: 600; }
+.task-milestone-tag { font-size: 10px; color: var(--text3); background: var(--bg4); padding: 2px 8px; border-radius: 4px; }
+.task-desc-preview { font-size: 11px; color: var(--text3); margin-top: 6px; max-height: 32px; overflow: hidden; line-height: 1.5; }
+
+/* ===== TASK FILTERS ===== */
+.task-filters { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg2); border-radius: var(--radius-sm); padding: 4px; width: fit-content; }
+.task-filter { padding: 6px 14px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; color: var(--text3); cursor: pointer; border: none; background: none; transition: all 0.15s; }
+.task-filter:hover { color: var(--text2); }
+.task-filter.active { background: var(--bg4); color: var(--text); }
+
+/* ===== ROADMAP ===== */
+.milestone-group { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+.milestone-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); }
+.milestone-header h3 { font-size: 15px; font-weight: 700; }
+.milestone-stats { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text3); }
+.progress-bar { width: 120px; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.3s; }
+.milestone-tasks { padding: 0; }
+.roadmap-row { display: grid; grid-template-columns: 1fr 90px 80px 70px 90px; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; transition: background 0.1s; }
+.roadmap-row:last-child { border-bottom: none; }
+.roadmap-row:hover { background: var(--bg3); }
+.roadmap-row-title { font-weight: 500; }
+.milestone-empty { padding: 20px; text-align: center; color: var(--text3); font-size: 13px; }
+
+/* ===== CHAT ASSISTANT ===== */
+.chat-fab { position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #818cf8); border: none; color: white; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 999; box-shadow: 0 4px 20px rgba(99,102,241,0.4); transition: transform 0.2s, box-shadow 0.2s; }
+.chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,102,241,0.55); }
+.chat-fab.has-panel { background: var(--bg4); box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+.chat-panel { position: fixed; bottom: 88px; right: 24px; width: 400px; height: 520px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,0.5); z-index: 998; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transform: translateY(16px) scale(0.96); transition: opacity 0.25s, transform 0.25s; }
+.chat-panel.open { opacity: 1; pointer-events: all; transform: translateY(0) scale(1); }
+
+.chat-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.chat-header-title { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; }
+.chat-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #a855f7, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: white; flex-shrink: 0; position: relative; animation: avatarPulse 3s ease-in-out infinite; }
+.chat-avatar::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; background: linear-gradient(135deg, #a855f7, #6366f1, #3b82f6); z-index: -1; opacity: 0.3; animation: avatarRing 3s ease-in-out infinite; }
+@keyframes avatarPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes avatarRing { 0%, 100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 0.45; transform: scale(1.15); } }
+.chat-avatar-status { position: absolute; bottom: 0; right: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--green); border: 2px solid var(--bg2); box-shadow: 0 0 6px var(--green); }
+.chat-close { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); transition: all 0.15s; }
+.chat-close:hover { background: var(--bg3); color: var(--text); }
+
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.chat-msg { max-width: 88%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; word-wrap: break-word; }
+.chat-msg-bot { align-self: flex-start; background: var(--bg3); color: var(--text); border-bottom-left-radius: 4px; }
+.chat-msg-user { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+.chat-msg-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chat-action { padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg2); color: var(--accent2); transition: all 0.15s; white-space: nowrap; }
+.chat-action:hover { background: var(--accent-bg); border-color: var(--accent); }
+.chat-msg-typing { align-self: flex-start; background: var(--bg3); padding: 10px 14px; border-radius: 12px; border-bottom-left-radius: 4px; }
+.chat-msg-typing span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--text3); animation: chatTyping 1.2s infinite; margin-right: 4px; }
+.chat-msg-typing span:nth-child(2) { animation-delay: 0.2s; }
+.chat-msg-typing span:nth-child(3) { animation-delay: 0.4s; margin-right: 0; }
+@keyframes chatTyping { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+.chat-input-row { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.chat-input { flex: 1; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; color: var(--text); font-size: 13px; outline: none; transition: border 0.15s; }
+.chat-input:focus { border-color: var(--accent); }
+.chat-input::placeholder { color: var(--text3); }
+.chat-send { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: none; color: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
+.chat-send:hover { background: var(--accent2); }
+
+/* ===== HIDDEN ===== */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ===== SETUP SCREEN (shown if Firebase not configured) ===== -->
+<div class="setup-overlay hidden" id="setup-screen">
+  <div class="setup-box">
+    <div style="font-size:48px;margin-bottom:16px;">&#127963;</div>
+    <h1>Fund HQ Setup</h1>
+    <p>Firebase is not configured yet. Follow the setup steps below to enable real-time sync between both users.</p>
+    <div style="text-align:left;font-size:13px;color:var(--text2);line-height:1.8;background:var(--bg3);padding:16px 20px;border-radius:var(--radius-sm);margin-bottom:20px;">
+      <strong style="color:var(--text);">One-time Setup (3 min):</strong><br>
+      1. Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
+      2. Create a new project (disable Analytics)<br>
+      3. Click <b>Realtime Database</b> → Create Database → <b>Start in test mode</b><br>
+      4. Go to <b>Project Settings</b> (gear icon) → Your Apps → click <b>&lt;/&gt;</b> (Web)<br>
+      5. Register an app → Copy the <code>firebaseConfig</code> object<br>
+      6. Paste the config values in this HTML file (search for <code>PASTE_YOUR</code>)
+    </div>
+    <div id="setup-error" class="error"></div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo"><div class="logo-icon">F</div> Fund HQ</div>
+    <div class="logo-sub">Private Investment Fund</div>
+
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon">&#9632;</span> Dashboard</div>
+
+    <div class="nav-section">Pipeline</div>
+    <div class="nav-item" data-page="dealflow"><span class="icon">&#9654;</span> Deal Flow <span class="badge" id="badge-deals">0</span></div>
+    <div class="nav-item" data-page="projects"><span class="icon">&#9733;</span> Project Dump <span class="badge" id="badge-projects">0</span></div>
+
+    <div class="nav-section">Research</div>
+    <div class="nav-item" data-page="research"><span class="icon">&#9998;</span> Research Notes <span class="badge" id="badge-research">0</span></div>
+    <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
+    <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
+
+    <div class="nav-section">Management</div>
+    <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
+    <div class="nav-item" data-page="roadmap"><span class="icon">&#128506;</span> Roadmap</div>
+
+    <div class="nav-section">Tools</div>
+    <div class="nav-item" data-page="settings"><span class="icon">&#9881;</span> Settings</div>
+
+    <div class="sidebar-footer">
+      <div class="conn-status" id="conn-status">
+        <span class="conn-dot connecting" id="conn-dot"></span>
+        <span class="conn-text" id="conn-text">Connecting...</span>
+      </div>
+      <div class="conn-user" id="conn-user"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="page-dashboard" class="page">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Fund overview and activity</p>
+      </div>
+      <div class="stats-row" id="stats-row"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="card">
+          <h3 style="font-size:14px;margin-bottom:14px;color:var(--text2);">Recent Deals</h3>
+          <div id="recent-deals"></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:14px;margin-bottom:14px;color:var(--text2);">Recent Research</h3>
+          <div id="recent-research"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DEAL FLOW ===== -->
+    <div id="page-dealflow" class="page hidden">
+      <div class="page-header">
+        <h1>Deal Flow</h1>
+        <p>Track deals from sourcing to close</p>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('deal')">+ New Deal</button>
+        </div>
+      </div>
+      <div class="pipeline" id="pipeline"></div>
+    </div>
+
+    <!-- ===== PROJECT DUMP ===== -->
+    <div id="page-projects" class="page hidden">
+      <div class="page-header">
+        <h1>Project Dump</h1>
+        <p>Quick capture for interesting projects and ideas</p>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('project')">+ Add Project</button>
+        </div>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="Search projects..." oninput="renderProjects(this.value)">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Project</th><th>Sector</th><th>Status</th><th>Source</th><th>Added</th><th></th></tr></thead>
+          <tbody id="projects-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== RESEARCH ===== -->
+    <div id="page-research" class="page hidden">
+      <div class="page-header">
+        <h1>Research Notes</h1>
+        <p>Deep-dive analysis and due diligence</p>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('research')">+ New Research</button>
+        </div>
+      </div>
+      <div id="research-list"></div>
+    </div>
+
+    <!-- ===== TEMPLATES ===== -->
+    <div id="page-templates" class="page hidden">
+      <div class="page-header">
+        <h1>Templates</h1>
+        <p>Research frameworks for stocks and crypto. Click "Use Template" to start a new report.</p>
+      </div>
+      <div class="template-grid" id="templates-list"></div>
+    </div>
+
+    <!-- ===== REPORTS ===== -->
+    <div id="page-reports" class="page hidden">
+      <div class="page-header">
+        <h1>Reports</h1>
+        <p>All research reports created from templates</p>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="Search reports..." oninput="renderReports(this.value)">
+      </div>
+      <div id="reports-list"></div>
+    </div>
+
+    <!-- ===== TASKS (Kanban Board) ===== -->
+    <div id="page-tasks" class="page hidden">
+      <div class="page-header">
+        <h1>Tasks</h1>
+        <p>Track work across the team</p>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('task')">+ New Task</button>
+        </div>
+      </div>
+      <div class="task-filters" id="task-filters">
+        <button class="task-filter active" data-filter="all" onclick="setTaskFilter('all')">All</button>
+        <button class="task-filter" data-filter="mine" onclick="setTaskFilter('mine')">My Tasks</button>
+        <button class="task-filter" data-filter="high" onclick="setTaskFilter('high')">High Priority</button>
+      </div>
+      <div class="pipeline" id="tasks-board"></div>
+    </div>
+
+    <!-- ===== ROADMAP ===== -->
+    <div id="page-roadmap" class="page hidden">
+      <div class="page-header">
+        <h1>Roadmap</h1>
+        <p>Progress by milestone</p>
+      </div>
+      <div id="roadmap-list"></div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div id="page-settings" class="page hidden">
+      <div class="page-header">
+        <h1>Settings</h1>
+        <p>Connection and data management</p>
+      </div>
+      <div class="card" style="max-width:560px;">
+        <h3 style="font-size:15px;margin-bottom:16px;">Real-time Sync</h3>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px;">
+          <p>Status: <strong id="settings-conn" style="color:var(--green);">Connected</strong></p>
+          <p>Your name: <strong id="settings-name"></strong>
+            <button class="btn btn-ghost btn-sm" style="margin-left:8px;" onclick="changeName()">Change</button>
+          </p>
+          <p style="margin-top:8px;color:var(--text3);">Both users are synced in real-time via Firebase. Changes appear on the other screen within seconds.</p>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+        <h3 style="font-size:15px;margin-bottom:12px;">Backup</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Download a local JSON backup of all fund data.</p>
+        <button class="btn btn-ghost" onclick="exportBackup()">Download Backup</button>
+        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+        <h3 style="font-size:15px;margin-bottom:12px;color:var(--red);">Danger Zone</h3>
+        <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">This deletes ALL data for BOTH users. Cannot be undone.</p>
+        <button class="btn btn-danger btn-sm" onclick="resetAllData()">Reset All Data</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHAT ASSISTANT ===== -->
+<button class="chat-fab" id="chat-fab" onclick="toggleChat()" title="Pamela — Fund Assistant">&#128172;</button>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-header">
+    <div class="chat-header-title"><div class="chat-avatar">P<span class="chat-avatar-status"></span></div> Pamela</div>
+    <button class="chat-close" onclick="toggleChat()">&#10005;</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chat-input" type="text" placeholder="Ask me anything..." autocomplete="off" onkeydown="if(event.key==='Enter')chatSend()">
+    <button class="chat-send" onclick="chatSend()">&#10148;</button>
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ============================================================================
+// FIREBASE CONFIG — Paste your Firebase config below
+// ============================================================================
+// Get this from: Firebase Console > Project Settings > Your Apps > Web App
+const firebaseConfig = {
+  apiKey: "AIzaSyAyK2aZBu29kX-7rHzZIs308MsekpgNvEo",
+  authDomain: "fundhq-8feae.firebaseapp.com",
+  databaseURL: "https://fundhq-8feae-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "fundhq-8feae",
+  storageBucket: "fundhq-8feae.firebasestorage.app",
+  messagingSenderId: "305591584755",
+  appId: "1:305591584755:web:ccbe80fbdac2282b743486"
+};
+// ============================================================================
+
+// ===== USER IDENTITY =====
+let MY_NAME = localStorage.getItem('fundHQ_userName');
+if (!MY_NAME) {
+  MY_NAME = prompt('Welcome to Fund HQ! Enter your name:') || 'Unknown';
+  localStorage.setItem('fundHQ_userName', MY_NAME);
+}
+
+function changeName() {
+  const name = prompt('Enter your new name:', MY_NAME);
+  if (name && name.trim()) {
+    MY_NAME = name.trim();
+    localStorage.setItem('fundHQ_userName', MY_NAME);
+    document.getElementById('conn-user').textContent = MY_NAME;
+    document.getElementById('settings-name').textContent = MY_NAME;
+  }
+}
+
+// ===== FIREBASE INIT =====
+let firebaseReady = false;
+let dbRef = null;
+let fbConnected = false;
+
+try {
+  if (firebaseConfig.apiKey.includes('PASTE_YOUR')) {
+    // Firebase not configured — show setup screen
+    document.getElementById('setup-screen').classList.remove('hidden');
+  } else {
+    firebase.initializeApp(firebaseConfig);
+    dbRef = firebase.database().ref('fundHQ');
+    firebaseReady = true;
+  }
+} catch (e) {
+  document.getElementById('setup-screen').classList.remove('hidden');
+  document.getElementById('setup-error').textContent = 'Firebase error: ' + e.message;
+}
+
+// ===== DATA LAYER =====
+const STAGES = ['Sourcing', 'Due Diligence', 'Term Sheet', 'Closed', 'Passed'];
+const STAGE_COLORS = { 'Sourcing': '#3b82f6', 'Due Diligence': '#f59e0b', 'Term Sheet': '#a855f7', 'Closed': '#10b981', 'Passed': '#ef4444' };
+const SECTORS = ['Stocks', 'AI', 'DeFi', 'AI Crypto', 'Privacy', 'Other'];
+const SECTOR_TAG = { 'Stocks': 'stocks', 'AI': 'ai', 'DeFi': 'defi', 'AI Crypto': 'aicrypto', 'Privacy': 'privacy', 'Other': 'other' };
+
+let DB = { deals: [], projects: [], research: [], reports: [], tasks: [] };
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmtDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ===== FIREBASE REAL-TIME LISTENERS =====
+let initialLoad = { deals: false, projects: false, research: false, reports: false, tasks: false };
+
+function allLoaded() { return initialLoad.deals && initialLoad.projects && initialLoad.research && initialLoad.reports && initialLoad.tasks; }
+
+if (firebaseReady) {
+  // Connection status
+  firebase.database().ref('.info/connected').on('value', (snap) => {
+    fbConnected = snap.val() === true;
+    const dot = document.getElementById('conn-dot');
+    const text = document.getElementById('conn-text');
+    const settingsConn = document.getElementById('settings-conn');
+    if (fbConnected) {
+      dot.className = 'conn-dot online';
+      text.textContent = 'Connected';
+      if (settingsConn) { settingsConn.textContent = 'Connected'; settingsConn.style.color = 'var(--green)'; }
+      // One-time migration from localStorage
+      if (localStorage.getItem('fundHQ')) migrateFromLocalStorage();
+    } else {
+      dot.className = 'conn-dot offline';
+      text.textContent = 'Offline';
+      if (settingsConn) { settingsConn.textContent = 'Offline'; settingsConn.style.color = 'var(--red)'; }
+    }
+  });
+
+  // Deals listener
+  dbRef.child('deals').on('value', (snap) => {
+    const data = snap.val();
+    DB.deals = data ? Object.values(data) : [];
+    initialLoad.deals = true;
+    if (allLoaded()) debouncedRender();
+  });
+
+  // Projects listener
+  dbRef.child('projects').on('value', (snap) => {
+    const data = snap.val();
+    DB.projects = data ? Object.values(data) : [];
+    initialLoad.projects = true;
+    if (allLoaded()) debouncedRender();
+  });
+
+  // Research listener
+  dbRef.child('research').on('value', (snap) => {
+    const data = snap.val();
+    DB.research = data ? Object.values(data) : [];
+    initialLoad.research = true;
+    if (allLoaded()) debouncedRender();
+  });
+
+  // Reports listener
+  dbRef.child('reports').on('value', (snap) => {
+    const data = snap.val();
+    DB.reports = data ? Object.values(data) : [];
+    initialLoad.reports = true;
+    if (allLoaded()) debouncedRender();
+  });
+
+  // Tasks listener
+  dbRef.child('tasks').on('value', (snap) => {
+    const data = snap.val();
+    DB.tasks = data ? Object.values(data) : [];
+    initialLoad.tasks = true;
+    if (allLoaded()) debouncedRender();
+  });
+}
+
+// Debounce rapid updates
+let renderTimeout;
+function debouncedRender() {
+  clearTimeout(renderTimeout);
+  renderTimeout = setTimeout(renderAll, 80);
+}
+
+// ===== MIGRATION FROM LOCALSTORAGE =====
+function migrateFromLocalStorage() {
+  const raw = localStorage.getItem('fundHQ');
+  if (!raw || !dbRef) return;
+  try {
+    const local = JSON.parse(raw);
+    const dc = local.deals?.length || 0;
+    const pc = local.projects?.length || 0;
+    const rc = local.research?.length || 0;
+    if (dc + pc + rc === 0) { localStorage.removeItem('fundHQ'); return; }
+    if (confirm(`Found local data: ${dc} deals, ${pc} projects, ${rc} research notes.\n\nUpload to Firebase for shared access? (one-time migration)`)) {
+      const updates = {};
+      (local.deals || []).forEach(d => { updates['deals/' + d.id] = d; });
+      (local.projects || []).forEach(p => { updates['projects/' + p.id] = p; });
+      (local.research || []).forEach(r => { updates['research/' + r.id] = r; });
+      dbRef.update(updates).then(() => {
+        localStorage.removeItem('fundHQ');
+        alert('Migration complete! Data is now synced via Firebase.');
+      }).catch(err => alert('Migration failed: ' + err.message));
+    }
+  } catch(e) { localStorage.removeItem('fundHQ'); }
+}
+
+// ===== NAVIGATION =====
+document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    document.getElementById('page-' + el.dataset.page).classList.remove('hidden');
+  });
+});
+
+// ===== RENDER DASHBOARD =====
+function renderDashboard() {
+  const activeDeals = DB.deals.filter(d => d.stage !== 'Passed').length;
+  const inDD = DB.deals.filter(d => d.stage === 'Due Diligence').length;
+  const closed = DB.deals.filter(d => d.stage === 'Closed').length;
+  const totalProjects = DB.projects.length;
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Active Deals</div><div class="stat-value accent">${activeDeals}</div></div>
+    <div class="stat-card"><div class="stat-label">In Due Diligence</div><div class="stat-value yellow">${inDD}</div></div>
+    <div class="stat-card"><div class="stat-label">Closed</div><div class="stat-value green">${closed}</div></div>
+    <div class="stat-card"><div class="stat-label">Projects Tracked</div><div class="stat-value blue">${totalProjects}</div></div>
+  `;
+
+  const recent = [...DB.deals].sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||'')).slice(0,5);
+  document.getElementById('recent-deals').innerHTML = recent.length ? recent.map(d => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-size:13px;font-weight:600;">${esc(d.name)}</div><div style="font-size:11px;color:var(--text3);">${esc(d.sector||'')}${d.editedBy ? ' &middot; by '+esc(d.editedBy) : ''}</div></div>
+      <span class="status-pill status-${d.stage==='Closed'?'closed':d.stage==='Passed'?'passed':d.stage==='Due Diligence'?'review':'active'}">${d.stage}</span>
+    </div>
+  `).join('') : '<div class="empty-state" style="padding:20px;"><p>No deals yet</p></div>';
+
+  const recentR = [...DB.research].sort((a,b) => (b.created||'').localeCompare(a.created||'')).slice(0,5);
+  document.getElementById('recent-research').innerHTML = recentR.length ? recentR.map(r => `
+    <div style="padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="font-size:13px;font-weight:600;">${esc(r.project)}</div>
+      <div style="font-size:11px;color:var(--text3);">${fmtDate(r.created)} &middot; Score: ${r.overallScore||'N/A'}/10${r.editedBy ? ' &middot; by '+esc(r.editedBy) : ''}</div>
+    </div>
+  `).join('') : '<div class="empty-state" style="padding:20px;"><p>No research yet</p></div>';
+
+  updateBadges();
+}
+
+function updateBadges() {
+  document.getElementById('badge-deals').textContent = DB.deals.filter(d=>d.stage!=='Passed').length;
+  document.getElementById('badge-projects').textContent = DB.projects.length;
+  document.getElementById('badge-research').textContent = DB.research.length;
+  document.getElementById('badge-reports').textContent = DB.reports.length;
+  document.getElementById('badge-tasks').textContent = DB.tasks.filter(t=>t.status!=='Done').length;
+}
+
+// ===== RENDER PIPELINE =====
+function renderPipeline() {
+  const html = STAGES.map(stage => {
+    const deals = DB.deals.filter(d => d.stage === stage);
+    return `
+      <div class="pipeline-col">
+        <div class="pipeline-col-header">
+          <div class="pipeline-col-title"><span class="dot" style="background:${STAGE_COLORS[stage]}"></span>${stage}</div>
+          <span class="pipeline-col-count">${deals.length}</span>
+        </div>
+        <div class="pipeline-col-body">
+          ${deals.map(d => `
+            <div class="deal-card" onclick="openDealDetail('${d.id}')">
+              <div class="deal-card-name">${esc(d.name)}</div>
+              <div class="deal-card-sector">${esc(d.sector||'Uncategorized')}</div>
+              <div class="deal-card-meta">
+                <span class="deal-card-size">${d.size ? '$'+d.size : ''}</span>
+                <span class="deal-card-date">${fmtDate(d.created)}</span>
+              </div>
+              ${d.tags ? `<div class="deal-card-tags">${d.tags.split(',').map(t => `<span class="tag tag-${SECTOR_TAG[t.trim()]||'infra'}">${esc(t.trim())}</span>`).join('')}</div>` : ''}
+              ${d.editedBy ? `<div style="font-size:10px;color:var(--text3);margin-top:6px;">by ${esc(d.editedBy)}</div>` : ''}
+            </div>
+          `).join('')}
+          ${deals.length === 0 ? '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No deals</div>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('pipeline').innerHTML = html;
+}
+
+// ===== RENDER PROJECTS TABLE =====
+function renderProjects(filter = '') {
+  const f = filter.toLowerCase();
+  const filtered = DB.projects.filter(p =>
+    !f || p.name.toLowerCase().includes(f) || (p.sector||'').toLowerCase().includes(f) || (p.notes||'').toLowerCase().includes(f)
+  );
+  document.getElementById('projects-table').innerHTML = filtered.length ? filtered.map(p => `
+    <tr>
+      <td><div style="font-weight:600;">${esc(p.name)}</div>${p.url ? `<a href="${esc(p.url)}" target="_blank" style="font-size:11px;">${esc(p.url.replace(/^https?:\/\//,'').slice(0,40))}</a>` : ''}</td>
+      <td><span class="tag tag-${SECTOR_TAG[p.sector]||'infra'}">${esc(p.sector||'Other')}</span></td>
+      <td><span class="status-pill status-${p.status==='Active'?'active':p.status==='Reviewing'?'review':'passed'}">${esc(p.status||'Active')}</span></td>
+      <td style="color:var(--text3);font-size:12px;">${esc(p.source||'')}</td>
+      <td style="color:var(--text3);font-size:12px;">${fmtDate(p.created)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editProject('${p.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteProject('${p.id}')">Del</button>
+      </td>
+    </tr>
+  `).join('') : `<tr><td colspan="6" class="empty-state" style="padding:40px;"><p>No projects yet. Click "+ Add Project" to start.</p></td></tr>`;
+}
+
+// ===== RENDER RESEARCH =====
+function renderResearch() {
+  document.getElementById('research-list').innerHTML = DB.research.length ? DB.research.map(r => `
+    <div class="research-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <h3>${esc(r.project)}</h3>
+          <div class="meta">${esc(r.sector||'')} &middot; ${fmtDate(r.created)} &middot; by ${esc(r.author||r.editedBy||'Unknown')}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="editResearch('${r.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteResearch('${r.id}')">Del</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="research-section"><h4>Thesis</h4><p>${esc(r.thesis||'N/A')}</p></div>
+        <div class="research-section"><h4>Team</h4><p>${esc(r.team||'N/A')}</p></div>
+        <div class="research-section"><h4>Market / TAM</h4><p>${esc(r.market||'N/A')}</p></div>
+        <div class="research-section"><h4>Tokenomics</h4><p>${esc(r.tokenomics||'N/A')}</p></div>
+        <div class="research-section"><h4>Risks</h4><p>${esc(r.risks||'N/A')}</p></div>
+        <div class="research-section"><h4>Competitive Edge</h4><p>${esc(r.edge||'N/A')}</p></div>
+      </div>
+      <div style="display:flex;gap:24px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <div><span style="font-size:11px;color:var(--text3);">OVERALL SCORE</span><div style="font-size:24px;font-weight:700;color:${(r.overallScore||0)>=7?'var(--green)':(r.overallScore||0)>=4?'var(--yellow)':'var(--red)'};">${r.overallScore||'?'}/10</div></div>
+        <div><span style="font-size:11px;color:var(--text3);">VERDICT</span><div style="font-size:14px;font-weight:600;margin-top:4px;">${esc(r.verdict||'Pending')}</div></div>
+      </div>
+      ${r.notes ? `<div class="research-section" style="margin-top:12px;"><h4>Additional Notes</h4><p>${esc(r.notes)}</p></div>` : ''}
+    </div>
+  `).join('') : '<div class="empty-state"><div class="icon">&#128209;</div><p>No research notes yet. Click "+ New Research" to start analyzing a project.</p></div>';
+}
+
+// ===== MODALS =====
+function openModal(type, id) {
+  let html = '';
+  if (type === 'deal') {
+    const d = id ? DB.deals.find(x=>x.id===id) : null;
+    html = `
+      <h2>${d ? 'Edit' : 'New'} Deal</h2>
+      <div class="form-group"><label>Project Name *</label><input id="m-name" value="${esc(d?.name||'')}" placeholder="e.g. Acme Protocol"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Sector</label><select id="m-sector">${SECTORS.map(s=>`<option${(d?.sector||'')===s?' selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Deal Size</label><input id="m-size" value="${esc(d?.size||'')}" placeholder="e.g. 500K"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Stage</label><select id="m-stage">${STAGES.map(s=>`<option${(d?.stage||'Sourcing')===s?' selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Lead</label><input id="m-lead" value="${esc(d?.lead||'')}" placeholder="Who's leading this?"></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="m-desc" placeholder="Quick summary of the opportunity...">${esc(d?.desc||'')}</textarea></div>
+      <div class="form-group"><label>Links</label><input id="m-links" value="${esc(d?.links||'')}" placeholder="Website, deck, docs..."></div>
+      <div class="form-group"><label>Tags (comma-separated)</label><input id="m-tags" value="${esc(d?.tags||'')}" placeholder="DeFi, Infrastructure..."></div>
+      <div class="modal-actions">
+        ${d ? `<button class="btn btn-danger btn-sm" onclick="deleteDeal('${d.id}')">Delete</button>` : ''}
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDeal('${d?.id||''}')">${d ? 'Update' : 'Create'} Deal</button>
+      </div>
+    `;
+  } else if (type === 'project') {
+    const p = id ? DB.projects.find(x=>x.id===id) : null;
+    html = `
+      <h2>${p ? 'Edit' : 'Add'} Project</h2>
+      <div class="form-group"><label>Project Name *</label><input id="m-name" value="${esc(p?.name||'')}" placeholder="e.g. LayerZero"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Sector</label><select id="m-sector">${SECTORS.map(s=>`<option${(p?.sector||'')===s?' selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Status</label><select id="m-status"><option${(p?.status||'')==='Active'?' selected':''}>Active</option><option${(p?.status||'')==='Reviewing'?' selected':''}>Reviewing</option><option${(p?.status||'')==='Passed'?' selected':''}>Passed</option></select></div>
+      </div>
+      <div class="form-group"><label>URL</label><input id="m-url" value="${esc(p?.url||'')}" placeholder="https://..."></div>
+      <div class="form-group"><label>Source</label><input id="m-source" value="${esc(p?.source||'')}" placeholder="Twitter, CT, podcast..."></div>
+      <div class="form-group"><label>Notes</label><textarea id="m-notes" placeholder="Quick thoughts...">${esc(p?.notes||'')}</textarea></div>
+      <div class="modal-actions">
+        ${p ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')">Delete</button>` : ''}
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProject('${p?.id||''}')">${p ? 'Update' : 'Add'} Project</button>
+      </div>
+    `;
+  } else if (type === 'task') {
+    const t = id ? DB.tasks.find(x=>x.id===id) : null;
+    html = `
+      <h2>${t ? 'Edit' : 'New'} Task</h2>
+      <div class="form-group"><label>Title *</label><input id="m-title" value="${esc(t?.title||'')}" placeholder="What needs to be done?"></div>
+      <div class="form-group"><label>Description</label><textarea id="m-desc" placeholder="Details, context, links...">${esc(t?.description||'')}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Assignee</label><select id="m-assignee"><option value="">Unassigned</option><option${(t?.assignee||'')==='Jumparo'?' selected':''}>Jumparo</option><option${(t?.assignee||'')==='Tihomir'?' selected':''}>Tihomir</option><option${(t?.assignee||'')==='Both'?' selected':''}>Both</option></select></div>
+        <div class="form-group"><label>Priority</label><select id="m-priority"><option${(t?.priority||'')==='Medium'||!t?' selected':''}>Medium</option><option${(t?.priority||'')==='High'?' selected':''}>High</option><option${(t?.priority||'')==='Low'?' selected':''}>Low</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Status</label><select id="m-status">${TASK_STATUSES.map(s=>'<option'+((t?.status||'To Do')===s?' selected':'')+'>'+s+'</option>').join('')}</select></div>
+        <div class="form-group"><label>Due Date</label><input type="date" id="m-due" value="${esc(t?.dueDate||'')}"></div>
+      </div>
+      <div class="form-group"><label>Milestone</label><input id="m-milestone" value="${esc(t?.milestone||'')}" placeholder="e.g. Q1 Launch, MVP, Research Phase..." list="milestone-suggestions">
+        <datalist id="milestone-suggestions">${[...new Set(DB.tasks.map(x=>x.milestone).filter(Boolean))].map(m=>'<option value="'+esc(m)+'">').join('')}</datalist>
+      </div>
+      <div class="modal-actions">
+        ${t ? `<button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">Delete</button>` : ''}
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTask('${t?.id||''}')">${t ? 'Update' : 'Create'} Task</button>
+      </div>
+    `;
+  } else if (type === 'report') {
+    const r = id ? DB.reports.find(x=>x.id===id) : null;
+    const modal = document.getElementById('modal-content');
+    modal.classList.add('modal-wide');
+    html = `
+      <h2>${r ? 'Edit' : 'New'} Report</h2>
+      <div class="form-group"><label>Title *</label><input id="m-title" value="${esc(r?.title||'')}" placeholder="e.g. Tesla (TSLA) or Ethereum (ETH)"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Rating</label><select id="m-rating"><option value="">—</option><option${(r?.rating||'')==='Strong Buy'?' selected':''}>Strong Buy</option><option${(r?.rating||'')==='Buy'?' selected':''}>Buy</option><option${(r?.rating||'')==='Hold'?' selected':''}>Hold</option><option${(r?.rating||'')==='Sell'?' selected':''}>Sell</option><option${(r?.rating||'')==='Speculate'?' selected':''}>Speculate</option><option${(r?.rating||'')==='Avoid'?' selected':''}>Avoid</option><option${(r?.rating||'')==='Watch'?' selected':''}>Watch</option></select></div>
+        <div class="form-group"><label>Conviction</label><select id="m-conviction"><option value="">—</option><option${(r?.conviction||'')==='High'?' selected':''}>High</option><option${(r?.conviction||'')==='Medium'?' selected':''}>Medium</option><option${(r?.conviction||'')==='Low'?' selected':''}>Low</option></select></div>
+      </div>
+      <div class="form-group"><label>Content</label><textarea id="m-content" style="min-height:500px;">${esc(r?.content||'')}</textarea></div>
+      <div class="modal-actions">
+        ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveReport('${r?.id||''}')">${r ? 'Update' : 'Save'} Report</button>
+      </div>
+    `;
+  } else if (type === 'research') {
+    const r = id ? DB.research.find(x=>x.id===id) : null;
+    html = `
+      <h2>${r ? 'Edit' : 'New'} Research Note</h2>
+      <div class="form-row">
+        <div class="form-group"><label>Project Name *</label><input id="m-project" value="${esc(r?.project||'')}" placeholder="e.g. Uniswap"></div>
+        <div class="form-group"><label>Sector</label><select id="m-sector">${SECTORS.map(s=>`<option${(r?.sector||'')===s?' selected':''}>${s}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-group"><label>Author</label><input id="m-author" value="${esc(r?.author||MY_NAME)}" placeholder="Your name"></div>
+      <div class="form-group"><label>Investment Thesis</label><textarea id="m-thesis" placeholder="Why is this interesting? What's the angle?">${esc(r?.thesis||'')}</textarea></div>
+      <div class="form-group"><label>Team Assessment</label><textarea id="m-team" placeholder="Founders, track record, team size...">${esc(r?.team||'')}</textarea></div>
+      <div class="form-group"><label>Market / TAM</label><textarea id="m-market" placeholder="Total addressable market, growth drivers...">${esc(r?.market||'')}</textarea></div>
+      <div class="form-group"><label>Tokenomics</label><textarea id="m-tokenomics" placeholder="Supply, vesting, distribution, utility...">${esc(r?.tokenomics||'')}</textarea></div>
+      <div class="form-group"><label>Risks</label><textarea id="m-risks" placeholder="Key risks, red flags, dependencies...">${esc(r?.risks||'')}</textarea></div>
+      <div class="form-group"><label>Competitive Edge</label><textarea id="m-edge" placeholder="Moat, differentiation, network effects...">${esc(r?.edge||'')}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Overall Score (1-10)</label><input type="number" id="m-score" min="1" max="10" value="${r?.overallScore||''}"></div>
+        <div class="form-group"><label>Verdict</label><select id="m-verdict"><option${(r?.verdict||'')==='Strong Buy'?' selected':''}>Strong Buy</option><option${(r?.verdict||'')==='Buy'?' selected':''}>Buy</option><option${(r?.verdict||'')==='Hold / Watch'?' selected':''}>Hold / Watch</option><option${(r?.verdict||'')==='Pass'?' selected':''}>Pass</option><option${(r?.verdict||'')==='Pending'?' selected':''}>Pending</option></select></div>
+      </div>
+      <div class="form-group"><label>Additional Notes</label><textarea id="m-notes" placeholder="Anything else...">${esc(r?.notes||'')}</textarea></div>
+      <div class="modal-actions">
+        ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteResearch('${r.id}')">Delete</button>` : ''}
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveResearch('${r?.id||''}')">${r ? 'Update' : 'Save'} Research</button>
+      </div>
+    `;
+  }
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal-content').classList.remove('modal-wide');
+}
+function openDealDetail(id) { openModal('deal', id); }
+function editProject(id) { openModal('project', id); }
+function editResearch(id) { openModal('research', id); }
+
+// ===== SAVE FUNCTIONS (Firebase writes) =====
+function saveDeal(existingId) {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) return alert('Project name is required.');
+  const id = existingId || genId();
+  const data = {
+    id, name,
+    sector: document.getElementById('m-sector').value,
+    size: document.getElementById('m-size').value.trim(),
+    stage: document.getElementById('m-stage').value,
+    lead: document.getElementById('m-lead').value.trim(),
+    desc: document.getElementById('m-desc').value.trim(),
+    links: document.getElementById('m-links').value.trim(),
+    tags: document.getElementById('m-tags').value.trim(),
+    updated: today(),
+    created: existingId ? (DB.deals.find(d=>d.id===existingId)?.created || today()) : today(),
+    editedBy: MY_NAME
+  };
+  if (dbRef) {
+    dbRef.child('deals').child(id).set(data);
+  } else {
+    // Fallback: localStorage mode (Firebase not configured)
+    if (existingId) { const idx = DB.deals.findIndex(d=>d.id===existingId); if(idx>=0) DB.deals[idx]=data; }
+    else DB.deals.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+  }
+  closeModal();
+}
+
+function deleteDeal(id) {
+  if (!confirm('Delete this deal?')) return;
+  if (dbRef) { dbRef.child('deals').child(id).remove(); }
+  else { DB.deals=DB.deals.filter(d=>d.id!==id); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+  closeModal();
+}
+
+function saveProject(existingId) {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) return alert('Project name is required.');
+  const id = existingId || genId();
+  const data = {
+    id, name,
+    sector: document.getElementById('m-sector').value,
+    status: document.getElementById('m-status').value,
+    url: document.getElementById('m-url').value.trim(),
+    source: document.getElementById('m-source').value.trim(),
+    notes: document.getElementById('m-notes').value.trim(),
+    created: existingId ? (DB.projects.find(p=>p.id===existingId)?.created || today()) : today(),
+    editedBy: MY_NAME
+  };
+  if (dbRef) {
+    dbRef.child('projects').child(id).set(data);
+  } else {
+    if (existingId) { const idx = DB.projects.findIndex(p=>p.id===existingId); if(idx>=0) DB.projects[idx]=data; }
+    else DB.projects.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+  }
+  closeModal();
+}
+
+function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  if (dbRef) { dbRef.child('projects').child(id).remove(); }
+  else { DB.projects=DB.projects.filter(p=>p.id!==id); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+}
+
+function saveResearch(existingId) {
+  const project = document.getElementById('m-project').value.trim();
+  if (!project) return alert('Project name is required.');
+  const id = existingId || genId();
+  const data = {
+    id, project,
+    sector: document.getElementById('m-sector').value,
+    author: document.getElementById('m-author').value.trim(),
+    thesis: document.getElementById('m-thesis').value.trim(),
+    team: document.getElementById('m-team').value.trim(),
+    market: document.getElementById('m-market').value.trim(),
+    tokenomics: document.getElementById('m-tokenomics').value.trim(),
+    risks: document.getElementById('m-risks').value.trim(),
+    edge: document.getElementById('m-edge').value.trim(),
+    overallScore: parseInt(document.getElementById('m-score').value) || null,
+    verdict: document.getElementById('m-verdict').value,
+    notes: document.getElementById('m-notes').value.trim(),
+    created: existingId ? (DB.research.find(r=>r.id===existingId)?.created || today()) : today(),
+    editedBy: MY_NAME
+  };
+  if (dbRef) {
+    dbRef.child('research').child(id).set(data);
+  } else {
+    if (existingId) { const idx = DB.research.findIndex(r=>r.id===existingId); if(idx>=0) DB.research[idx]=data; }
+    else DB.research.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+  }
+  closeModal();
+}
+
+function deleteResearch(id) {
+  if (!confirm('Delete this research note?')) return;
+  if (dbRef) { dbRef.child('research').child(id).remove(); }
+  else { DB.research=DB.research.filter(r=>r.id!==id); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+}
+
+// ===== TEMPLATE CONSTANTS =====
+const STOCK_TEMPLATE = `RATING: [BUY / SELL / HOLD / WATCH] | CONVICTION: [High / Medium / Low] | TIMEFRAME: [Short / Medium / Long-term] | ANALYST: ${MY_NAME} | DATE: ${today()}
+
+═══════════════════════════════════════════════════
+1. EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════
+[Company name, ticker, exchange. Current price, market cap, 52-week range. One-paragraph overview of the business and primary investment recommendation.]
+
+═══════════════════════════════════════════════════
+2. INVESTMENT THESIS
+═══════════════════════════════════════════════════
+BULL CASE:
+* [Key bull argument #1 - growth catalyst, TAM expansion, new product]
+* [Key bull argument #2 - margin improvement, pricing power, scale]
+* [Key bull argument #3 - competitive moat, IP, network effects]
+
+BEAR CASE:
+* [Key bear argument #1 - competition, market saturation]
+* [Key bear argument #2 - regulatory risk, execution risk]
+* [Key bear argument #3 - valuation concern, macro headwinds]
+
+BASE CASE SCENARIO:
+[Most likely outcome over 12-18 months. Expected price target, probability-weighted return, key assumptions.]
+
+═══════════════════════════════════════════════════
+3. FINANCIAL ANALYSIS
+═══════════════════════════════════════════════════
+INCOME STATEMENT:
+Revenue: [$B] | Revenue Growth: [%] | Gross Margin: [%] | Operating Margin: [%] | Net Income: [$B] | EPS: [$] | FCF: [$B]
+
+BALANCE SHEET:
+Total Assets: [$B] | Total Debt: [$B] | Cash: [$B] | Debt/Equity: [x] | Current Ratio: [x] | Book Value/Share: [$]
+
+CASH FLOW:
+Operating CF: [$B] | CapEx: [$B] | FCF: [$B] | FCF Margin: [%] | FCF Yield: [%]
+
+KEY RATIOS:
+ROE: [%] | ROA: [%] | ROIC: [%] | Debt/EBITDA: [x] | Interest Coverage: [x]
+
+═══════════════════════════════════════════════════
+4. VALUATION
+═══════════════════════════════════════════════════
+RELATIVE VALUATION:
+P/E (TTM): [x] vs Sector [x] | P/E (Fwd): [x] | EV/EBITDA: [x] vs Sector [x] | P/S: [x] | PEG: [x] | P/FCF: [x]
+
+DCF SUMMARY:
+WACC: [%] | Terminal Growth: [%] | Implied Price: [$] | Current: [$] | Upside/Downside: [%]
+
+SCENARIO ANALYSIS:
+Bear: [$] @ [%] prob = [$] | Base: [$] @ [%] prob = [$] | Bull: [$] @ [%] prob = [$]
+Probability-Weighted Target: [$] | Expected Return: [%]
+
+═══════════════════════════════════════════════════
+5. CATALYSTS & GROWTH DRIVERS
+═══════════════════════════════════════════════════
+NEAR-TERM (0-6 months):
+* [Catalyst 1 - earnings, product launch, regulatory decision. Expected date. Impact estimate.]
+* [Catalyst 2]
+
+MEDIUM-TERM (6-18 months):
+* [Growth driver 1 - market expansion, margin opportunity, new segment]
+* [Growth driver 2]
+
+LONG-TERM (18+ months):
+* [Secular trend 1 - industry tailwind, technology disruption, demographic shift]
+* [Secular trend 2]
+
+═══════════════════════════════════════════════════
+6. RISK ASSESSMENT
+═══════════════════════════════════════════════════
+COMPANY RISKS:
+* [Risk 1] | Impact: [H/M/L] | Probability: [H/M/L] | Mitigation: [Strategy]
+* [Risk 2] | Impact: [H/M/L] | Probability: [H/M/L] | Mitigation: [Strategy]
+
+MACRO / SECTOR RISKS:
+* [Risk 1 - rates, recession, regulation] | Impact: [H/M/L] | Probability: [H/M/L]
+* [Risk 2 - competition, disruption] | Impact: [H/M/L] | Probability: [H/M/L]
+
+TAIL RISKS:
+* [Black swan scenario - low probability, catastrophic impact]
+
+═══════════════════════════════════════════════════
+7. COMPETITIVE LANDSCAPE
+═══════════════════════════════════════════════════
+PEER COMPARISON:
+Peer 1: [Name] | Mkt Cap: [$B] | P/E: [x] | Rev Growth: [%] | Margin: [%]
+Peer 2: [Name] | Mkt Cap: [$B] | P/E: [x] | Rev Growth: [%] | Margin: [%]
+Peer 3: [Name] | Mkt Cap: [$B] | P/E: [x] | Rev Growth: [%] | Margin: [%]
+
+MOAT ASSESSMENT:
+Moat Type: [None / Narrow / Wide] | Trend: [Stable / Expanding / Eroding]
+Brand: [1-5] | Switching Costs: [1-5] | Network Effects: [1-5] | Cost Advantage: [1-5] | IP: [1-5]
+
+═══════════════════════════════════════════════════
+8. TECHNICAL ANALYSIS
+═══════════════════════════════════════════════════
+Price: [$] | 52W High: [$] | 52W Low: [$] | Support: [$, $] | Resistance: [$, $]
+50-Day MA: [$] | 200-Day MA: [$] | RSI: [value] | MACD: [Signal] | Volume: [avg]
+Trend: [Strong Uptrend / Uptrend / Sideways / Downtrend / Strong Downtrend]
+
+═══════════════════════════════════════════════════
+9. MANAGEMENT & GOVERNANCE
+═══════════════════════════════════════════════════
+CEO: [Name] | Tenure: [Yrs] | Track Record: [1-5] | Alignment: [Strong/Moderate/Weak]
+CFO: [Name] | Capital Allocation: [1-5]
+Board Independence: [%] | Insider Ownership: [%] | Institutional: [%]
+ESG: [Score] | Compensation: [Aligned/Misaligned] | Red Flags: [None / Describe]
+
+═══════════════════════════════════════════════════
+10. RECOMMENDATION & ACTION PLAN
+═══════════════════════════════════════════════════
+FINAL RATING: [STRONG BUY / BUY / HOLD / SELL / STRONG SELL] | Conviction: [H/M/L] | R/R Score: [1-10]
+
+POSITION SIZING:
+Allocation: [%] of portfolio | Max Size: [%] | Entry: [Limit/Market] at [$]
+Scale-in: [$, $, $] | Stop Loss: [$] ([%]) | Take Profit: [$] ([%]) | R/R Ratio: [x:1]
+
+MONITORING TRIGGERS:
+RE-EVALUATE IF:
+* [Trigger 1 - price level, earnings threshold, news event]
+* [Trigger 2 - competitive shift, regulatory change]
+EXIT IF:
+* [Thesis broken - fundamental deterioration beyond recovery]
+* [Stop loss hit or better opportunity identified]
+
+Next Review: [DD/MM/YYYY] | Frequency: [Weekly / Monthly / Quarterly]
+
+═══════════════════════════════════════════════════
+RESEARCH LOG
+═══════════════════════════════════════════════════
+Date | Action | Key Findings | Rating | Analyst
+[DD/MM/YYYY] | [Initial / Update / Review] | [Summary] | [Rating] | [Name]
+
+DISCLAIMER: Internal use only. All data must be independently verified. Not investment advice.`;
+
+const CRYPTO_TEMPLATE = `PROJECT: [TOKEN NAME] | TICKER: $[TICKER] | CHAIN: [Chain] | DATE: ${today()} | ANALYST: ${MY_NAME}
+
+═══════════════════════════════════════════════════
+0. INTRO
+═══════════════════════════════════════════════════
+[Paste output here - warm intro, why this project matters, 2-3 sentences max]
+
+PROMPT: "Write a short, professional intro for [TOKEN NAME]. Mention its relevance to [DePIN/DeAI/DeFi/etc.]. 3 sentences max. Substack-friendly tone."
+
+═══════════════════════════════════════════════════
+1. OVERVIEW
+═══════════════════════════════════════════════════
+What it does: [1-2 sentences]
+FDV: [$] | Market Cap: [$] | FDV/MC Ratio: [x]
+Volume 24h: [$] ([+/-%]) | Volume 7d: [$] ([+/-%])
+X: [@handle] | Website: [url] | GitHub: [url]
+
+═══════════════════════════════════════════════════
+2. TL;DR
+═══════════════════════════════════════════════════
+* What it is: [simple definition]
+* How it works: [1-liner mechanism]
+* Why it matters: [value prop or opportunity]
+
+═══════════════════════════════════════════════════
+3. PRODUCT & FEATURES
+═══════════════════════════════════════════════════
+* Core product: [what it builds/provides]
+* How miners/nodes contribute: [tasks + rewards]
+* How validators secure it: [mechanism]
+* Tech stack: [infra, SDKs, tools]
+* Key features: [real-world utility, what makes it useful]
+
+═══════════════════════════════════════════════════
+4. MOATS
+═══════════════════════════════════════════════════
+* Data Advantage: [proprietary? hard to replicate? feedback loops?]
+* Model/Tech Differentiation: [unique architecture, novel methods?]
+* Trust Barrier: [transparent scoring? hard-to-copy evaluation?]
+* Incentive Lock-in: [are participants aligned long-term?]
+* Fork Resistance: [could a competitor easily clone + attract users?]
+
+═══════════════════════════════════════════════════
+5. TEAM
+═══════════════════════════════════════════════════
+* Founders: [Names, roles, background]
+* Key experience: [crypto, AI, Web2, notable companies]
+* Links: [X, LinkedIn, GitHub]
+* Credibility: [why this team? track record?]
+
+═══════════════════════════════════════════════════
+6. CODE & GITHUB
+═══════════════════════════════════════════════════
+* Repos: [# of repos, main org/repo link]
+* Activity: [last commit, active devs/contributors]
+* Structure: [modular? clean? messy? docs? tests?]
+* Red flags: [abandoned? copy-paste? no tests?]
+
+═══════════════════════════════════════════════════
+7. TOKENOMICS
+═══════════════════════════════════════════════════
+Launch Date: [Date] | Launch Price: [$] | Current Price: [$]
+Circulating Supply: [#] ([%]) | Max Supply: [#] | FDV: [$] | Market Cap: [$]
+Distribution: Team [%] | Investors [%] | Community [%] | Treasury [%] | Ecosystem [%]
+Next Unlock: [Date] | Amount: [# tokens, $value] | % of Circ: [%]
+Emissions: Daily [#] | Weekly [#] | Yearly [#] | Inflation Rate: [%]
+Staking: [% staked] | Real Yield: [%] | Protocol Revenue (30d): [$]
+
+═══════════════════════════════════════════════════
+8. BACKERS & FUNDING
+═══════════════════════════════════════════════════
+* Lead investors: [Names]
+* Round details: [Stage, size, valuation]
+* Other notable backers: [Angels, DAOs, funds]
+* Status: [Early/Stealth/Well-funded/No data]
+
+═══════════════════════════════════════════════════
+9. COMPETITIVE LANDSCAPE
+═══════════════════════════════════════════════════
+NARRATIVE FIT:
+Macro theme: [DePIN / DeAI / DeFi / Gaming / Infra / etc.]
+Why relevant now: [narrative timing, market demand]
+
+PEER COMPARISON:
+Peer 1: [Name] | Sector: [X] | FDV: [$] | Edge: [strength] | Narrative: [fit]
+Peer 2: [Name] | Sector: [X] | FDV: [$] | Edge: [strength] | Narrative: [fit]
+Peer 3: [Name] | Sector: [X] | FDV: [$] | Edge: [strength] | Narrative: [fit]
+
+COMPETITIVE EDGE:
+* [What makes this different from peers]
+* [Hard-to-replicate design features]
+* [Where asymmetric upside may lie]
+
+═══════════════════════════════════════════════════
+10. USERS, GROWTH & REVENUE
+═══════════════════════════════════════════════════
+USAGE METRICS:
+Active miners/nodes: [#] | Validators: [#] | DAU: [#] | TVL: [$]
+30d trend: [rising/flat/falling] | Early traction signals: [X followers, demo, validator competition]
+
+REVENUE MODEL:
+Miner rewards: [performance-based / participation / other]
+Validator economics: [scoring + earnings mechanism]
+Demand side: [who consumes output? real buyers or speculative?]
+On-chain revenue: [visible fees/volume? or purely emission-driven?]
+
+═══════════════════════════════════════════════════
+11. SOCIAL SENTIMENT
+═══════════════════════════════════════════════════
+* Community vibe: [positive / hyped / skeptical / quiet]
+* Influencer engagement: [who is talking? bullish or bearish?]
+* Public alpha: [any leaks, insider threads, stealth updates?]
+* FUD / warnings: [recurring concerns on CT?]
+Signal Rating: [Strong / Moderate / Weak]
+
+═══════════════════════════════════════════════════
+12. TOP HOLDERS & WHALE ACTIVITY
+═══════════════════════════════════════════════════
+Top 10 concentration: [%] | Top 30 concentration: [%]
+* Whale wallets: [# flagged as whale, team, or CEX]
+* Behavior: [accumulating / distributing / idle]
+* Red flags: [high centralization? active sell-offs? unknown multisigs?]
+
+TOP TRADER PnL:
+Entry clusters: [$X-$Y range] | Avg PnL: [+/-X%] | Whales holding or selling: [status]
+
+═══════════════════════════════════════════════════
+13. CHART & TECHNICAL ANALYSIS
+═══════════════════════════════════════════════════
+* Trend: [direction + strength]
+* Support: [$, $] | Resistance: [$, $]
+* Entry zone: [breakout / retest / DCA level]
+* Stop loss: [$]
+* Volume / momentum: [insight]
+* Targets: [TP1: $, TP2: $]
+BTC Pair: [Outperforming / Underperforming] | Market Structure: [Accumulation / Markup / Distribution / Markdown]
+
+═══════════════════════════════════════════════════
+14. CATALYSTS & FUD
+═══════════════════════════════════════════════════
+POSITIVE CATALYSTS:
+* [Catalyst 1 - product launch, listing, partnership, upgrade]
+* [Catalyst 2 - unlock, airdrop, mainnet, SDK release]
+* [Catalyst 3 - CT hype, influencer thread, narrative shift]
+
+RISKS / FUD:
+* [Risk 1 - regulatory, tech failure, team drama]
+* [Risk 2 - whale dumping, low usage, competitor launch]
+
+═══════════════════════════════════════════════════
+15. FINAL THESIS
+═══════════════════════════════════════════════════
+BULLISH:
+* [Strength 1]
+* [Strength 2]
+* [Strength 3]
+
+BEARISH:
+* [Risk 1]
+* [Risk 2]
+* [Risk 3]
+
+═══════════════════════════════════════════════════
+16. SIGNAL
+═══════════════════════════════════════════════════
+VERDICT: [BUY / SPECULATE / HOLD-WAIT / AVOID]
+Conviction: [High / Medium / Low] | Timeframe: [Short / Medium / Long]
+One-liner: [core reason for the call]
+
+═══════════════════════════════════════════════════
+17. SOURCES
+═══════════════════════════════════════════════════
+CoinGecko | DefiLlama | Artemis | TokenTerminal | TaoStats | SubnetStats | Dexscreener | DropsTab | SpotOnChain | Etherscan | Holderscan | Crunchbase | CoinCarp | CryptoRank | Cookie.fun | GoatIndex | Coindar | Coinmarketcal | Tokenomist.ai | GitHub | Official Docs | X (Twitter)
+
+═══════════════════════════════════════════════════
+18. X / SUBSTACK PREVIEW
+═══════════════════════════════════════════════════
+[Paste ~300 word preview for X thread / Substack teaser here]
+
+PROMPT: "Distill the full research into a punchy ~300 word X/Substack preview. Structure: bold hook (1-2 lines), what it does, simple analogy, how it works (2 sentences), 5-6 bulleted highlights, closing line, chart link, CTA to full article. CT-friendly tone, no hype."
+
+DISCLAIMER: This report was AI-generated with human edits. For informational purposes only - not financial advice. Always DYOR. The analyst may or may not hold tokens discussed.`;
+
+const STOCK_SECTIONS = ['Executive Summary', 'Investment Thesis', 'Financial Analysis', 'Valuation', 'Catalysts & Growth Drivers', 'Risk Assessment', 'Competitive Landscape', 'Technical Analysis', 'Management & Governance', 'Recommendation & Action Plan'];
+const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Code & GitHub', 'Tokenomics', 'Backers & Funding', 'Competitive Landscape', 'Users, Growth & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources'];
+
+// ===== RENDER TEMPLATES =====
+function renderTemplates() {
+  document.getElementById('templates-list').innerHTML = `
+    <div class="template-card">
+      <span class="template-type template-type-stock">STOCK / EQUITY</span>
+      <h3>Stock Research Template</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Comprehensive equity analysis framework with 10 structured sections covering fundamentals, valuation, catalysts, risks, and trade setup.</p>
+      <ul class="template-sections">
+        ${STOCK_SECTIONS.map(s => `<li>${s}</li>`).join('')}
+      </ul>
+      <button class="btn btn-primary" onclick="useTemplate('stock')">Use Template</button>
+    </div>
+    <div class="template-card">
+      <span class="template-type template-type-crypto">CRYPTO / ALTCOINS</span>
+      <h3>Crypto Research Template</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Deep-dive crypto analysis with 18 sections. Includes AI prompt guides for Claude and Grok, on-chain metrics, tokenomics, whale tracking, and social sentiment.</p>
+      <ul class="template-sections">
+        ${CRYPTO_SECTIONS.map(s => `<li>${s}</li>`).join('')}
+      </ul>
+      <button class="btn btn-primary" onclick="useTemplate('crypto')">Use Template</button>
+    </div>
+  `;
+}
+
+// ===== RENDER REPORTS =====
+function renderReports(filter = '') {
+  const f = (filter || '').toLowerCase();
+  const filtered = [...DB.reports]
+    .filter(r => !f || r.title.toLowerCase().includes(f) || (r.type||'').toLowerCase().includes(f))
+    .sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||''));
+
+  document.getElementById('reports-list').innerHTML = filtered.length ? filtered.map(r => `
+    <div class="report-card" onclick="openModal('report','${r.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <span class="template-type ${r.type==='stock'?'template-type-stock':'template-type-crypto'}">${r.type==='stock'?'STOCK':'CRYPTO'}</span>
+          <h3 style="margin-top:6px;">${esc(r.title)}</h3>
+          <div class="report-meta">${fmtDate(r.updated||r.created)}${r.editedBy ? ' &middot; by '+esc(r.editedBy) : ''}${r.rating ? ' &middot; '+esc(r.rating) : ''}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
+        </div>
+      </div>
+      <div class="report-preview">${esc((r.content||'').substring(0,200))}</div>
+    </div>
+  `).join('') : '<div class="empty-state"><div class="icon">&#128203;</div><p>No reports yet. Go to Templates to start a new research report.</p></div>';
+}
+
+// ===== USE TEMPLATE =====
+function useTemplate(type) {
+  const placeholder = type === 'stock' ? 'e.g. Tesla (TSLA)' : 'e.g. Ethereum (ETH)';
+  const title = prompt('Enter the name of the project/company:', '');
+  if (!title || !title.trim()) return;
+  const id = genId();
+  const content = type === 'stock' ? STOCK_TEMPLATE : CRYPTO_TEMPLATE;
+  const data = {
+    id, title: title.trim(), type,
+    content: content.replace(/\[TOKEN NAME\]/g, title.trim()).replace(/\[Company name[^\]]*\]/g, title.trim()),
+    rating: '', conviction: '',
+    created: today(), updated: today(), editedBy: MY_NAME
+  };
+  if (dbRef) {
+    dbRef.child('reports').child(id).set(data).then(() => {
+      // Navigate to reports page and open editor
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('[data-page="reports"]').classList.add('active');
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('page-reports').classList.remove('hidden');
+      setTimeout(() => openModal('report', id), 300);
+    });
+  } else {
+    DB.reports.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+    openModal('report', id);
+  }
+}
+
+// ===== SAVE REPORT =====
+function saveReport(existingId) {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) return alert('Title is required.');
+  const id = existingId || genId();
+  const existing = DB.reports.find(r => r.id === existingId);
+  const data = {
+    id, title,
+    type: existing?.type || 'crypto',
+    content: document.getElementById('m-content').value,
+    rating: document.getElementById('m-rating').value,
+    conviction: document.getElementById('m-conviction').value,
+    created: existing?.created || today(),
+    updated: today(),
+    editedBy: MY_NAME
+  };
+  if (dbRef) {
+    dbRef.child('reports').child(id).set(data);
+  } else {
+    if (existingId) { const idx = DB.reports.findIndex(r=>r.id===existingId); if(idx>=0) DB.reports[idx]=data; }
+    else DB.reports.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+  }
+  closeModal();
+}
+
+function deleteReport(id) {
+  if (!confirm('Delete this report?')) return;
+  if (dbRef) { dbRef.child('reports').child(id).remove(); }
+  else { DB.reports=DB.reports.filter(r=>r.id!==id); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+  closeModal();
+}
+
+// ===== TASK CONSTANTS =====
+const TEAM = ['Jumparo', 'Tihomir'];
+const TASK_STATUSES = ['To Do', 'In Progress', 'Review', 'Done'];
+const TASK_STATUS_COLORS = { 'To Do': '#3b82f6', 'In Progress': '#f59e0b', 'Review': '#a855f7', 'Done': '#10b981' };
+
+function getAssigneeBadge(assignee) {
+  if (!assignee) return '';
+  if (assignee === 'Both') return '<span class="assignee-badge assignee-jt" title="Jumparo & Tihomir">JT</span>';
+  if (assignee === 'Jumparo') return '<span class="assignee-badge assignee-j" title="Jumparo">J</span>';
+  if (assignee === 'Tihomir') return '<span class="assignee-badge assignee-t" title="Tihomir">T</span>';
+  return '';
+}
+
+function getDueClass(dueDate) {
+  if (!dueDate) return '';
+  return new Date(dueDate) < new Date(today()) ? ' overdue' : '';
+}
+
+// ===== RENDER TASKS (Kanban Board) =====
+let currentTaskFilter = 'all';
+
+function setTaskFilter(filter) {
+  currentTaskFilter = filter;
+  document.querySelectorAll('.task-filter').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  renderTasks();
+}
+
+function renderTasks() {
+  let tasks = [...DB.tasks];
+  if (currentTaskFilter === 'mine') {
+    tasks = tasks.filter(t => t.assignee === MY_NAME || t.assignee === 'Both');
+  } else if (currentTaskFilter === 'high') {
+    tasks = tasks.filter(t => t.priority === 'High');
+  }
+
+  const html = TASK_STATUSES.map(status => {
+    const col = tasks.filter(t => t.status === status);
+    return `
+      <div class="pipeline-col">
+        <div class="pipeline-col-header">
+          <div class="pipeline-col-title"><span class="dot" style="background:${TASK_STATUS_COLORS[status]}"></span>${status}</div>
+          <span class="pipeline-col-count">${col.length}</span>
+        </div>
+        <div class="pipeline-col-body">
+          ${col.sort((a,b) => {
+            const p = {High:0,Medium:1,Low:2};
+            return (p[a.priority]||1) - (p[b.priority]||1);
+          }).map(t => `
+            <div class="task-card" onclick="openModal('task','${t.id}')">
+              <div class="task-card-title">${esc(t.title)}</div>
+              <div class="task-card-meta">
+                ${getAssigneeBadge(t.assignee)}
+                ${t.priority ? `<span class="priority-pill priority-${t.priority.toLowerCase()}">${t.priority}</span>` : ''}
+                ${t.dueDate ? `<span class="task-due${getDueClass(t.dueDate)}">${fmtDate(t.dueDate)}</span>` : ''}
+              </div>
+              ${t.milestone ? `<div class="task-card-meta" style="margin-top:4px;"><span class="task-milestone-tag">${esc(t.milestone)}</span></div>` : ''}
+              ${t.description ? `<div class="task-desc-preview">${esc(t.description.substring(0,100))}</div>` : ''}
+              ${t.editedBy ? `<div style="font-size:10px;color:var(--text3);margin-top:6px;">by ${esc(t.editedBy)}</div>` : ''}
+            </div>
+          `).join('')}
+          ${col.length === 0 ? '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No tasks</div>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('tasks-board').innerHTML = html;
+}
+
+// ===== RENDER ROADMAP =====
+function renderRoadmap() {
+  const grouped = {};
+  DB.tasks.forEach(t => {
+    const key = t.milestone || '__none__';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(t);
+  });
+
+  // Sort milestones: active first (have incomplete tasks), then completed, then "No milestone" last
+  const keys = Object.keys(grouped).sort((a, b) => {
+    if (a === '__none__') return 1;
+    if (b === '__none__') return -1;
+    const aDone = grouped[a].every(t => t.status === 'Done');
+    const bDone = grouped[b].every(t => t.status === 'Done');
+    if (aDone !== bDone) return aDone ? 1 : -1;
+    return a.localeCompare(b);
+  });
+
+  if (keys.length === 0) {
+    document.getElementById('roadmap-list').innerHTML = `
+      <div class="card" style="max-width:600px;margin:40px auto;text-align:center;padding:40px;">
+        <div style="font-size:48px;margin-bottom:16px;">&#127963;</div>
+        <h2 style="font-size:20px;margin-bottom:8px;">Launch Your Fund</h2>
+        <p style="color:var(--text2);font-size:14px;line-height:1.7;margin-bottom:24px;">
+          Load a professional fund-building roadmap with ~50 tasks across 7 milestones.<br>
+          Covers formation, strategy, research, execution, operations, networking & growth.<br>
+          <span style="color:var(--accent2);">Jumparo = Crypto</span> &middot; <span style="color:var(--orange);">Tihomir = Equities</span>
+        </p>
+        <button class="btn btn-primary" style="font-size:15px;padding:12px 28px;" onclick="seedFundRoadmap()">&#128640; Load Fund Roadmap</button>
+        <p style="color:var(--text3);font-size:12px;margin-top:16px;">All tasks are fully editable. You can add, modify, or delete any task after loading.</p>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('roadmap-list').innerHTML = keys.map(key => {
+    const tasks = grouped[key];
+    const done = tasks.filter(t => t.status === 'Done').length;
+    const total = tasks.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const name = key === '__none__' ? 'No Milestone' : key;
+
+    return `
+      <div class="milestone-group">
+        <div class="milestone-header">
+          <div>
+            <h3>${esc(name)}</h3>
+          </div>
+          <div class="milestone-stats">
+            <span>${done}/${total} done</span>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;${pct===100?'background:var(--green);':''}"></div></div>
+            <span style="font-weight:600;${pct===100?'color:var(--green);':''}">${pct}%</span>
+          </div>
+        </div>
+        <div class="milestone-tasks">
+          <div class="roadmap-row" style="font-weight:700;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;cursor:default;">
+            <div>Task</div><div>Assignee</div><div>Status</div><div>Priority</div><div>Due</div>
+          </div>
+          ${tasks.sort((a,b) => {
+            const statusOrder = {'To Do':0,'In Progress':1,'Review':2,'Done':3};
+            return (statusOrder[a.status]||0) - (statusOrder[b.status]||0);
+          }).map(t => `
+            <div class="roadmap-row" onclick="openModal('task','${t.id}')">
+              <div class="roadmap-row-title" style="${t.status==='Done'?'text-decoration:line-through;color:var(--text3);':''}">${esc(t.title)}</div>
+              <div>${getAssigneeBadge(t.assignee)} <span style="font-size:12px;color:var(--text2);">${esc(t.assignee||'—')}</span></div>
+              <div><span class="status-pill" style="background:${TASK_STATUS_COLORS[t.status]}22;color:${TASK_STATUS_COLORS[t.status]};">${t.status}</span></div>
+              <div>${t.priority ? `<span class="priority-pill priority-${t.priority.toLowerCase()}">${t.priority}</span>` : '—'}</div>
+              <div><span class="task-due${getDueClass(t.dueDate)}">${t.dueDate ? fmtDate(t.dueDate) : '—'}</span></div>
+            </div>
+          `).join('')}
+          ${tasks.length === 0 ? '<div class="milestone-empty">No tasks in this milestone</div>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== SAVE / DELETE TASK =====
+function saveTask(existingId) {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) return alert('Title is required.');
+  const id = existingId || genId();
+  const data = {
+    id, title,
+    description: document.getElementById('m-desc').value.trim(),
+    assignee: document.getElementById('m-assignee').value,
+    priority: document.getElementById('m-priority').value,
+    status: document.getElementById('m-status').value,
+    dueDate: document.getElementById('m-due').value,
+    milestone: document.getElementById('m-milestone').value.trim(),
+    created: existingId ? (DB.tasks.find(t=>t.id===existingId)?.created || today()) : today(),
+    updated: today(),
+    editedBy: MY_NAME
+  };
+  if (dbRef) {
+    dbRef.child('tasks').child(id).set(data);
+  } else {
+    if (existingId) { const idx = DB.tasks.findIndex(t=>t.id===existingId); if(idx>=0) DB.tasks[idx]=data; }
+    else DB.tasks.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+  }
+  closeModal();
+}
+
+function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  if (dbRef) { dbRef.child('tasks').child(id).remove(); }
+  else { DB.tasks=DB.tasks.filter(t=>t.id!==id); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+  closeModal();
+}
+
+function editTask(id) { openModal('task', id); }
+
+// ===== SEED FUND ROADMAP =====
+function seedFundRoadmap() {
+  if (!confirm('Load the professional fund roadmap?\n\nThis will create ~50 tasks across 7 milestones for building a fully operational investment fund.\n\nJumparo = Crypto | Tihomir = Equities')) return;
+
+  const tasks = [
+    // Phase 1: Fund Formation & Legal
+    { title: 'Define fund structure (LP/GP, jurisdiction, fund type)', description: 'Decide on legal structure: Limited Partnership, LLC, or offshore. Choose jurisdiction (Delaware, Cayman, BVI). Define GP/LP roles and responsibilities.', assignee: 'Both', priority: 'High', milestone: '1. Fund Formation & Legal' },
+    { title: 'Draft & sign partnership agreement', description: 'Legal partnership agreement defining profit split, decision authority, capital commitments, dispute resolution, and exit terms between partners.', assignee: 'Both', priority: 'High', milestone: '1. Fund Formation & Legal' },
+    { title: 'Register fund entity (LLC/LP)', description: 'File articles of organization/incorporation. Get EIN. Register with state. Set up registered agent if needed.', assignee: 'Both', priority: 'High', milestone: '1. Fund Formation & Legal' },
+    { title: 'Open fund bank account & custody setup', description: 'Open business bank account. Set up custody solution for securities (prime broker) and crypto (institutional custodian or multisig).', assignee: 'Both', priority: 'High', milestone: '1. Fund Formation & Legal' },
+    { title: 'Define fee structure (mgmt fee %, carry %, hurdle rate)', description: 'Standard: 2% management fee + 20% carry above hurdle. Define high-water mark, clawback provisions, fee calculation methodology.', assignee: 'Both', priority: 'High', milestone: '1. Fund Formation & Legal' },
+    { title: 'Set compliance & KYC/AML framework', description: 'Establish KYC procedures for new investors. AML policy. Define reporting obligations. Consider compliance officer or outsourced service.', assignee: 'Both', priority: 'Medium', milestone: '1. Fund Formation & Legal' },
+    { title: 'Create investor onboarding docs (PPM, subscription agreement)', description: 'Private Placement Memorandum, Limited Partnership Agreement, Subscription Agreement, investor questionnaire, side letter template.', assignee: 'Both', priority: 'Medium', milestone: '1. Fund Formation & Legal' },
+
+    // Phase 2: Investment Strategy & Thesis
+    { title: 'Define crypto investment thesis & target sectors', description: 'Core thesis for crypto portfolio: DePIN, DeAI, DeFi, L1/L2, Gaming? Define what makes a good crypto investment. Narrative timing framework.', assignee: 'Jumparo', priority: 'High', milestone: '2. Investment Strategy & Thesis' },
+    { title: 'Define equity investment thesis & target sectors', description: 'Core thesis for equity portfolio: Growth vs Value? Sector focus (Tech, Healthcare, Energy)? Market cap preference? Geographic focus?', assignee: 'Tihomir', priority: 'High', milestone: '2. Investment Strategy & Thesis' },
+    { title: 'Set portfolio allocation model (crypto % vs equity %)', description: 'Target allocation between crypto and equities. Rebalancing triggers. Cash reserve policy. Maximum allocation per asset class.', assignee: 'Both', priority: 'High', milestone: '2. Investment Strategy & Thesis' },
+    { title: 'Define position sizing rules & max exposure limits', description: 'Max single position size (% of AUM). Sector concentration limits. Correlation-based exposure caps. Liquidity-weighted sizing.', assignee: 'Both', priority: 'High', milestone: '2. Investment Strategy & Thesis' },
+    { title: 'Create risk management framework (drawdown limits, stop-loss policy)', description: 'Max portfolio drawdown threshold. Per-position stop-loss rules. Correlation monitoring. VaR limits. Crisis playbook.', assignee: 'Both', priority: 'High', milestone: '2. Investment Strategy & Thesis' },
+    { title: 'Build crypto watchlist (top 50 altcoins by conviction)', description: 'Curate top 50 crypto assets ranked by conviction. Include thesis snippet, target entry, sector tag. Update monthly.', assignee: 'Jumparo', priority: 'Medium', milestone: '2. Investment Strategy & Thesis' },
+    { title: 'Build equity watchlist (top 30 stocks by conviction)', description: 'Curate top 30 equities ranked by conviction. Include thesis snippet, fair value estimate, catalyst timeline. Update monthly.', assignee: 'Tihomir', priority: 'Medium', milestone: '2. Investment Strategy & Thesis' },
+    { title: 'Define entry/exit criteria for each asset class', description: 'Quantitative and qualitative triggers for entering/exiting positions. Scoring system. Minimum checklist before deploying capital.', assignee: 'Both', priority: 'Medium', milestone: '2. Investment Strategy & Thesis' },
+
+    // Phase 3: Research Infrastructure
+    { title: 'Set up on-chain analytics stack (Dune, Nansen, Arkham, DefiLlama)', description: 'Accounts on Dune Analytics, Nansen, Arkham Intelligence, DefiLlama, Token Terminal, Artemis. Bookmark key dashboards. Set up alerts.', assignee: 'Jumparo', priority: 'High', milestone: '3. Research Infrastructure' },
+    { title: 'Set up equity research tools (Bloomberg/Koyfin, SEC filings, earnings)', description: 'Koyfin or Bloomberg terminal access. SEC EDGAR bookmarks. Earnings calendar (Earnings Whispers). Analyst estimate aggregators.', assignee: 'Tihomir', priority: 'High', milestone: '3. Research Infrastructure' },
+    { title: 'Build crypto due diligence checklist (tokenomics, team, code, TVL)', description: 'Standardized DD checklist: tokenomics analysis, team background, GitHub activity, TVL trends, whale concentration, social sentiment. Score each 1-10.', assignee: 'Jumparo', priority: 'Medium', milestone: '3. Research Infrastructure' },
+    { title: 'Build equity due diligence checklist (financials, moat, management)', description: 'Standardized DD checklist: financial health (FCF, margins, growth), competitive moat, management quality, valuation vs peers. Score each 1-10.', assignee: 'Tihomir', priority: 'Medium', milestone: '3. Research Infrastructure' },
+    { title: 'Create macro dashboard (Fed, rates, DXY, M2, fear/greed, BTC dominance)', description: 'Single dashboard tracking: Fed funds rate, 10Y yield, DXY, M2 money supply, VIX, crypto fear/greed index, BTC dominance, S&P500.', assignee: 'Both', priority: 'Medium', milestone: '3. Research Infrastructure' },
+    { title: 'Set up news & alpha feed (CT, Substack, X lists, earnings whispers)', description: 'Curated X lists for crypto alpha and equity analysis. Substack subscriptions. Telegram groups. RSS feeds. CT signal accounts.', assignee: 'Both', priority: 'Low', milestone: '3. Research Infrastructure' },
+    { title: 'Establish research review process (weekly investment committee)', description: 'Weekly 1-hour call: review new ideas, existing positions, macro update, risk check. Rotating agenda. Document decisions.', assignee: 'Both', priority: 'Medium', milestone: '3. Research Infrastructure' },
+
+    // Phase 4: Portfolio Construction & Execution
+    { title: 'Open exchange accounts (Binance, Coinbase Prime, OTC desks)', description: 'Binance institutional, Coinbase Prime, Kraken Pro. OTC desk relationships (Cumberland, Circle). Complete KYC/KYB for each.', assignee: 'Jumparo', priority: 'High', milestone: '4. Portfolio Construction & Execution' },
+    { title: 'Open brokerage accounts (Interactive Brokers, prime brokerage)', description: 'Interactive Brokers institutional account. Evaluate prime brokerage needs. Set up margin if applicable. Enable options trading.', assignee: 'Tihomir', priority: 'High', milestone: '4. Portfolio Construction & Execution' },
+    { title: 'Set up cold storage & multisig wallets (Ledger, Gnosis Safe)', description: 'Hardware wallets (Ledger x2). Gnosis Safe multisig for fund treasury. Define signing policy (2-of-2 or 2-of-3). Backup seed phrases securely.', assignee: 'Jumparo', priority: 'High', milestone: '4. Portfolio Construction & Execution' },
+    { title: 'Define order execution playbook (limit orders, DCA, OTC blocks)', description: 'Standard execution procedures: limit vs market, DCA schedules for large positions, OTC for size > $100K, slippage tolerance. Document for consistency.', assignee: 'Both', priority: 'Medium', milestone: '4. Portfolio Construction & Execution' },
+    { title: 'Build position tracking spreadsheet / dashboard', description: 'Real-time portfolio tracker: cost basis, current value, P&L, allocation %, sector exposure. Combine crypto + equity in one view.', assignee: 'Both', priority: 'Medium', milestone: '4. Portfolio Construction & Execution' },
+    { title: 'Set up automated alerts (price, volume, on-chain whale moves)', description: 'TradingView alerts for price levels. Nansen/Arkham whale alerts. Volume spike notifications. Liquidation cascade monitors.', assignee: 'Jumparo', priority: 'Medium', milestone: '4. Portfolio Construction & Execution' },
+    { title: 'Set up equity alerts (earnings, insider trades, SEC filings)', description: 'Earnings date alerts. SEC filing notifications (13F, 13D, Form 4). Insider buying/selling alerts. Analyst upgrade/downgrade notifications.', assignee: 'Tihomir', priority: 'Medium', milestone: '4. Portfolio Construction & Execution' },
+    { title: 'Create rebalancing schedule & triggers', description: 'Monthly rebalancing review. Trigger-based rebalance if allocation drifts > 5% from target. Document rebalancing methodology.', assignee: 'Both', priority: 'Low', milestone: '4. Portfolio Construction & Execution' },
+
+    // Phase 5: Operations & Reporting
+    { title: 'Design monthly performance report template (NAV, returns, attribution)', description: 'Monthly report: NAV, gross/net returns, benchmark comparison, attribution by position, sector breakdown, risk metrics.', assignee: 'Both', priority: 'High', milestone: '5. Operations & Reporting' },
+    { title: 'Set up P&L tracking system (realized, unrealized, fees)', description: 'Track realized P&L, unrealized P&L, management fees accrued, performance fees, net fund value. Reconcile monthly.', assignee: 'Both', priority: 'High', milestone: '5. Operations & Reporting' },
+    { title: 'Create investor update template (quarterly letter)', description: 'Quarterly letter template: market commentary, portfolio update, key trades, performance summary, outlook. Professional tone, 2-3 pages.', assignee: 'Both', priority: 'Medium', milestone: '5. Operations & Reporting' },
+    { title: 'Build risk report (VaR, correlation matrix, drawdown analysis)', description: 'Risk dashboard: Value-at-Risk, portfolio correlation matrix, max drawdown tracking, Sharpe/Sortino ratios, sector concentration.', assignee: 'Both', priority: 'Medium', milestone: '5. Operations & Reporting' },
+    { title: 'Set up tax reporting workflow (cost basis, wash sales, crypto tax)', description: 'Tax lot tracking. Crypto tax software (Koinly/CoinTracker). Wash sale monitoring for equities. K-1 preparation for LPs. Year-end tax package.', assignee: 'Both', priority: 'Medium', milestone: '5. Operations & Reporting' },
+    { title: 'Establish audit trail & trade documentation process', description: 'Document every trade with rationale, entry/exit levels, thesis. Maintain trade journal. Timestamp all decisions. Archive communications.', assignee: 'Both', priority: 'Low', milestone: '5. Operations & Reporting' },
+    { title: 'Create fund factsheet (1-pager for LPs)', description: 'One-page factsheet: fund overview, strategy summary, team bios, performance chart, key metrics, contact info. PDF format, update monthly.', assignee: 'Both', priority: 'Low', milestone: '5. Operations & Reporting' },
+
+    // Phase 6: Deal Flow & Network
+    { title: 'Build crypto founder & VC network (Telegram, X, conferences)', description: 'Actively network in crypto: join founder Telegram groups, engage on CT, attend ETHDenver/Token2049/Consensus. Build VC co-invest relationships.', assignee: 'Jumparo', priority: 'High', milestone: '6. Deal Flow & Network' },
+    { title: 'Build equity analyst & PM network (LinkedIn, conferences)', description: 'Network with equity analysts, portfolio managers, sell-side research. Attend investor conferences (Sohn, Ira Sohn). Join investment clubs.', assignee: 'Tihomir', priority: 'High', milestone: '6. Deal Flow & Network' },
+    { title: 'Create deal sourcing pipeline (inbound + outbound)', description: 'Systematize deal flow: inbound (network referrals, applications) + outbound (proactive research, cold outreach). Track in Deal Flow page.', assignee: 'Both', priority: 'Medium', milestone: '6. Deal Flow & Network' },
+    { title: 'Attend 2-3 industry conferences per quarter', description: 'Quarterly conference schedule. Budget per conference. Pre-schedule meetings. Post-conference follow-up process. Share notes with team.', assignee: 'Both', priority: 'Medium', milestone: '6. Deal Flow & Network' },
+    { title: 'Launch fund X/Twitter presence for thought leadership', description: 'Professional fund account on X. Share market insights, research snippets, investment commentary. Build credibility and inbound deal flow.', assignee: 'Both', priority: 'Medium', milestone: '6. Deal Flow & Network' },
+    { title: 'Build Substack / research publication for public alpha', description: 'Weekly or bi-weekly research publication. Mix of crypto and equity analysis. Build audience. Drive inbound LP interest and deal flow.', assignee: 'Both', priority: 'Low', milestone: '6. Deal Flow & Network' },
+    { title: 'Set up LP relations cadence (quarterly calls, annual meeting)', description: 'Quarterly LP update call schedule. Annual investor meeting/dinner. Ad-hoc communication policy for material events. CRM for LP tracking.', assignee: 'Both', priority: 'Low', milestone: '6. Deal Flow & Network' },
+
+    // Phase 7: Scaling & Growth
+    { title: 'Hire crypto analyst when AUM > $10M', description: 'First hire: junior crypto analyst. Focus on on-chain research, token analysis, monitoring existing positions. Free up GP time for strategy.', assignee: 'Jumparo', priority: 'Low', milestone: '7. Scaling & Growth' },
+    { title: 'Hire equity analyst when AUM > $10M', description: 'Second hire: junior equity analyst. Focus on financial modeling, earnings analysis, screening. Support the equity book.', assignee: 'Tihomir', priority: 'Low', milestone: '7. Scaling & Growth' },
+    { title: 'Evaluate fund admin / back-office outsourcing', description: 'Assess fund administration services (NAV calc, investor services, compliance). Compare costs vs in-house. Consider at $5M+ AUM.', assignee: 'Both', priority: 'Low', milestone: '7. Scaling & Growth' },
+    { title: 'Set up automated NAV calculation', description: 'Automate daily/weekly NAV: pull prices from APIs, calculate positions, deduct fees, generate NAV per share. Reduce manual reconciliation.', assignee: 'Both', priority: 'Medium', milestone: '7. Scaling & Growth' },
+    { title: 'Explore multi-strategy expansion (market neutral, arb, yield)', description: 'Evaluate adding strategies: market neutral pairs, crypto basis trade, DeFi yield farming, merger arb. Only if edge exists and team can execute.', assignee: 'Both', priority: 'Low', milestone: '7. Scaling & Growth' },
+    { title: 'Annual strategy review & thesis refinement', description: 'Annual offsite: review fund performance, refine thesis, update strategy, set next year goals. Document learnings. Adjust allocation targets.', assignee: 'Both', priority: 'Medium', milestone: '7. Scaling & Growth' },
+    { title: 'Build track record deck for institutional LPs', description: 'After 2+ years: professional pitch deck with audited track record, risk metrics, attribution analysis, team bio, strategy overview. Target institutional allocators.', assignee: 'Both', priority: 'Low', milestone: '7. Scaling & Growth' },
+  ];
+
+  const batch = {};
+  tasks.forEach(t => {
+    const id = genId();
+    batch[id] = {
+      id, title: t.title, description: t.description,
+      assignee: t.assignee, priority: t.priority,
+      status: 'To Do', milestone: t.milestone,
+      dueDate: '', created: today(), updated: today(), editedBy: MY_NAME
+    };
+  });
+
+  if (dbRef) {
+    dbRef.child('tasks').update(batch).then(() => {
+      alert('Fund roadmap loaded! ' + tasks.length + ' tasks across 7 milestones.');
+    }).catch(err => alert('Error: ' + err.message));
+  } else {
+    Object.values(batch).forEach(t => DB.tasks.push(t));
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+    alert('Fund roadmap loaded! ' + tasks.length + ' tasks across 7 milestones.');
+  }
+}
+
+// ===== BACKUP EXPORT =====
+function exportBackup() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fund-hq-backup-' + today() + '.json';
+  a.click();
+}
+
+// ===== RESET ALL DATA =====
+function resetAllData() {
+  if (!confirm('DELETE ALL DATA?\n\nThis affects BOTH users and cannot be undone.')) return;
+  if (!confirm('Are you really sure? Type OK to confirm.')) return;
+  if (dbRef) { dbRef.remove(); }
+  localStorage.removeItem('fundHQ');
+}
+
+// ===== UTILS =====
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ===== CHAT ASSISTANT ENGINE =====
+let chatOpen = false;
+let chatInited = false;
+
+const PAGE_ALIASES = {
+  dashboard: 'dashboard', home: 'dashboard', overview: 'dashboard', main: 'dashboard',
+  'deal flow': 'dealflow', deals: 'dealflow', dealflow: 'dealflow', pipeline: 'dealflow',
+  'project dump': 'projects', projects: 'projects', dump: 'projects',
+  research: 'research', 'research notes': 'research', notes: 'research', 'due diligence': 'research',
+  templates: 'templates', template: 'templates', frameworks: 'templates',
+  reports: 'reports', report: 'reports',
+  tasks: 'tasks', task: 'tasks', kanban: 'tasks', board: 'tasks', 'task board': 'tasks', todos: 'tasks',
+  roadmap: 'roadmap', milestones: 'roadmap', progress: 'roadmap', phases: 'roadmap',
+  settings: 'settings', config: 'settings', preferences: 'settings', backup: 'settings'
+};
+
+const PAGE_LABELS = {
+  dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
+  research: 'Research Notes', templates: 'Templates', reports: 'Reports',
+  tasks: 'Tasks', roadmap: 'Roadmap', settings: 'Settings'
+};
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-panel').classList.toggle('open', chatOpen);
+  document.getElementById('chat-fab').classList.toggle('has-panel', chatOpen);
+  if (chatOpen) {
+    if (!chatInited) { chatInit(); chatInited = true; }
+    setTimeout(() => document.getElementById('chat-input').focus(), 100);
+  }
+}
+
+function chatInit() {
+  chatAddMsg('bot', "Hey! I'm <strong>Pamela</strong>, your Fund HQ assistant. I can navigate, search, create &amp; manage data — all from here.", [
+    { label: 'Show help', action: "help" },
+    { label: 'Add a task', action: "add task " },
+    { label: 'Stats', action: "stats" }
+  ]);
+}
+
+function chatAddMsg(type, text, actions) {
+  const box = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-msg-' + type;
+  let html = '<div class="chat-msg-text">' + text + '</div>';
+  if (actions && actions.length) {
+    html += '<div class="chat-msg-actions">';
+    actions.forEach(a => {
+      html += '<button class="chat-action" onclick="chatRunAction(\'' + esc(a.action).replace(/'/g, "\\'") + '\')">' + esc(a.label) + '</button>';
+    });
+    html += '</div>';
+  }
+  div.innerHTML = html;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function chatRunAction(action) {
+  document.getElementById('chat-input').value = action;
+  chatSend();
+}
+
+function chatSend() {
+  const input = document.getElementById('chat-input');
+  const raw = input.value.trim();
+  if (!raw) return;
+  input.value = '';
+  chatAddMsg('user', esc(raw));
+  setTimeout(() => chatProcess(raw), 150);
+}
+
+function getCurrentPage() {
+  const active = document.querySelector('.nav-item.active');
+  return active ? active.dataset.page : 'dashboard';
+}
+
+function navigateTo(page) {
+  const nav = document.querySelector('.nav-item[data-page="' + page + '"]');
+  if (nav) { nav.click(); return true; }
+  return false;
+}
+
+// --- CRUD HELPERS ---
+let chatPendingAction = null; // stores {action, collection, id, name} for delete confirmations
+
+function chatWriteItem(collection, id, data) {
+  if (dbRef) {
+    dbRef.child(collection).child(id).set(data);
+  } else {
+    const idx = DB[collection].findIndex(x => x.id === id);
+    if (idx >= 0) DB[collection][idx] = data; else DB[collection].push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+  }
+}
+
+function chatRemoveItem(collection, id) {
+  if (dbRef) {
+    dbRef.child(collection).child(id).remove();
+  } else {
+    DB[collection] = DB[collection].filter(x => x.id !== id);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+  }
+}
+
+function chatCreateTask(title, opts = {}) {
+  const id = genId();
+  const data = {
+    id, title,
+    description: opts.description || '',
+    assignee: opts.assignee || '',
+    priority: opts.priority || 'Medium',
+    status: opts.status || 'To Do',
+    dueDate: opts.dueDate || '',
+    milestone: opts.milestone || '',
+    created: today(), updated: today(), editedBy: MY_NAME
+  };
+  chatWriteItem('tasks', id, data);
+  return data;
+}
+
+function chatCreateDeal(name, opts = {}) {
+  const id = genId();
+  const data = {
+    id, name,
+    sector: opts.sector || 'Other',
+    size: opts.size || '',
+    stage: opts.stage || 'Sourcing',
+    lead: opts.lead || MY_NAME,
+    desc: opts.desc || '',
+    links: opts.links || '',
+    tags: opts.tags || '',
+    created: today(), updated: today(), editedBy: MY_NAME
+  };
+  chatWriteItem('deals', id, data);
+  return data;
+}
+
+function chatCreateProject(name, opts = {}) {
+  const id = genId();
+  const data = {
+    id, name,
+    sector: opts.sector || 'Other',
+    status: opts.status || 'Active',
+    url: opts.url || '',
+    source: opts.source || '',
+    notes: opts.notes || '',
+    created: today(), editedBy: MY_NAME
+  };
+  chatWriteItem('projects', id, data);
+  return data;
+}
+
+function chatUpdateItem(collection, id, updates) {
+  const item = DB[collection].find(x => x.id === id);
+  if (!item) return null;
+  const merged = { ...item, ...updates, updated: today(), editedBy: MY_NAME };
+  chatWriteItem(collection, id, merged);
+  return merged;
+}
+
+// --- FUZZY ITEM FINDER ---
+function chatFindItem(collection, query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return { items: [], exact: false };
+  const nameKey = collection === 'tasks' ? 'title' : collection === 'research' ? 'project' : 'name';
+  const all = DB[collection];
+  // Exact match
+  const exact = all.filter(x => (x[nameKey]||'').toLowerCase() === q);
+  if (exact.length === 1) return { items: exact, exact: true };
+  // Starts with
+  const starts = all.filter(x => (x[nameKey]||'').toLowerCase().startsWith(q));
+  if (starts.length === 1) return { items: starts, exact: true };
+  // Includes
+  const includes = all.filter(x => (x[nameKey]||'').toLowerCase().includes(q));
+  if (includes.length === 1) return { items: includes, exact: true };
+  if (includes.length > 0) return { items: includes.slice(0, 5), exact: false };
+  // Word overlap
+  const words = q.split(/\s+/);
+  const overlap = all.filter(x => {
+    const name = (x[nameKey]||'').toLowerCase();
+    return words.filter(w => name.includes(w)).length >= Math.ceil(words.length * 0.5);
+  });
+  if (overlap.length > 0) return { items: overlap.slice(0, 5), exact: overlap.length === 1 };
+  return { items: [], exact: false };
+}
+
+function getItemName(item, collection) {
+  if (collection === 'tasks') return item.title;
+  if (collection === 'research') return item.project;
+  if (collection === 'reports') return item.title;
+  return item.name;
+}
+
+// --- NL ATTRIBUTE PARSER ---
+function chatParseAttrs(text) {
+  let s = text;
+  const attrs = {};
+  // Priority
+  const priMatch = s.match(/\b(?:priority\s+)(high|medium|low)\b/i) || s.match(/\b(high|low)\s+priority\b/i);
+  if (priMatch) { attrs.priority = priMatch[1].charAt(0).toUpperCase() + priMatch[1].slice(1).toLowerCase(); s = s.replace(priMatch[0], ''); }
+  // Assignee
+  const assignMatch = s.match(/\b(?:assign(?:ed)?\s+to|for)\s+(jumparo|tihomir|both)\b/i);
+  if (assignMatch) { attrs.assignee = assignMatch[1].charAt(0).toUpperCase() + assignMatch[1].slice(1).toLowerCase(); s = s.replace(assignMatch[0], ''); }
+  // Stage (deals)
+  const stageMatch = s.match(/\bstage\s+(sourcing|due\s*diligence|term\s*sheet|closed|passed)\b/i);
+  if (stageMatch) { const st = stageMatch[1].trim(); attrs.stage = STAGES.find(x => x.toLowerCase() === st.toLowerCase()) || st; s = s.replace(stageMatch[0], ''); }
+  // Sector
+  const sectorMatch = s.match(/\bsector\s+([\w\/]+(?:\s*\/\s*\w+)?)\b/i);
+  if (sectorMatch) { const sec = sectorMatch[1].trim(); attrs.sector = SECTORS.find(x => x.toLowerCase() === sec.toLowerCase()) || sec; s = s.replace(sectorMatch[0], ''); }
+  // Status (tasks)
+  const statusMatch = s.match(/\bstatus\s+(to\s*do|in\s*progress|review|done)\b/i);
+  if (statusMatch) { const st = statusMatch[1].trim(); attrs.status = TASK_STATUSES.find(x => x.toLowerCase() === st.toLowerCase()) || st; s = s.replace(statusMatch[0], ''); }
+  // Due date
+  const dueMatch = s.match(/\bdue\s+(\d{4}-\d{2}-\d{2})\b/i);
+  if (dueMatch) { attrs.dueDate = dueMatch[1]; s = s.replace(dueMatch[0], ''); }
+  // Milestone
+  const mileMatch = s.match(/\bmilestone\s+["']?([^"']+?)["']?\s*$/i) || s.match(/\bmilestone\s+([\w\s.]+?)(?:\s+(?:priority|assign|sector|stage|status|due)\b|$)/i);
+  if (mileMatch) { attrs.milestone = mileMatch[1].trim(); s = s.replace(mileMatch[0], ''); }
+  // Clean up name
+  const name = s.replace(/\s+/g, ' ').trim();
+  return { name, attrs };
+}
+
+function chatProcess(input) {
+  const q = input.toLowerCase().trim();
+
+  // --- PENDING CONFIRMATION (for deletes) ---
+  if (chatPendingAction) {
+    const pending = chatPendingAction;
+    if (/^(?:yes|confirm|do it|delete|remove|ok|sure|y)$/i.test(q)) {
+      chatPendingAction = null;
+      chatRemoveItem(pending.collection, pending.id);
+      chatAddMsg('bot', 'Deleted <strong>' + esc(pending.name) + '</strong> from ' + pending.collection + '. &#128465;');
+      return;
+    } else if (/^(?:no|cancel|nah|nope|n|nevermind)$/i.test(q)) {
+      chatPendingAction = null;
+      chatAddMsg('bot', 'Cancelled. Nothing was deleted.');
+      return;
+    }
+    // If they type something else, clear pending and continue processing
+    chatPendingAction = null;
+  }
+
+  // --- NAVIGATION ---
+  const navMatch = q.match(/^(?:go\s*(?:to)?|open|show|navigate\s*(?:to)?|switch\s*(?:to)?|take me to)\s+(.+)$/);
+  if (navMatch) {
+    const target = navMatch[1].trim();
+    const page = PAGE_ALIASES[target];
+    if (page) {
+      navigateTo(page);
+      chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[page] + '</strong>.', buildPageSuggestions(page));
+      return;
+    }
+    // Fuzzy match
+    const fuzzy = fuzzyPageMatch(target);
+    if (fuzzy) {
+      navigateTo(fuzzy);
+      chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[fuzzy] + '</strong>.', buildPageSuggestions(fuzzy));
+      return;
+    }
+    chatAddMsg('bot', "I don't recognize that page. Here are the available pages:", buildAllPageActions());
+    return;
+  }
+
+  // Direct page name typed alone
+  if (PAGE_ALIASES[q]) {
+    navigateTo(PAGE_ALIASES[q]);
+    chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[PAGE_ALIASES[q]] + '</strong>.', buildPageSuggestions(PAGE_ALIASES[q]));
+    return;
+  }
+
+  // --- INLINE CREATE (task, deal, project) ---
+  const addTaskMatch = q.match(/^(?:add|create|new)\s+task\s+(.+)/i);
+  if (addTaskMatch) {
+    const { name, attrs } = chatParseAttrs(addTaskMatch[1]);
+    if (!name) { chatAddMsg('bot', 'Please provide a task name. Example: <strong>add task Fix login bug priority high assigned to Jumparo</strong>'); return; }
+    const t = chatCreateTask(name, attrs);
+    let details = [];
+    if (t.priority !== 'Medium') details.push(t.priority + ' priority');
+    if (t.assignee) details.push('assigned to ' + t.assignee);
+    if (t.milestone) details.push('milestone: ' + t.milestone);
+    if (t.dueDate) details.push('due ' + fmtDate(t.dueDate));
+    chatAddMsg('bot', 'Created task <strong>' + esc(name) + '</strong>' + (details.length ? ' (' + details.join(', ') + ')' : '') + ' &#9989;', [
+      { label: 'Go to Tasks', action: 'go to tasks' },
+      { label: 'Add another', action: 'add task ' }
+    ]);
+    return;
+  }
+  // Just "add task" / "new task" with no name → open modal
+  if (/^(?:new|add|create)\s+task\s*$/i.test(q)) {
+    navigateTo('tasks'); setTimeout(() => openModal('task'), 200);
+    chatAddMsg('bot', 'Opening new task form. Or type <strong>add task My task name priority high</strong> to create inline.');
+    return;
+  }
+
+  const addDealMatch = q.match(/^(?:add|create|new)\s+deal\s+(.+)/i);
+  if (addDealMatch) {
+    const { name, attrs } = chatParseAttrs(addDealMatch[1]);
+    if (!name) { chatAddMsg('bot', 'Please provide a deal name. Example: <strong>add deal Acme Protocol sector DeFi</strong>'); return; }
+    const d = chatCreateDeal(name, attrs);
+    let details = [];
+    if (d.sector !== 'Other') details.push(d.sector);
+    if (d.stage !== 'Sourcing') details.push(d.stage);
+    chatAddMsg('bot', 'Created deal <strong>' + esc(name) + '</strong> in ' + d.stage + (details.length ? ' (' + details.join(', ') + ')' : '') + ' &#9989;', [
+      { label: 'Go to Deal Flow', action: 'go to deals' },
+      { label: 'Add another', action: 'add deal ' }
+    ]);
+    return;
+  }
+  if (/^(?:new|add|create)\s+deal\s*$/i.test(q)) {
+    navigateTo('dealflow'); setTimeout(() => openModal('deal'), 200);
+    chatAddMsg('bot', 'Opening new deal form. Or type <strong>add deal Acme Protocol sector DeFi</strong> to create inline.');
+    return;
+  }
+
+  const addProjMatch = q.match(/^(?:add|create|new)\s+project\s+(.+)/i);
+  if (addProjMatch) {
+    const { name, attrs } = chatParseAttrs(addProjMatch[1]);
+    if (!name) { chatAddMsg('bot', 'Please provide a project name. Example: <strong>add project LayerZero sector Infrastructure</strong>'); return; }
+    const p = chatCreateProject(name, attrs);
+    chatAddMsg('bot', 'Added project <strong>' + esc(name) + '</strong>' + (p.sector !== 'Other' ? ' (' + p.sector + ')' : '') + ' &#9989;', [
+      { label: 'Go to Projects', action: 'go to projects' },
+      { label: 'Add another', action: 'add project ' }
+    ]);
+    return;
+  }
+  if (/^(?:new|add|create)\s+project\s*$/i.test(q)) {
+    navigateTo('projects'); setTimeout(() => openModal('project'), 200);
+    chatAddMsg('bot', 'Opening new project form. Or type <strong>add project LayerZero sector DeFi</strong> to create inline.');
+    return;
+  }
+
+  if (/^(?:new|add|create)\s+(?:research|report)\s*$/i.test(q)) {
+    navigateTo(q.includes('report') ? 'templates' : 'research');
+    if (q.includes('report')) {
+      chatAddMsg('bot', 'Switched to <strong>Templates</strong> — pick Stock or Crypto template to create a new report.', [{ label: 'Go to Reports', action: 'go to reports' }]);
+    } else {
+      setTimeout(() => openModal('research'), 200);
+      chatAddMsg('bot', 'Opening new research note form.');
+    }
+    return;
+  }
+
+  // --- COMPLETE / MARK DONE ---
+  const completeMatch = q.match(/^(?:complete|finish|done|close|mark)\s+(?:task\s+)?(.+?)(?:\s+(?:as\s+)?done)?$/i);
+  if (completeMatch && !/^(?:go|open|show|nav|search|find|add|create|new|delete|remove|move|assign|set|export|backup|help|stats|status|my|high|where|recent)/i.test(q)) {
+    const query = completeMatch[1].replace(/\s+as\s*$/, '').trim();
+    const result = chatFindItem('tasks', query);
+    if (result.items.length === 0) {
+      chatAddMsg('bot', 'No task found matching "<strong>' + esc(query) + '</strong>". Try a more specific name.');
+      return;
+    }
+    if (result.exact) {
+      const t = result.items[0];
+      chatUpdateItem('tasks', t.id, { status: 'Done' });
+      chatAddMsg('bot', 'Marked <strong>' + esc(t.title) + '</strong> as Done &#9989;', [{ label: 'Go to Tasks', action: 'go to tasks' }, { label: 'My Tasks', action: 'my tasks' }]);
+    } else {
+      let html = 'Multiple tasks match. Which one?<br>';
+      const actions = result.items.map(t => ({ label: t.title.substring(0, 35), action: 'complete task ' + t.title }));
+      chatAddMsg('bot', html, actions);
+    }
+    return;
+  }
+
+  // --- MOVE (deal stage or task status) ---
+  const moveMatch = q.match(/^move\s+(?:(deal|task)\s+)?(.+?)\s+to\s+(.+)$/i);
+  if (moveMatch) {
+    const typeHint = (moveMatch[1] || '').toLowerCase();
+    const name = moveMatch[2].trim();
+    const target = moveMatch[3].trim();
+    // Try deal first
+    const stageTarget = STAGES.find(s => s.toLowerCase() === target.toLowerCase() || s.toLowerCase().startsWith(target.toLowerCase()));
+    const statusTarget = TASK_STATUSES.find(s => s.toLowerCase() === target.toLowerCase() || s.toLowerCase().replace(/\s+/g,'').startsWith(target.toLowerCase().replace(/\s+/g,'')));
+    if (typeHint !== 'task' && stageTarget) {
+      const result = chatFindItem('deals', name);
+      if (result.exact) {
+        chatUpdateItem('deals', result.items[0].id, { stage: stageTarget });
+        chatAddMsg('bot', 'Moved <strong>' + esc(result.items[0].name) + '</strong> to <strong>' + stageTarget + '</strong> &#9989;', [{ label: 'Deal Flow', action: 'go to deals' }]);
+        return;
+      }
+    }
+    if (typeHint !== 'deal' && statusTarget) {
+      const result = chatFindItem('tasks', name);
+      if (result.exact) {
+        chatUpdateItem('tasks', result.items[0].id, { status: statusTarget });
+        chatAddMsg('bot', 'Moved <strong>' + esc(result.items[0].title) + '</strong> to <strong>' + statusTarget + '</strong> &#9989;', [{ label: 'Tasks', action: 'go to tasks' }]);
+        return;
+      }
+    }
+    // Fallback — try both collections
+    const dealResult = chatFindItem('deals', name);
+    const taskResult = chatFindItem('tasks', name);
+    if (dealResult.items.length === 0 && taskResult.items.length === 0) {
+      chatAddMsg('bot', 'No deal or task found matching "<strong>' + esc(name) + '</strong>".');
+    } else {
+      let html = 'I found these — which one did you mean?<br>';
+      const actions = [];
+      dealResult.items.slice(0,3).forEach(d => actions.push({ label: '(Deal) ' + d.name.substring(0,25), action: 'move deal ' + d.name + ' to ' + target }));
+      taskResult.items.slice(0,3).forEach(t => actions.push({ label: '(Task) ' + t.title.substring(0,25), action: 'move task ' + t.title + ' to ' + target }));
+      chatAddMsg('bot', html, actions);
+    }
+    return;
+  }
+
+  // --- ASSIGN ---
+  const assignMatch = q.match(/^assign\s+(?:task\s+)?(.+?)\s+to\s+(jumparo|tihomir|both)\s*$/i);
+  if (assignMatch) {
+    const name = assignMatch[1].trim();
+    const assignee = assignMatch[2].charAt(0).toUpperCase() + assignMatch[2].slice(1).toLowerCase();
+    const result = chatFindItem('tasks', name);
+    if (result.exact) {
+      chatUpdateItem('tasks', result.items[0].id, { assignee });
+      chatAddMsg('bot', 'Assigned <strong>' + esc(result.items[0].title) + '</strong> to <strong>' + assignee + '</strong> &#9989;', [{ label: 'Tasks', action: 'go to tasks' }]);
+    } else if (result.items.length > 1) {
+      const actions = result.items.map(t => ({ label: t.title.substring(0,35), action: 'assign task ' + t.title + ' to ' + assignee }));
+      chatAddMsg('bot', 'Multiple tasks match. Which one?', actions);
+    } else {
+      chatAddMsg('bot', 'No task found matching "<strong>' + esc(name) + '</strong>".');
+    }
+    return;
+  }
+
+  // --- SET PRIORITY ---
+  const priMatch = q.match(/^(?:set\s+priority\s+(?:of\s+)?|prioritize\s+)(.+?)\s+(?:to\s+)?(high|medium|low)\s*$/i);
+  if (priMatch) {
+    const name = priMatch[1].trim();
+    const priority = priMatch[2].charAt(0).toUpperCase() + priMatch[2].slice(1).toLowerCase();
+    const result = chatFindItem('tasks', name);
+    if (result.exact) {
+      chatUpdateItem('tasks', result.items[0].id, { priority });
+      chatAddMsg('bot', 'Set priority of <strong>' + esc(result.items[0].title) + '</strong> to <strong>' + priority + '</strong> &#9989;');
+    } else if (result.items.length > 1) {
+      const actions = result.items.map(t => ({ label: t.title.substring(0,35), action: 'set priority of ' + t.title + ' to ' + priority }));
+      chatAddMsg('bot', 'Multiple tasks match. Which one?', actions);
+    } else {
+      chatAddMsg('bot', 'No task found matching "<strong>' + esc(name) + '</strong>".');
+    }
+    return;
+  }
+
+  // --- DELETE / REMOVE ---
+  const deleteMatch = q.match(/^(?:delete|remove)\s+(task|deal|project|research|report)\s+(.+)$/i);
+  if (deleteMatch) {
+    const type = deleteMatch[1].toLowerCase();
+    const name = deleteMatch[2].trim();
+    const collectionMap = { task: 'tasks', deal: 'deals', project: 'projects', research: 'research', report: 'reports' };
+    const collection = collectionMap[type];
+    const result = chatFindItem(collection, name);
+    if (result.exact) {
+      const item = result.items[0];
+      const itemName = getItemName(item, collection);
+      chatPendingAction = { action: 'delete', collection, id: item.id, name: itemName };
+      chatAddMsg('bot', 'Delete <strong>' + esc(itemName) + '</strong> from ' + type + 's? This can\'t be undone.', [
+        { label: 'Yes, delete', action: 'yes' },
+        { label: 'Cancel', action: 'cancel' }
+      ]);
+    } else if (result.items.length > 1) {
+      const actions = result.items.map(item => ({ label: getItemName(item, collection).substring(0,35), action: 'delete ' + type + ' ' + getItemName(item, collection) }));
+      chatAddMsg('bot', 'Multiple ' + type + 's match. Which one?', actions);
+    } else {
+      chatAddMsg('bot', 'No ' + type + ' found matching "<strong>' + esc(name) + '</strong>".');
+    }
+    return;
+  }
+
+  if (/^(?:export|backup|download)/i.test(q)) {
+    exportBackup();
+    chatAddMsg('bot', 'Backup downloaded! Check your downloads folder.');
+    return;
+  }
+
+  // --- SEARCH ---
+  const searchMatch = q.match(/^(?:search|find|look\s*(?:for|up)?)\s+(.+)$/);
+  if (searchMatch) {
+    const term = searchMatch[1].trim();
+    chatDoSearch(term);
+    return;
+  }
+
+  // --- STATS ---
+  if (/^(?:stats|summary|counts?|numbers|overview|how many)/i.test(q)) {
+    const active = DB.deals.filter(d => d.stage !== 'Passed').length;
+    const closed = DB.deals.filter(d => d.stage === 'Closed').length;
+    const openTasks = DB.tasks.filter(t => t.status !== 'Done').length;
+    const doneTasks = DB.tasks.filter(t => t.status === 'Done').length;
+    chatAddMsg('bot',
+      '<strong>Fund Stats:</strong><br>' +
+      '&#9654; Active Deals: <strong>' + active + '</strong> (' + closed + ' closed)<br>' +
+      '&#9733; Projects: <strong>' + DB.projects.length + '</strong><br>' +
+      '&#9998; Research Notes: <strong>' + DB.research.length + '</strong><br>' +
+      '&#128203; Reports: <strong>' + DB.reports.length + '</strong><br>' +
+      '&#9745; Tasks: <strong>' + openTasks + '</strong> open, <strong>' + doneTasks + '</strong> done',
+      [{ label: 'Dashboard', action: 'dashboard' }]
+    );
+    return;
+  }
+
+  // --- STATUS ---
+  if (/^(?:status|connection|connected|firebase)/i.test(q)) {
+    chatAddMsg('bot',
+      '<strong>Connection Status:</strong><br>' +
+      'Firebase: <strong style="color:' + (fbConnected ? 'var(--green)' : 'var(--red)') + ';">' + (fbConnected ? 'Connected' : 'Offline') + '</strong><br>' +
+      'User: <strong>' + esc(MY_NAME) + '</strong><br>' +
+      'Team: Jumparo (crypto) + Tihomir (equities)',
+      [{ label: 'Settings', action: 'go to settings' }]
+    );
+    return;
+  }
+
+  // --- MY TASKS ---
+  if (/^(?:my\s*tasks|what.*(?:assigned|todo|to do|to-do)|what.*(?:should|need).*do)/i.test(q)) {
+    const mine = DB.tasks.filter(t => (t.assignee === MY_NAME || t.assignee === 'Both') && t.status !== 'Done');
+    if (mine.length === 0) {
+      chatAddMsg('bot', 'You have no open tasks assigned. Nice work! &#127881;', [{ label: 'New Task', action: 'new task' }]);
+    } else {
+      const high = mine.filter(t => t.priority === 'High');
+      let html = '<strong>Your open tasks (' + mine.length + '):</strong><br>';
+      if (high.length) html += '<span style="color:var(--red);">' + high.length + ' high priority</span><br>';
+      mine.slice(0, 8).forEach(t => {
+        const pri = t.priority === 'High' ? ' &#128308;' : t.priority === 'Low' ? ' &#128994;' : ' &#128992;';
+        html += '&middot; ' + esc(t.title) + pri + '<br>';
+      });
+      if (mine.length > 8) html += '...and ' + (mine.length - 8) + ' more';
+      chatAddMsg('bot', html, [{ label: 'Go to Tasks', action: 'go to tasks' }]);
+    }
+    return;
+  }
+
+  // --- HIGH PRIORITY ---
+  if (/^(?:high\s*priority|urgent|critical|important\s*tasks?)/i.test(q)) {
+    const high = DB.tasks.filter(t => t.priority === 'High' && t.status !== 'Done');
+    if (high.length === 0) {
+      chatAddMsg('bot', 'No high-priority tasks open. All clear! &#9989;');
+    } else {
+      let html = '<strong>High-priority tasks (' + high.length + '):</strong><br>';
+      high.slice(0, 8).forEach(t => {
+        html += '&#128308; ' + esc(t.title) + (t.assignee ? ' <span style="color:var(--text3);">(' + esc(t.assignee) + ')</span>' : '') + '<br>';
+      });
+      if (high.length > 8) html += '...and ' + (high.length - 8) + ' more';
+      chatAddMsg('bot', html, [{ label: 'Go to Tasks', action: 'go to tasks' }]);
+    }
+    return;
+  }
+
+  // --- WHERE AM I ---
+  if (/^(?:where\s*am\s*i|current\s*page|which\s*page)/i.test(q)) {
+    const cur = getCurrentPage();
+    chatAddMsg('bot', 'You\'re on <strong>' + PAGE_LABELS[cur] + '</strong>.', buildPageSuggestions(cur));
+    return;
+  }
+
+  // --- HELP ---
+  if (/^(?:help|\?|commands|what\s*can|how\s*(?:to|do)|guide|pamela)/i.test(q)) {
+    chatAddMsg('bot',
+      '<strong>I\'m Pamela — here\'s what I can do:</strong><br><br>' +
+      '<strong>Navigate:</strong> "go to tasks", "open roadmap", "dashboard"<br>' +
+      '<strong>Search:</strong> "search ethereum", "find DeFi"<br><br>' +
+      '<strong>Create inline:</strong><br>' +
+      '&middot; "add task Fix bug priority high assigned to Jumparo"<br>' +
+      '&middot; "add deal Acme Protocol sector DeFi"<br>' +
+      '&middot; "add project LayerZero sector Infrastructure"<br><br>' +
+      '<strong>Update:</strong><br>' +
+      '&middot; "complete task Fix bug" — mark as done<br>' +
+      '&middot; "move deal Acme to Due Diligence"<br>' +
+      '&middot; "assign task X to Tihomir"<br>' +
+      '&middot; "set priority of X to high"<br><br>' +
+      '<strong>Delete:</strong> "delete task X", "remove deal Acme"<br>' +
+      '<strong>Stats:</strong> "stats", "my tasks", "high priority"<br>' +
+      '<strong>Info:</strong> "status", "where am I"<br>' +
+      '<strong>Tools:</strong> "export" / "backup"',
+      [
+        { label: 'Stats', action: 'stats' },
+        { label: 'Add task', action: 'add task ' },
+        { label: 'My Tasks', action: 'my tasks' }
+      ]
+    );
+    return;
+  }
+
+  // --- RECENT ---
+  if (/^(?:recent|latest|new|what's new)/i.test(q)) {
+    let html = '<strong>Recent activity:</strong><br>';
+    const recentDeals = [...DB.deals].sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||'')).slice(0,3);
+    const recentTasks = [...DB.tasks].filter(t=>t.status!=='Done').sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||'')).slice(0,3);
+    if (recentDeals.length) {
+      html += '<br><strong>Deals:</strong><br>';
+      recentDeals.forEach(d => { html += '&middot; ' + esc(d.name) + ' <span style="color:var(--text3);">(' + d.stage + ')</span><br>'; });
+    }
+    if (recentTasks.length) {
+      html += '<br><strong>Tasks:</strong><br>';
+      recentTasks.forEach(t => { html += '&middot; ' + esc(t.title) + ' <span style="color:var(--text3);">(' + t.status + ')</span><br>'; });
+    }
+    if (!recentDeals.length && !recentTasks.length) html += 'No activity yet. Start by adding deals or tasks!';
+    chatAddMsg('bot', html, [{ label: 'Dashboard', action: 'dashboard' }]);
+    return;
+  }
+
+  // --- FALLBACK: Try fuzzy page match ---
+  const fuzzy = fuzzyPageMatch(q);
+  if (fuzzy) {
+    navigateTo(fuzzy);
+    chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[fuzzy] + '</strong>.', buildPageSuggestions(fuzzy));
+    return;
+  }
+
+  // --- FALLBACK: Try search ---
+  const searchResults = searchAll(q);
+  if (searchResults.length > 0) {
+    chatRenderSearchResults(q, searchResults);
+    return;
+  }
+
+  // --- FINAL FALLBACK ---
+  chatAddMsg('bot', "I'm not sure what you mean. Try <strong>help</strong> for available commands, or type a page name to navigate.", [
+    { label: 'Help', action: 'help' },
+    { label: 'Dashboard', action: 'dashboard' }
+  ]);
+}
+
+// --- Search engine ---
+function searchAll(term) {
+  const t = term.toLowerCase();
+  const results = [];
+  DB.deals.forEach(d => {
+    if (matchScore(t, [d.name, d.sector, d.desc, d.tags, d.lead])) results.push({ type: 'Deal', name: d.name, sub: d.stage + (d.sector ? ' · ' + d.sector : ''), page: 'dealflow', id: d.id });
+  });
+  DB.projects.forEach(p => {
+    if (matchScore(t, [p.name, p.sector, p.notes, p.source])) results.push({ type: 'Project', name: p.name, sub: (p.sector||'') + ' · ' + (p.status||''), page: 'projects', id: p.id });
+  });
+  DB.research.forEach(r => {
+    if (matchScore(t, [r.project, r.sector, r.thesis, r.team])) results.push({ type: 'Research', name: r.project, sub: (r.sector||'') + ' · Score ' + (r.overallScore||'?') + '/10', page: 'research', id: r.id });
+  });
+  DB.reports.forEach(r => {
+    if (matchScore(t, [r.title, r.type, r.content?.substring(0,300)])) results.push({ type: 'Report', name: r.title, sub: (r.type||'') + (r.rating ? ' · ' + r.rating : ''), page: 'reports', id: r.id });
+  });
+  DB.tasks.forEach(t2 => {
+    if (matchScore(t, [t2.title, t2.description, t2.milestone, t2.assignee])) results.push({ type: 'Task', name: t2.title, sub: t2.status + (t2.assignee ? ' · ' + t2.assignee : ''), page: 'tasks', id: t2.id });
+  });
+  return results;
+}
+
+function matchScore(term, fields) {
+  return fields.some(f => f && f.toLowerCase().includes(term));
+}
+
+function chatDoSearch(term) {
+  const results = searchAll(term);
+  if (results.length === 0) {
+    chatAddMsg('bot', 'No results found for "<strong>' + esc(term) + '</strong>". Try a different search term.', [{ label: 'Help', action: 'help' }]);
+    return;
+  }
+  chatRenderSearchResults(term, results);
+}
+
+function chatRenderSearchResults(term, results) {
+  const capped = results.slice(0, 10);
+  let html = '<strong>Found ' + results.length + ' result' + (results.length !== 1 ? 's' : '') + '</strong> for "' + esc(term) + '":<br><br>';
+  capped.forEach(r => {
+    html += '<span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">' + r.type + '</span><br>';
+    html += '<strong>' + esc(r.name) + '</strong><br>';
+    html += '<span style="color:var(--text3);font-size:11px;">' + esc(r.sub) + '</span><br><br>';
+  });
+  if (results.length > 10) html += '<span style="color:var(--text3);">...and ' + (results.length - 10) + ' more</span>';
+  // Group pages for action chips
+  const pages = [...new Set(capped.map(r => r.page))];
+  const actions = pages.map(p => ({ label: 'Go to ' + PAGE_LABELS[p], action: 'go to ' + PAGE_LABELS[p].toLowerCase() }));
+  chatAddMsg('bot', html, actions);
+}
+
+// --- Fuzzy page matching ---
+function fuzzyPageMatch(input) {
+  const q = input.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  if (!q) return null;
+  // Direct alias
+  if (PAGE_ALIASES[q]) return PAGE_ALIASES[q];
+  // Partial match on aliases
+  for (const [alias, page] of Object.entries(PAGE_ALIASES)) {
+    if (alias.includes(q) || q.includes(alias)) return page;
+  }
+  // Partial match on labels
+  for (const [page, label] of Object.entries(PAGE_LABELS)) {
+    if (label.toLowerCase().includes(q) || q.includes(label.toLowerCase())) return page;
+  }
+  return null;
+}
+
+// --- Contextual suggestions per page ---
+function buildPageSuggestions(page) {
+  const suggestions = {
+    dashboard: [{ label: 'Stats', action: 'stats' }, { label: 'Recent', action: 'recent' }],
+    dealflow: [{ label: 'New Deal', action: 'new deal' }, { label: 'Stats', action: 'stats' }],
+    projects: [{ label: 'New Project', action: 'new project' }, { label: 'Search', action: 'search ' }],
+    research: [{ label: 'New Research', action: 'new research' }, { label: 'Templates', action: 'go to templates' }],
+    templates: [{ label: 'Go to Reports', action: 'go to reports' }],
+    reports: [{ label: 'New Report', action: 'new report' }, { label: 'Templates', action: 'go to templates' }],
+    tasks: [{ label: 'New Task', action: 'new task' }, { label: 'My Tasks', action: 'my tasks' }, { label: 'High Priority', action: 'high priority' }],
+    roadmap: [{ label: 'Go to Tasks', action: 'go to tasks' }, { label: 'Stats', action: 'stats' }],
+    settings: [{ label: 'Export Backup', action: 'export' }, { label: 'Status', action: 'status' }]
+  };
+  return suggestions[page] || [];
+}
+
+function buildAllPageActions() {
+  return Object.entries(PAGE_LABELS).map(([page, label]) => ({ label: label, action: 'go to ' + label.toLowerCase() }));
+}
+
+function renderAll() {
+  renderDashboard();
+  renderPipeline();
+  renderProjects();
+  renderResearch();
+  renderTemplates();
+  renderReports();
+  renderTasks();
+  renderRoadmap();
+}
+
+// ===== INIT =====
+document.getElementById('conn-user').textContent = MY_NAME;
+document.getElementById('settings-name').textContent = MY_NAME;
+
+if (!firebaseReady) {
+  // Fallback: load from localStorage if Firebase not configured
+  try { const raw = localStorage.getItem('fundHQ'); if (raw) DB = JSON.parse(raw); } catch(e) {}
+  if (!DB.deals) DB.deals = [];
+  if (!DB.projects) DB.projects = [];
+  if (!DB.research) DB.research = [];
+  if (!DB.reports) DB.reports = [];
+  if (!DB.tasks) DB.tasks = [];
+  renderAll();
+}
+</script>
+</body>
+</html>
