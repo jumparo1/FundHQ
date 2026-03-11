@@ -777,7 +777,7 @@ async function searchStocks(query) {
   if (!key || !query || query.length < 2) return [];
   const cached = marketCache.get('searches', 'stock:' + query);
   if (cached) return cached;
-  const resp = await fetch('https://financialmodelingprep.com/stable/search?query=' + encodeURIComponent(query) + '&limit=10&apikey=' + key);
+  const resp = await fetch('https://financialmodelingprep.com/stable/search-symbol?query=' + encodeURIComponent(query) + '&limit=10&apikey=' + key);
   if (!resp.ok) throw new Error('FMP search failed');
   const data = await resp.json();
   const results = (data || []).map(s => ({
