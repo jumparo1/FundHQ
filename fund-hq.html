@@ -450,6 +450,7 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item" data-page="roadmap"><span class="icon">&#128506;</span> Roadmap</div>
 
     <div class="nav-section">Tools</div>
+    <div class="nav-item" data-page="help"><span class="icon">&#10068;</span> Help</div>
     <div class="nav-item" data-page="settings"><span class="icon">&#9881;</span> Settings</div>
 
     <div class="sidebar-footer">
@@ -602,6 +603,158 @@ tbody tr:hover { background: var(--bg3); }
       </div>
       <div class="watchlist-grid" id="watchlist-grid"></div>
       <div id="market-detail" style="margin-top:20px;"></div>
+    </div>
+
+    <!-- ===== HELP ===== -->
+    <div id="page-help" class="page hidden">
+      <div class="page-header">
+        <h1>How to Use Fund HQ</h1>
+        <p>Step-by-step guide to researching and tracking investments</p>
+      </div>
+
+      <!-- Pipeline Overview -->
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px;">&#127919; Research Pipeline</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="font-size:24px;margin-bottom:6px;">&#128270;</div>
+            <div style="font-size:13px;font-weight:600;">1. Discover</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Market Data search</div>
+          </div>
+          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
+          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="font-size:24px;margin-bottom:6px;">&#11088;</div>
+            <div style="font-size:13px;font-weight:600;">2. Score</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Auto quant rating</div>
+          </div>
+          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
+          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="font-size:24px;margin-bottom:6px;">&#128221;</div>
+            <div style="font-size:13px;font-weight:600;">3. Research</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Templates + AI</div>
+          </div>
+          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
+          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="font-size:24px;margin-bottom:6px;">&#128203;</div>
+            <div style="font-size:13px;font-weight:600;">4. Report</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Save & review</div>
+          </div>
+          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
+          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="font-size:24px;margin-bottom:6px;">&#128200;</div>
+            <div style="font-size:13px;font-weight:600;">5. Track</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Watchlist monitor</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Steps -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">1</span> Discover — Find Projects</h3>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <p style="margin-bottom:8px;">Go to <strong style="color:var(--text);">Market Data</strong> and search for any crypto or stock.</p>
+            <p style="margin-bottom:8px;">Each search result shows 3 quick actions:</p>
+            <ul style="margin-left:16px;margin-bottom:8px;">
+              <li><strong style="color:var(--green);">+ Watch</strong> — add to your watchlist for live tracking</li>
+              <li><strong style="color:var(--blue);">+ Dump</strong> — save to Project Dump for later review</li>
+              <li><strong style="color:var(--purple);">AI Report</strong> — instantly generate a research report</li>
+            </ul>
+            <p style="color:var(--text3);font-size:12px;">Crypto uses CoinGecko (free, no key). Stocks need a free FMP key in Settings.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">2</span> Score — Automatic Ratings</h3>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <p style="margin-bottom:8px;">Every asset gets a <strong style="color:var(--yellow);">5-star rating</strong> computed from live fundamentals.</p>
+            <p style="margin-bottom:8px;"><strong style="color:var(--text);">Crypto scores:</strong> Momentum, Liquidity, Value (dilution), Market Position, Recovery (ATH distance).</p>
+            <p style="margin-bottom:8px;"><strong style="color:var(--text);">Stock scores:</strong> Valuation (P/E), Profitability (ROE), Health (D/E), Momentum (52W range), Yield.</p>
+            <p>Stars appear on watchlist cards and in the research workspace. When AI research runs, it can add a &#177;0.5&#9733; qualitative adjustment.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">3</span> Research — Templates & AI</h3>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <p style="margin-bottom:8px;">Go to <strong style="color:var(--text);">Templates</strong> and pick a framework:</p>
+            <ul style="margin-left:16px;margin-bottom:8px;">
+              <li><strong style="color:var(--purple);">Crypto Research</strong> — 18 sections (tokenomics, team, moats, whales, etc.)</li>
+              <li><strong style="color:var(--blue);">Stock Research</strong> — 10 sections (financials, valuation, DCF, etc.)</li>
+              <li><strong style="color:var(--purple);">Quick Thesis</strong> — 5 sections for fast screening</li>
+            </ul>
+            <p style="margin-bottom:8px;">Each section shows a <strong style="color:var(--text);">prompt</strong> (what to write) and <strong style="color:var(--text);">bullet points</strong> (what to cover).</p>
+            <p><strong style="color:var(--text);">Two ways to fill:</strong> write manually, or click <strong style="color:var(--accent2);">&#129302; AI</strong> to let Claude research it. You can also "Run All with AI" or "Fill Empty Only".</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">4</span> Report — Save & Review</h3>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <p style="margin-bottom:8px;">When your research is done, click <strong style="color:var(--text);">Save as Report</strong> to compile all sections into a formatted report.</p>
+            <p style="margin-bottom:8px;">Reports are saved to Firebase and appear in the <strong style="color:var(--text);">Reports</strong> page. You can:</p>
+            <ul style="margin-left:16px;margin-bottom:8px;">
+              <li>Set a <strong>Rating</strong> (Strong Buy, Buy, Hold, Sell, Avoid, etc.)</li>
+              <li>Set <strong>Conviction</strong> (High, Medium, Low)</li>
+              <li>Edit the content anytime</li>
+              <li>Re-run AI research with a different model</li>
+            </ul>
+            <p style="color:var(--text3);font-size:12px;">All reports sync in real-time between users via Firebase.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">5</span> Track — Watchlist Monitor</h3>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <p style="margin-bottom:8px;">Your <strong style="color:var(--text);">Market Data</strong> watchlist tracks live prices, 24h changes, key metrics, and scores.</p>
+            <p style="margin-bottom:8px;">Click any card to see the full <strong style="color:var(--text);">detail view</strong> with all metrics and the score breakdown.</p>
+            <p>Hit <strong style="color:var(--text);">&#8635; Refresh All</strong> to update prices and re-compute scores for everything at once.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#128172; Pamela — Chat Assistant</h3>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <p style="margin-bottom:8px;">Click the chat bubble (bottom-right) to open <strong style="color:var(--text);">Pamela</strong>, your fund assistant. She can:</p>
+            <ul style="margin-left:16px;margin-bottom:8px;">
+              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">price btc</code> — check any crypto/stock price</li>
+              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">watch eth</code> — add to watchlist</li>
+              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">research sol</code> — generate an AI research report</li>
+              <li>Navigate to any page, search projects, and more</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Reference -->
+      <div class="card" style="margin-top:20px;">
+        <h3 style="font-size:15px;margin-bottom:12px;">&#9889; Quick Reference</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:13px;color:var(--text2);">
+          <div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:6px;">API Keys</div>
+            <p>Crypto: free (CoinGecko, no key needed)</p>
+            <p>Stocks: free FMP key (<a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">get one here</a>)</p>
+            <p>AI Research: Anthropic key (<a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">get one here</a>)</p>
+            <p style="font-size:11px;color:var(--text3);margin-top:4px;">All keys saved in Settings &#8594; stored in localStorage</p>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:6px;">AI Models</div>
+            <p><strong>Haiku</strong> — fast & cheap, good for quick research</p>
+            <p><strong>Sonnet</strong> — balanced quality & speed</p>
+            <p><strong>Opus</strong> — highest quality, slower</p>
+            <p style="font-size:11px;color:var(--text3);margin-top:4px;">Select model in the workspace or report editor</p>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:6px;">Data Sources</div>
+            <p><strong>CoinGecko</strong> — crypto prices, MCap, supply, ATH</p>
+            <p><strong>FMP</strong> — stock fundamentals, P/E, ROE, D/E</p>
+            <p><strong>DefiLlama</strong> — TVL data</p>
+            <p style="font-size:11px;color:var(--text3);margin-top:4px;">Data refreshes on search and watchlist refresh</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ===== SETTINGS ===== -->
