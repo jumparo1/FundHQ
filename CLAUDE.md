@@ -42,6 +42,7 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - [x] Redesigned Dashboard — watchlist, reports, tasks, projects at a glance + quick actions
 - [x] Dedicated Watchlist page (under Pipeline) — separated from Market Data
 - [x] Market Data = search/discovery, Watchlist = tracked assets with detail view
+- [x] Progress page (under Roadmap) — daily work log with timeline, stats, streak tracking
 
 ## Deploy
 - **Live URL:** https://jumparo1.github.io/JumpTools/fund-hq.html
@@ -51,6 +52,7 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - API keys stored in browser localStorage (per-domain, need re-entry if domain changes)
 
 ## Recent Changes
+- 2026-03-11: Progress page (Roadmap section) — daily work log, timeline grouped by date, stats (items/days/streak), Firebase sync
 - 2026-03-11: Dedicated Watchlist page (Pipeline section) — search, add, track assets with detail view, scores, refresh
 - 2026-03-11: Market Data simplified to search/discovery only, Watchlist is now its own page
 - 2026-03-11: Redesigned Dashboard — stats (watchlist/reports/tasks/projects), quick actions, top watchlist, recent reports, open tasks, recent projects

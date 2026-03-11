@@ -276,6 +276,32 @@ tbody tr:hover { background: var(--bg3); }
 .te-section-actions button:hover { color: var(--text); background: var(--bg4); }
 .te-section-actions button.te-del:hover { color: var(--red); border-color: var(--red); }
 
+/* ===== PROGRESS TIMELINE ===== */
+.pg-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+.pg-stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 18px; font-size: 13px; }
+.pg-stat strong { color: var(--accent2); font-size: 18px; display: block; margin-bottom: 2px; }
+.pg-day { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+.pg-day-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; cursor: pointer; }
+.pg-day-header:hover { background: var(--bg3); }
+.pg-day-date { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.pg-day-date .pg-weekday { font-size: 12px; font-weight: 500; color: var(--text3); }
+.pg-day-count { font-size: 12px; color: var(--text3); background: var(--bg4); padding: 3px 10px; border-radius: 10px; }
+.pg-day-body { padding: 0 20px 16px; }
+.pg-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.pg-item:last-child { border-bottom: none; }
+.pg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); margin-top: 6px; flex-shrink: 0; }
+.pg-item-text { font-size: 13px; line-height: 1.5; color: var(--text); flex: 1; }
+.pg-item-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.pg-today { border-color: var(--accent); }
+.pg-today .pg-day-header { background: rgba(139,92,246,0.06); }
+.pg-actions { display: flex; gap: 6px; }
+.pg-actions button { background: none; border: 1px solid var(--border); color: var(--text3); border-radius: var(--radius-sm); padding: 3px 8px; font-size: 11px; cursor: pointer; }
+.pg-actions button:hover { color: var(--text); border-color: var(--text3); }
+.pg-empty { text-align: center; color: var(--text3); padding: 40px 20px; font-size: 13px; }
+.pg-textarea { width: 100%; min-height: 120px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; font-family: inherit; line-height: 1.6; resize: vertical; }
+.pg-textarea::placeholder { color: var(--text3); }
+.pg-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
 /* ===== REPORT CARDS ===== */
 .report-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.15s; }
 .report-card:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -472,6 +498,7 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-section">Management</div>
     <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
     <div class="nav-item" data-page="roadmap"><span class="icon">&#128506;</span> Roadmap</div>
+    <div class="nav-item" data-page="progress"><span class="icon">&#128197;</span> Progress</div>
 
     <div class="nav-section">Tools</div>
     <div class="nav-item" data-page="help"><span class="icon">&#10068;</span> Help</div>
@@ -667,6 +694,19 @@ tbody tr:hover { background: var(--bg3); }
         <p>Progress by milestone</p>
       </div>
       <div id="roadmap-list"></div>
+    </div>
+
+    <!-- ===== PROGRESS ===== -->
+    <div id="page-progress" class="page hidden">
+      <div class="page-header">
+        <h1>Progress</h1>
+        <p>Daily log of features built and work completed</p>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openProgressModal()">+ Log Today</button>
+        </div>
+      </div>
+      <div id="progress-stats" style="margin-bottom:20px;"></div>
+      <div id="progress-timeline"></div>
     </div>
 
     <!-- ===== MARKET DATA ===== -->
@@ -969,7 +1009,7 @@ const STAGE_COLORS = { 'Sourcing': '#3b82f6', 'Due Diligence': '#f59e0b', 'Term 
 const SECTORS = ['Stocks', 'Crypto', 'AI', 'DeFi', 'AI Crypto', 'Privacy', 'Other'];
 const SECTOR_TAG = { 'Stocks': 'stocks', 'AI': 'ai', 'DeFi': 'defi', 'AI Crypto': 'aicrypto', 'Privacy': 'privacy', 'Other': 'other' };
 
-let DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [] };
+let DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [], progress: [] };
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function fmtDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
@@ -1982,9 +2022,9 @@ async function autoFillResearch() {
 }
 
 // ===== FIREBASE REAL-TIME LISTENERS =====
-let initialLoad = { deals: false, projects: false, research: false, reports: false, tasks: false, watchlist: false };
+let initialLoad = { deals: false, projects: false, research: false, reports: false, tasks: false, watchlist: false, progress: false };
 
-function allLoaded() { return initialLoad.deals && initialLoad.projects && initialLoad.research && initialLoad.reports && initialLoad.tasks && initialLoad.watchlist; }
+function allLoaded() { return initialLoad.deals && initialLoad.projects && initialLoad.research && initialLoad.reports && initialLoad.tasks && initialLoad.watchlist && initialLoad.progress; }
 
 if (firebaseReady) {
   // Connection status
@@ -2051,6 +2091,14 @@ if (firebaseReady) {
     const data = snap.val();
     DB.watchlist = data ? Object.values(data) : [];
     initialLoad.watchlist = true;
+    if (allLoaded()) debouncedRender();
+  });
+
+  // Progress listener
+  dbRef.child('progress').on('value', (snap) => {
+    const data = snap.val();
+    DB.progress = data ? Object.values(data) : [];
+    initialLoad.progress = true;
     if (allLoaded()) debouncedRender();
   });
 }
@@ -4065,13 +4113,14 @@ const PAGE_ALIASES = {
   settings: 'settings', config: 'settings', preferences: 'settings', backup: 'settings',
   'market data': 'marketdata', market: 'marketdata', markets: 'marketdata', marketdata: 'marketdata',
   'live data': 'marketdata', prices: 'marketdata', fundamentals: 'marketdata',
-  watchlist: 'watchlist', 'watch list': 'watchlist', watching: 'watchlist', tracked: 'watchlist'
+  watchlist: 'watchlist', 'watch list': 'watchlist', watching: 'watchlist', tracked: 'watchlist',
+  progress: 'progress', log: 'progress', 'daily log': 'progress', changelog: 'progress', 'work log': 'progress'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  tasks: 'Tasks', roadmap: 'Roadmap', settings: 'Settings', marketdata: 'Market Data'
+  tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', settings: 'Settings', marketdata: 'Market Data'
 };
 
 function toggleChat() {
@@ -4836,6 +4885,7 @@ function buildPageSuggestions(page) {
     roadmap: [{ label: 'Go to Tasks', action: 'go to tasks' }, { label: 'Stats', action: 'stats' }],
     settings: [{ label: 'Export Backup', action: 'export' }, { label: 'Status', action: 'status' }],
     watchlist: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Add to watchlist', action: 'watch ' }, { label: 'Refresh', action: 'go to watchlist' }],
+    progress: [{ label: 'Log Today', action: 'go to progress' }, { label: 'Go to Roadmap', action: 'go to roadmap' }],
     marketdata: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Search Market', action: 'go to market data' }]
   };
   return suggestions[page] || [];
@@ -4843,6 +4893,132 @@ function buildPageSuggestions(page) {
 
 function buildAllPageActions() {
   return Object.entries(PAGE_LABELS).map(([page, label]) => ({ label: label, action: 'go to ' + label.toLowerCase() }));
+}
+
+// ===== PROGRESS LOG =====
+function renderProgress() {
+  const timeline = document.getElementById('progress-timeline');
+  const statsEl = document.getElementById('progress-stats');
+  if (!timeline) return;
+
+  // Group by date, sorted newest first
+  const byDate = {};
+  DB.progress.forEach(p => {
+    if (!byDate[p.date]) byDate[p.date] = [];
+    byDate[p.date].push(p);
+  });
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  const todayStr = today();
+
+  // Stats
+  const totalItems = DB.progress.length;
+  const totalDays = dates.length;
+  // Streak: count consecutive days from today backwards
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const ds = d.toISOString().slice(0, 10);
+    if (byDate[ds]) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  if (statsEl) statsEl.innerHTML = '<div class="pg-stats">' +
+    '<div class="pg-stat"><strong>' + totalItems + '</strong>items logged</div>' +
+    '<div class="pg-stat"><strong>' + totalDays + '</strong>active days</div>' +
+    '<div class="pg-stat"><strong>' + streak + '</strong>day streak 🔥</div>' +
+  '</div>';
+
+  if (!dates.length) {
+    timeline.innerHTML = '<div class="pg-empty">No progress logged yet.<br>Click <strong>+ Log Today</strong> to record what you built.</div>';
+    return;
+  }
+
+  timeline.innerHTML = dates.map(date => {
+    const items = byDate[date].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+    const isToday = date === todayStr;
+    const dateObj = new Date(date + 'T12:00:00');
+    const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const formatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return '<div class="pg-day' + (isToday ? ' pg-today' : '') + '">' +
+      '<div class="pg-day-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">' +
+        '<div class="pg-day-date">' +
+          (isToday ? '<span style="background:var(--accent);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;">TODAY</span>' : '') +
+          formatted +
+          '<span class="pg-weekday">' + weekday + '</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<span class="pg-day-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span>' +
+          '<div class="pg-actions">' +
+            '<button onclick="event.stopPropagation();openProgressModal(\'' + date + '\')" title="Add item">+</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pg-day-body">' +
+        items.map(item =>
+          '<div class="pg-item">' +
+            '<div class="pg-dot"></div>' +
+            '<div style="flex:1;">' +
+              '<div class="pg-item-text">' + esc(item.text) + '</div>' +
+              '<div class="pg-item-meta">' + (item.editedBy ? item.editedBy : '') +
+                '<span style="margin-left:8px;cursor:pointer;color:var(--text3);" onclick="deleteProgressEntry(\'' + item.id + '\')" title="Remove">✕</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        ).join('') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openProgressModal(date) {
+  const d = date || today();
+  const dateObj = new Date(d + 'T12:00:00');
+  const formatted = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+  const html = `
+    <h2>Log Progress — ${formatted}</h2>
+    <div class="form-group">
+      <label>What did you build or accomplish?</label>
+      <textarea id="m-progress-text" class="pg-textarea" placeholder="One item per line, e.g.:\nBuilt watchlist page\nRedesigned dashboard\nFixed scoring bug"></textarea>
+      <div class="pg-hint">Each line becomes a separate entry. Be specific — future you will thank you.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProgressEntry('${d}')">Save Progress</button>
+    </div>
+  `;
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('m-progress-text')?.focus(), 100);
+}
+
+function saveProgressEntry(date) {
+  const text = document.getElementById('m-progress-text')?.value?.trim();
+  if (!text) return;
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  lines.forEach(line => {
+    const id = genId();
+    const entry = {
+      id, date: date, text: line,
+      editedBy: MY_NAME, createdAt: new Date().toISOString()
+    };
+    if (firebaseReady && dbRef) {
+      dbRef.child('progress').child(id).set(entry);
+    } else {
+      DB.progress.push(entry);
+      localStorage.setItem('fundHQ', JSON.stringify(DB));
+    }
+  });
+  closeModal();
+  if (!firebaseReady) renderProgress();
+}
+
+function deleteProgressEntry(id) {
+  if (firebaseReady && dbRef) {
+    dbRef.child('progress').child(id).remove();
+  } else {
+    DB.progress = DB.progress.filter(p => p.id !== id);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderProgress();
+  }
 }
 
 function renderAll() {
@@ -4854,6 +5030,7 @@ function renderAll() {
   renderReports();
   renderTasks();
   renderRoadmap();
+  renderProgress();
   renderMarketData();
   // Load API keys into settings fields if present
   const fmpInput = document.getElementById('settings-fmp-key');
