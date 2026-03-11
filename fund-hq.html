@@ -556,6 +556,13 @@ tbody tr:hover { background: var(--bg3); }
           <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="testFmpKey()">Test Connection</button>
           <div id="fmp-test-result" style="font-size:12px;margin-top:4px;"></div>
         </div>
+        <div style="max-width:400px;margin-top:16px;">
+          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Anthropic API Key <span style="color:var(--accent);">(AI Research)</span></label>
+          <input type="password" id="settings-anthropic-key" placeholder="Enter your Anthropic API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;" onchange="saveAnthropicKey(this.value)">
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="testAnthropicKey()">Test Connection</button>
+          <div id="anthropic-test-result" style="font-size:12px;margin-top:4px;"></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Powers "Research with AI" in reports. Get a key at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
+        </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
         <h3 style="font-size:15px;margin-bottom:12px;color:var(--red);">Danger Zone</h3>
         <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">This deletes ALL data for BOTH users. Cannot be undone.</p>
@@ -801,6 +808,277 @@ async function fetchStockData(symbol) {
   };
   marketCache.set('stocks', symbol, data);
   return data;
+}
+
+// ===== CLAUDE AI INTEGRATION =====
+const AI_MODELS = [
+  { id: 'claude-haiku-4-5-20251001', label: 'Haiku (fast + cheap)' },
+  { id: 'claude-sonnet-4-6', label: 'Sonnet (balanced)' },
+  { id: 'claude-opus-4-6', label: 'Opus (deep research)' }
+];
+
+function getAnthropicKey() { return localStorage.getItem('fundHQ_anthropicKey') || ''; }
+function saveAnthropicKey(key) { localStorage.setItem('fundHQ_anthropicKey', key.trim()); }
+
+async function testAnthropicKey() {
+  const key = getAnthropicKey();
+  const el = document.getElementById('anthropic-test-result');
+  if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
+  try {
+    el.textContent = 'Testing...'; el.style.color = 'var(--text3)';
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 20, messages: [{ role: 'user', content: 'Say OK' }] })
+    });
+    if (resp.ok) { el.textContent = 'Connected! AI research enabled.'; el.style.color = 'var(--green)'; }
+    else {
+      const err = await resp.json().catch(() => ({}));
+      el.textContent = err.error?.message || 'Invalid key or API error'; el.style.color = 'var(--red)';
+    }
+  } catch(e) { el.textContent = 'Connection failed'; el.style.color = 'var(--red)'; }
+}
+
+async function callClaude(prompt, model) {
+  const key = getAnthropicKey();
+  if (!key) throw new Error('No Anthropic API key configured. Add it in Settings.');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model: model || 'claude-haiku-4-5-20251001', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Claude API error (' + resp.status + ')');
+  }
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+function buildCryptoResearchPrompt(projectName, marketData) {
+  let dataContext = '';
+  if (marketData) {
+    dataContext = '\n## LIVE MARKET DATA (from CoinGecko, use these exact numbers):\n' +
+      'Price: $' + fmtNum(marketData.price) + '\n' +
+      'Market Cap: $' + fmtBigNum(marketData.marketCap) + (marketData.marketCapRank ? ' (Rank #' + marketData.marketCapRank + ')' : '') + '\n' +
+      (marketData.fdv ? 'FDV: $' + fmtBigNum(marketData.fdv) + '\n' : '') +
+      (marketData.volume24h ? '24h Volume: $' + fmtBigNum(marketData.volume24h) + '\n' : '') +
+      (marketData.change24h != null ? '24h Change: ' + fmtPct(marketData.change24h) + '\n' : '') +
+      (marketData.change7d != null ? '7d Change: ' + fmtPct(marketData.change7d) + '\n' : '') +
+      (marketData.change30d != null ? '30d Change: ' + fmtPct(marketData.change30d) + '\n' : '') +
+      (marketData.ath ? 'ATH: $' + fmtNum(marketData.ath) + ' (' + fmtPct(marketData.athChangePercent) + ' from ATH)\n' : '') +
+      (marketData.atl ? 'ATL: $' + fmtNum(marketData.atl) + '\n' : '') +
+      (marketData.circulatingSupply ? 'Circulating Supply: ' + fmtBigNum(marketData.circulatingSupply) + ' ' + marketData.symbol + '\n' : '') +
+      (marketData.totalSupply ? 'Total Supply: ' + fmtBigNum(marketData.totalSupply) + '\n' : '') +
+      (marketData.maxSupply ? 'Max Supply: ' + fmtBigNum(marketData.maxSupply) + '\n' : 'Max Supply: Unlimited\n') +
+      (marketData.fdv && marketData.marketCap ? 'FDV/MC Ratio: ' + (marketData.fdv / marketData.marketCap).toFixed(2) + 'x\n' : '') +
+      (marketData.categories?.length ? 'Categories: ' + marketData.categories.filter(Boolean).join(', ') + '\n' : '') +
+      (marketData.genesisDate ? 'Genesis Date: ' + marketData.genesisDate + '\n' : '') +
+      (marketData.links?.homepage ? 'Website: ' + marketData.links.homepage + '\n' : '') +
+      (marketData.links?.github ? 'GitHub: ' + marketData.links.github + '\n' : '') +
+      (marketData.links?.twitter ? 'Twitter/X: ' + marketData.links.twitter + '\n' : '') +
+      (marketData.description ? 'Description: ' + marketData.description + '\n' : '');
+  }
+
+  return `You are a professional crypto research analyst writing a comprehensive report on ${projectName}.
+${dataContext}
+## TASK
+Fill out the following 18-section crypto research template with real, substantive analysis. Use the live market data provided above for exact numbers. For information you genuinely don't have, write [Unknown] rather than guessing.
+
+## OUTPUT FORMAT
+Return ONLY the filled template below. Keep the exact section headers and field labels. Each section should be 3-8 lines of concise, actionable analysis. Do not add extra sections or commentary outside the template.
+
+## TEMPLATE
+
+PROJECT: ${projectName} | TICKER: $[fill ticker] | CHAIN: [fill chain] | DATE: ${today()} | ANALYST: ${MY_NAME}
+
+═══════════════════════════════════════════════════════
+0. INTRO
+═══════════════════════════════════════════════════════
+[Write a warm 2-3 sentence intro explaining why this project matters and what makes it interesting right now.]
+
+═══════════════════════════════════════════════════════
+1. OVERVIEW
+═══════════════════════════════════════════════════════
+FDV:           [use live data]
+Market Cap:    [use live data]
+FDV/MC Ratio:  [use live data]
+Volume 24h:    [use live data]
+Volume 7d chg: [use live data or Unknown]
+X handle:      [fill or Unknown]
+Website:       [use live data]
+GitHub:        [use live data or Unknown]
+
+═══════════════════════════════════════════════════════
+2. TL;DR
+═══════════════════════════════════════════════════════
+[3-5 bullet points summarizing the key investment case: what it does, why it matters, main risk, and current opportunity.]
+
+═══════════════════════════════════════════════════════
+3. PRODUCT & FEATURES
+═══════════════════════════════════════════════════════
+[Describe the core product, key features, user experience, and what problem it solves. Include any recent launches or upgrades.]
+
+═══════════════════════════════════════════════════════
+4. MOATS
+═══════════════════════════════════════════════════════
+Data moat:        [assess]
+Technology moat:  [assess]
+Trust moat:       [assess]
+Incentive moat:   [assess]
+Fork resistance:  [assess]
+
+═══════════════════════════════════════════════════════
+5. TEAM
+═══════════════════════════════════════════════════════
+[Key founders/leaders, backgrounds, track record, team size if known, any red flags.]
+
+═══════════════════════════════════════════════════════
+6. CODE & GITHUB
+═══════════════════════════════════════════════════════
+[Assess development activity, open source status, commit frequency, audit history, known vulnerabilities.]
+
+═══════════════════════════════════════════════════════
+7. TOKENOMICS
+═══════════════════════════════════════════════════════
+Launch Date:       [fill]
+Price:             [use live data]
+Circulating:       [use live data]
+Total Supply:      [use live data]
+Max Supply:        [use live data]
+Distribution:      [fill: team %, investors %, community %, treasury %]
+Next Unlock:       [fill or Unknown]
+Emissions:         [fill: inflationary/deflationary, rate]
+Staking:           [fill: APY, % staked]
+Real Yield:        [fill or Unknown]
+Protocol Revenue:  [fill or Unknown]
+
+═══════════════════════════════════════════════════════
+8. BACKERS & FUNDING
+═══════════════════════════════════════════════════════
+[Key investors, funding rounds, amounts raised, notable VCs or angels.]
+
+═══════════════════════════════════════════════════════
+9. COMPETITIVE LANDSCAPE
+═══════════════════════════════════════════════════════
+[Main competitors, market positioning, what sets this project apart, market share if known.]
+
+═══════════════════════════════════════════════════════
+10. USERS, GROWTH & REVENUE
+═══════════════════════════════════════════════════════
+[DAU/MAU, growth trends, TVL if applicable, revenue metrics, fee generation.]
+
+═══════════════════════════════════════════════════════
+11. SOCIAL SENTIMENT
+═══════════════════════════════════════════════════════
+[Twitter/X following, community activity, Discord/Telegram size, sentiment analysis, influencer coverage.]
+
+═══════════════════════════════════════════════════════
+12. TOP HOLDERS & WHALE ACTIVITY
+═══════════════════════════════════════════════════════
+[Top holder concentration, whale movements if known, exchange inflows/outflows.]
+
+═══════════════════════════════════════════════════════
+13. CHART & TECHNICAL ANALYSIS
+═══════════════════════════════════════════════════════
+Price:          [use live data]
+ATH:            [use live data]
+ATL:            [use live data]
+From ATH:       [use live data]
+24h Change:     [use live data]
+7d Change:      [use live data]
+30d Change:     [use live data]
+Key levels:     [fill support/resistance if known]
+Trend:          [assess current trend]
+
+═══════════════════════════════════════════════════════
+14. CATALYSTS & FUD
+═══════════════════════════════════════════════════════
+Bullish catalysts: [list 3-5]
+Bearish risks/FUD: [list 3-5]
+
+═══════════════════════════════════════════════════════
+15. FINAL THESIS
+═══════════════════════════════════════════════════════
+Bull case: [2-3 sentences]
+Bear case: [2-3 sentences]
+Base case: [2-3 sentences]
+
+═══════════════════════════════════════════════════════
+16. SIGNAL
+═══════════════════════════════════════════════════════
+VERDICT:     [BUY / SPECULATE / HOLD-WAIT / AVOID]
+Conviction:  [High / Medium / Low]
+Timeframe:   [Short / Medium / Long-term]
+One-liner:   [single sentence summary]
+
+═══════════════════════════════════════════════════════
+17. SOURCES
+═══════════════════════════════════════════════════════
+[List relevant data sources: CoinGecko, DefiLlama, project docs, etc.]
+
+═══════════════════════════════════════════════════════
+18. X / SUBSTACK PREVIEW
+═══════════════════════════════════════════════════════
+[Write a ~300 word engaging teaser for social media / newsletter. Hook the reader, highlight key findings, end with the verdict.]`;
+}
+
+async function aiResearchCrypto() {
+  const titleEl = document.getElementById('m-title');
+  const contentEl = document.getElementById('m-content');
+  const statusEl = document.getElementById('ai-research-status');
+  const btn = document.getElementById('btn-ai-research');
+  const modelEl = document.getElementById('ai-model-select');
+
+  if (!titleEl || !titleEl.value.trim()) { if (statusEl) statusEl.textContent = 'Enter a project name first'; return; }
+  if (!getAnthropicKey()) { if (statusEl) { statusEl.textContent = 'Add your Anthropic API key in Settings first'; statusEl.style.color = 'var(--red)'; } return; }
+
+  const projectName = titleEl.value.trim();
+  const model = modelEl ? modelEl.value : 'claude-haiku-4-5-20251001';
+
+  btn.disabled = true;
+  btn.textContent = 'Researching...';
+  if (statusEl) { statusEl.textContent = 'Fetching market data...'; statusEl.style.color = 'var(--text3)'; }
+
+  try {
+    // 1. Fetch live market data from CoinGecko
+    let marketData = null;
+    try {
+      const results = await searchCrypto(projectName);
+      if (results.length > 0) {
+        marketData = await fetchCryptoData(results[0].id);
+        if (statusEl) statusEl.textContent = 'Got live data for ' + (marketData?.name || projectName) + '. Calling Claude ' + (model.includes('haiku') ? 'Haiku' : model.includes('sonnet') ? 'Sonnet' : 'Opus') + '...';
+      } else {
+        if (statusEl) statusEl.textContent = 'No CoinGecko data found. Calling Claude with name only...';
+      }
+    } catch(e) {
+      if (statusEl) statusEl.textContent = 'CoinGecko failed, calling Claude without market data...';
+    }
+
+    // 2. Build prompt and call Claude
+    const prompt = buildCryptoResearchPrompt(projectName, marketData);
+    const result = await callClaude(prompt, model);
+
+    // 3. Insert result into content textarea
+    contentEl.value = result;
+
+    if (statusEl) { statusEl.textContent = 'Research complete! Review and edit below.'; statusEl.style.color = 'var(--green)'; }
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.color = 'var(--red)'; }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Research with AI';
+  }
 }
 
 // ===== MARKET DATA UI FUNCTIONS =====
@@ -1444,6 +1722,13 @@ function openModal(type, id) {
         <div class="form-group"><label>Rating</label><select id="m-rating"><option value="">—</option><option${(r?.rating||'')==='Strong Buy'?' selected':''}>Strong Buy</option><option${(r?.rating||'')==='Buy'?' selected':''}>Buy</option><option${(r?.rating||'')==='Hold'?' selected':''}>Hold</option><option${(r?.rating||'')==='Sell'?' selected':''}>Sell</option><option${(r?.rating||'')==='Speculate'?' selected':''}>Speculate</option><option${(r?.rating||'')==='Avoid'?' selected':''}>Avoid</option><option${(r?.rating||'')==='Watch'?' selected':''}>Watch</option></select></div>
         <div class="form-group"><label>Conviction</label><select id="m-conviction"><option value="">—</option><option${(r?.conviction||'')==='High'?' selected':''}>High</option><option${(r?.conviction||'')==='Medium'?' selected':''}>Medium</option><option${(r?.conviction||'')==='Low'?' selected':''}>Low</option></select></div>
       </div>
+      ${getAnthropicKey() ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+        <select id="ai-model-select" style="padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+          ${AI_MODELS.map(m => '<option value="' + m.id + '">' + m.label + '</option>').join('')}
+        </select>
+        <button class="btn btn-primary btn-sm" id="btn-ai-research" onclick="aiResearchCrypto()" style="font-size:12px;">&#129302; Research with AI</button>
+        <span id="ai-research-status" style="font-size:11px;color:var(--text3);flex:1;"></span>
+      </div>` : '<div style="margin-bottom:12px;font-size:12px;color:var(--text3);">Add your Anthropic API key in <a href="#" onclick="event.preventDefault();document.querySelector(\'[data-page=settings]\').click();" style="color:var(--accent);">Settings</a> to enable AI research.</div>'}
       <div class="form-group"><label>Content</label><textarea id="m-content" style="min-height:500px;">${esc(r?.content||'')}</textarea></div>
       <div class="modal-actions">
         ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
@@ -2845,6 +3130,38 @@ function chatProcess(input) {
     return;
   }
 
+  // --- AI RESEARCH ---
+  const researchMatch = q.match(/^(?:research|analyze|report on)\s+(.+)$/i);
+  if (researchMatch) {
+    const query = researchMatch[1].trim();
+    if (!getAnthropicKey()) {
+      chatAddMsg('bot', 'Add your Anthropic API key in <strong>Settings</strong> first to use AI research.',
+        [{ label: 'Go to Settings', action: 'go to settings' }]);
+      return;
+    }
+    chatAddMsg('bot', 'Creating AI research report for <strong>' + esc(query) + '</strong>... This may take 30-60 seconds.');
+    (async () => {
+      try {
+        let marketData = null;
+        try {
+          const results = await searchCrypto(query);
+          if (results.length > 0) marketData = await fetchCryptoData(results[0].id);
+        } catch {}
+        const prompt = buildCryptoResearchPrompt(query, marketData);
+        const content = await callClaude(prompt, 'claude-haiku-4-5-20251001');
+        const id = genId();
+        const data = { id, title: query, type: 'crypto', content, rating: '', conviction: '', created: today(), updated: today(), editedBy: MY_NAME };
+        if (dbRef) { dbRef.child('reports').child(id).set(data); }
+        else { DB.reports.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+        chatAddMsg('bot', 'Research report for <strong>' + esc(query) + '</strong> is ready! &#129302;',
+          [{ label: 'Open report', action: 'go to reports' }]);
+      } catch(e) {
+        chatAddMsg('bot', 'Research failed: ' + esc(e.message));
+      }
+    })();
+    return;
+  }
+
   // --- PRICE LOOKUP ---
   const priceMatch = q.match(/^(?:price|quote|lookup|check)\s+(.+)$/i);
   if (priceMatch) {
@@ -3142,9 +3459,11 @@ function renderAll() {
   renderTasks();
   renderRoadmap();
   renderMarketData();
-  // Load FMP key into settings field if present
+  // Load API keys into settings fields if present
   const fmpInput = document.getElementById('settings-fmp-key');
   if (fmpInput && !fmpInput.value) fmpInput.value = getFmpKey();
+  const anthropicInput = document.getElementById('settings-anthropic-key');
+  if (anthropicInput && !anthropicInput.value) anthropicInput.value = getAnthropicKey();
 }
 
 // ===== INIT =====
