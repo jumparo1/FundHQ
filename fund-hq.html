@@ -561,14 +561,20 @@ tbody tr:hover { background: var(--bg3); }
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Stock data requires a free key from <a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">Financial Modeling Prep</a> (250 req/day).</p>
         <div style="max-width:400px;">
           <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">FMP API Key</label>
-          <input type="password" id="settings-fmp-key" placeholder="Enter your FMP API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;" onchange="saveFmpKey(this.value)">
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="testFmpKey()">Test Connection</button>
+          <input type="text" id="settings-fmp-key" autocomplete="off" data-1p-ignore placeholder="Enter your FMP API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" onclick="saveFmpKey(document.getElementById('settings-fmp-key').value);document.getElementById('fmp-test-result').textContent='Saved!';document.getElementById('fmp-test-result').style.color='var(--green)';">Save Key</button>
+            <button class="btn btn-ghost btn-sm" onclick="testFmpKey()">Test Connection</button>
+          </div>
           <div id="fmp-test-result" style="font-size:12px;margin-top:4px;"></div>
         </div>
         <div style="max-width:400px;margin-top:16px;">
           <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Anthropic API Key <span style="color:var(--accent);">(AI Research)</span></label>
-          <input type="password" id="settings-anthropic-key" placeholder="Enter your Anthropic API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;" onchange="saveAnthropicKey(this.value)">
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="testAnthropicKey()">Test Connection</button>
+          <input type="text" id="settings-anthropic-key" autocomplete="off" data-1p-ignore placeholder="Enter your Anthropic API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" onclick="saveAnthropicKey(document.getElementById('settings-anthropic-key').value);document.getElementById('anthropic-test-result').textContent='Saved!';document.getElementById('anthropic-test-result').style.color='var(--green)';">Save Key</button>
+            <button class="btn btn-ghost btn-sm" onclick="testAnthropicKey()">Test Connection</button>
+          </div>
           <div id="anthropic-test-result" style="font-size:12px;margin-top:4px;"></div>
           <p style="font-size:11px;color:var(--text3);margin-top:6px;">Powers "Research with AI" in reports. Get a key at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
         </div>
@@ -709,6 +715,8 @@ function getFmpKey() { return localStorage.getItem('fundHQ_fmpApiKey') || ''; }
 function saveFmpKey(key) { localStorage.setItem('fundHQ_fmpApiKey', key.trim()); }
 
 async function testFmpKey() {
+  const inputVal = document.getElementById('settings-fmp-key')?.value?.trim();
+  if (inputVal) saveFmpKey(inputVal);
   const key = getFmpKey();
   const el = document.getElementById('fmp-test-result');
   if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
@@ -836,6 +844,8 @@ function getAnthropicKey() { return localStorage.getItem('fundHQ_anthropicKey') 
 function saveAnthropicKey(key) { localStorage.setItem('fundHQ_anthropicKey', key.trim()); }
 
 async function testAnthropicKey() {
+  const inputVal = document.getElementById('settings-anthropic-key')?.value?.trim();
+  if (inputVal) saveAnthropicKey(inputVal);
   const key = getAnthropicKey();
   const el = document.getElementById('anthropic-test-result');
   if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
