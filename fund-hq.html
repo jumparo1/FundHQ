@@ -275,6 +275,58 @@ tbody tr:hover { background: var(--bg3); }
 .chat-send { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: none; color: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
 .chat-send:hover { background: var(--accent2); }
 
+/* ===== MARKET DATA ===== */
+.market-search { position: relative; }
+.market-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text3); pointer-events: none; }
+.market-search input { width: 100%; padding: 10px 14px 10px 36px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; outline: none; }
+.market-search input:focus { border-color: var(--accent); }
+.market-search-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; max-height: 320px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.market-search-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid var(--border); }
+.market-search-item:last-child { border-bottom: none; }
+.market-search-item:hover { background: var(--bg3); }
+.market-search-item img { width: 24px; height: 24px; border-radius: 50%; }
+.market-search-item .name { font-size: 13px; font-weight: 600; color: var(--text); }
+.market-search-item .symbol { font-size: 11px; color: var(--text3); text-transform: uppercase; }
+.market-search-item .rank { font-size: 11px; color: var(--text3); margin-left: auto; }
+.market-search-item .add-btn { margin-left: auto; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--accent); background: transparent; color: var(--accent); transition: all 0.15s; }
+.market-search-item .add-btn:hover { background: var(--accent); color: white; }
+.market-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 8px; padding: 3px; }
+.market-tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text3); transition: all 0.15s; }
+.market-tab.active { background: var(--accent); color: white; }
+.watchlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.watchlist-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; position: relative; }
+.watchlist-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.watchlist-card.expanded { border-color: var(--accent); }
+.watchlist-card .wc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.watchlist-card .wc-header img { width: 28px; height: 28px; border-radius: 50%; }
+.watchlist-card .wc-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.watchlist-card .wc-symbol { font-size: 11px; color: var(--text3); text-transform: uppercase; }
+.watchlist-card .wc-price { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.watchlist-card .wc-change { font-size: 13px; font-weight: 600; }
+.watchlist-card .wc-change.up { color: var(--green); }
+.watchlist-card .wc-change.down { color: var(--red); }
+.watchlist-card .wc-metric { font-size: 11px; color: var(--text3); margin-top: 8px; }
+.watchlist-card .wc-remove { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; border: none; background: transparent; color: var(--text3); font-size: 14px; cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.15s; }
+.watchlist-card:hover .wc-remove { display: flex; }
+.watchlist-card .wc-remove:hover { background: var(--red); color: white; }
+.watchlist-empty { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 14px; }
+.watchlist-empty .icon { font-size: 36px; margin-bottom: 12px; display: block; }
+.metric-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.metric-card .mc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.metric-card .mc-header img { width: 36px; height: 36px; border-radius: 50%; }
+.metric-card .mc-title { font-size: 18px; font-weight: 700; color: var(--text); }
+.metric-card .mc-subtitle { font-size: 12px; color: var(--text3); }
+.metric-card .mc-price-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.metric-card .mc-big-price { font-size: 28px; font-weight: 700; color: var(--text); }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.metric-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg3); border-radius: 6px; }
+.metric-row .mr-label { font-size: 12px; color: var(--text3); }
+.metric-row .mr-value { font-size: 13px; font-weight: 600; color: var(--text); }
+.metric-row .mr-value.up { color: var(--green); }
+.metric-row .mr-value.down { color: var(--red); }
+.metric-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.market-loading { text-align: center; padding: 20px; color: var(--text3); font-size: 13px; }
+
 /* ===== HIDDEN ===== */
 .hidden { display: none !important; }
 </style>
@@ -317,6 +369,9 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item" data-page="research"><span class="icon">&#9998;</span> Research Notes <span class="badge" id="badge-research">0</span></div>
     <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
     <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
+
+    <div class="nav-section">Market</div>
+    <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data <span class="badge" id="badge-watchlist">0</span></div>
 
     <div class="nav-section">Management</div>
     <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
@@ -449,6 +504,29 @@ tbody tr:hover { background: var(--bg3); }
       <div id="roadmap-list"></div>
     </div>
 
+    <!-- ===== MARKET DATA ===== -->
+    <div id="page-marketdata" class="page hidden">
+      <div class="page-header">
+        <h1>Market Data</h1>
+        <p>Live fundamentals for crypto and stocks</p>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="market-search" style="flex:1;min-width:240px;max-width:480px;position:relative;">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="market-search-input" placeholder="Search coin or stock..." oninput="debouncedMarketSearch(this.value)" autocomplete="off">
+          <div class="market-search-results hidden" id="market-search-results"></div>
+        </div>
+        <div class="market-tabs">
+          <button class="market-tab active" onclick="setMarketType('crypto')" id="tab-crypto">Crypto</button>
+          <button class="market-tab" onclick="setMarketType('stock')" id="tab-stock">Stocks</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="refreshWatchlist()" id="btn-refresh-watchlist">&#8635; Refresh All</button>
+        <span id="watchlist-last-refresh" style="font-size:11px;color:var(--text3);"></span>
+      </div>
+      <div class="watchlist-grid" id="watchlist-grid"></div>
+      <div id="market-detail" style="margin-top:20px;"></div>
+    </div>
+
     <!-- ===== SETTINGS ===== -->
     <div id="page-settings" class="page hidden">
       <div class="page-header">
@@ -468,6 +546,16 @@ tbody tr:hover { background: var(--bg3); }
         <h3 style="font-size:15px;margin-bottom:12px;">Backup</h3>
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Download a local JSON backup of all fund data.</p>
         <button class="btn btn-ghost" onclick="exportBackup()">Download Backup</button>
+        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+        <h3 style="font-size:15px;margin-bottom:12px;">API Keys</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">Crypto data works immediately via CoinGecko (no key needed).</p>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Stock data requires a free key from <a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">Financial Modeling Prep</a> (250 req/day).</p>
+        <div style="max-width:400px;">
+          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">FMP API Key</label>
+          <input type="password" id="settings-fmp-key" placeholder="Enter your FMP API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;" onchange="saveFmpKey(this.value)">
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="testFmpKey()">Test Connection</button>
+          <div id="fmp-test-result" style="font-size:12px;margin-top:4px;"></div>
+        </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
         <h3 style="font-size:15px;margin-bottom:12px;color:var(--red);">Danger Zone</h3>
         <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">This deletes ALL data for BOTH users. Cannot be undone.</p>
@@ -554,16 +642,497 @@ const STAGE_COLORS = { 'Sourcing': '#3b82f6', 'Due Diligence': '#f59e0b', 'Term 
 const SECTORS = ['Stocks', 'AI', 'DeFi', 'AI Crypto', 'Privacy', 'Other'];
 const SECTOR_TAG = { 'Stocks': 'stocks', 'AI': 'ai', 'DeFi': 'defi', 'AI Crypto': 'aicrypto', 'Privacy': 'privacy', 'Other': 'other' };
 
-let DB = { deals: [], projects: [], research: [], reports: [], tasks: [] };
+let DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [] };
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function fmtDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
 function today() { return new Date().toISOString().slice(0,10); }
 
-// ===== FIREBASE REAL-TIME LISTENERS =====
-let initialLoad = { deals: false, projects: false, research: false, reports: false, tasks: false };
+// ===== NUMBER FORMATTERS =====
+function fmtNum(n) {
+  if (n == null || isNaN(n)) return '\u2014';
+  if (Math.abs(n) >= 1) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  if (n === 0) return '0';
+  return n.toPrecision(4);
+}
+function fmtBigNum(n) {
+  if (n == null || isNaN(n)) return '\u2014';
+  if (Math.abs(n) >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+  if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n.toFixed(2);
+}
+function fmtPct(n) {
+  if (n == null || isNaN(n)) return '\u2014';
+  return (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
+}
+function pctClass(n) { return n >= 0 ? 'up' : 'down'; }
 
-function allLoaded() { return initialLoad.deals && initialLoad.projects && initialLoad.research && initialLoad.reports && initialLoad.tasks; }
+// ===== MARKET DATA API LAYER =====
+const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
+let currentMarketType = 'crypto';
+let marketSearchTimeout = null;
+let selectedMarketDetail = null;
+
+const marketCache = {
+  crypto: {}, stocks: {}, searches: {},
+  TTL: 5 * 60 * 1000,
+  get(type, key) {
+    const entry = this[type]?.[key.toLowerCase()];
+    if (!entry) return null;
+    if (Date.now() - entry.fetchedAt > this.TTL) { delete this[type][key.toLowerCase()]; return null; }
+    return entry.data;
+  },
+  set(type, key, data) {
+    this[type][key.toLowerCase()] = { data, fetchedAt: Date.now() };
+  }
+};
+
+function getFmpKey() { return localStorage.getItem('fundHQ_fmpApiKey') || ''; }
+function saveFmpKey(key) { localStorage.setItem('fundHQ_fmpApiKey', key.trim()); }
+
+async function testFmpKey() {
+  const key = getFmpKey();
+  const el = document.getElementById('fmp-test-result');
+  if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
+  try {
+    el.textContent = 'Testing...'; el.style.color = 'var(--text3)';
+    const resp = await fetch('https://financialmodelingprep.com/api/v3/profile/AAPL?apikey=' + key);
+    if (resp.ok) { el.textContent = 'Connected! Stock data enabled.'; el.style.color = 'var(--green)'; }
+    else { el.textContent = 'Invalid key or API error'; el.style.color = 'var(--red)'; }
+  } catch(e) { el.textContent = 'Connection failed'; el.style.color = 'var(--red)'; }
+}
+
+// --- CoinGecko API ---
+async function searchCrypto(query) {
+  if (!query || query.length < 2) return [];
+  const cached = marketCache.get('searches', 'crypto:' + query);
+  if (cached) return cached;
+  const resp = await fetch(COINGECKO_BASE + '/search?query=' + encodeURIComponent(query));
+  if (!resp.ok) throw new Error('CoinGecko search failed');
+  const data = await resp.json();
+  const results = (data.coins || []).slice(0, 10).map(c => ({
+    id: c.id, symbol: (c.symbol || '').toUpperCase(), name: c.name,
+    marketCapRank: c.market_cap_rank, thumb: c.thumb, type: 'crypto'
+  }));
+  marketCache.set('searches', 'crypto:' + query, results);
+  return results;
+}
+
+async function fetchCryptoData(coingeckoId) {
+  const cached = marketCache.get('crypto', coingeckoId);
+  if (cached) return cached;
+  const resp = await fetch(COINGECKO_BASE + '/coins/' + coingeckoId + '?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false');
+  if (!resp.ok) throw new Error('CoinGecko fetch failed');
+  const c = await resp.json();
+  const md = c.market_data || {};
+  const data = {
+    id: c.id, symbol: (c.symbol || '').toUpperCase(), name: c.name, type: 'crypto',
+    price: md.current_price?.usd, marketCap: md.market_cap?.usd, marketCapRank: c.market_cap_rank,
+    fdv: md.fully_diluted_valuation?.usd, volume24h: md.total_volume?.usd,
+    change24h: md.price_change_percentage_24h, change7d: md.price_change_percentage_7d,
+    change30d: md.price_change_percentage_30d, ath: md.ath?.usd, athDate: md.ath_date?.usd,
+    athChangePercent: md.ath_change_percentage?.usd, atl: md.atl?.usd, atlDate: md.atl_date?.usd,
+    circulatingSupply: md.circulating_supply, totalSupply: md.total_supply, maxSupply: md.max_supply,
+    description: (c.description?.en || '').substring(0, 300),
+    categories: c.categories || [],
+    links: { homepage: c.links?.homepage?.[0], github: c.links?.repos_url?.github?.[0],
+      twitter: c.links?.twitter_screen_name ? 'https://x.com/' + c.links.twitter_screen_name : null },
+    genesisDate: c.genesis_date, image: c.image?.small
+  };
+  marketCache.set('crypto', coingeckoId, data);
+  return data;
+}
+
+async function fetchTVL(protocolSlug) {
+  try {
+    const cached = marketCache.get('crypto', 'tvl:' + protocolSlug);
+    if (cached) return cached;
+    const resp = await fetch('https://api.llama.fi/protocol/' + protocolSlug);
+    if (!resp.ok) return null;
+    const d = await resp.json();
+    const tvlData = { totalTvl: d.currentChainTvls ? Object.values(d.currentChainTvls).reduce((s, v) => s + (v || 0), 0) : null };
+    marketCache.set('crypto', 'tvl:' + protocolSlug, tvlData);
+    return tvlData;
+  } catch { return null; }
+}
+
+// --- FMP API (Stocks) ---
+async function searchStocks(query) {
+  const key = getFmpKey();
+  if (!key || !query || query.length < 2) return [];
+  const cached = marketCache.get('searches', 'stock:' + query);
+  if (cached) return cached;
+  const resp = await fetch('https://financialmodelingprep.com/api/v3/search?query=' + encodeURIComponent(query) + '&limit=10&apikey=' + key);
+  if (!resp.ok) throw new Error('FMP search failed');
+  const data = await resp.json();
+  const results = (data || []).map(s => ({
+    symbol: s.symbol, name: s.name, exchange: s.exchangeShortName, type: 'stock'
+  }));
+  marketCache.set('searches', 'stock:' + query, results);
+  return results;
+}
+
+async function fetchStockData(symbol) {
+  const key = getFmpKey();
+  if (!key) return null;
+  const cached = marketCache.get('stocks', symbol);
+  if (cached) return cached;
+  const [profileResp, metricsResp] = await Promise.all([
+    fetch('https://financialmodelingprep.com/api/v3/profile/' + symbol + '?apikey=' + key),
+    fetch('https://financialmodelingprep.com/api/v3/key-metrics-ttm/' + symbol + '?apikey=' + key)
+  ]);
+  const profile = (await profileResp.json())?.[0];
+  const metrics = (await metricsResp.json())?.[0];
+  if (!profile) return null;
+  const data = {
+    symbol: profile.symbol, name: profile.companyName, type: 'stock',
+    price: profile.price, marketCap: profile.mktCap, change24h: profile.changes,
+    pe: profile.pe || metrics?.peRatioTTM, eps: metrics?.netIncomePerShareTTM,
+    beta: profile.beta, sector: profile.sector, industry: profile.industry,
+    exchange: profile.exchangeShortName, dividendYield: profile.lastDiv ? (profile.lastDiv / profile.price * 100) : null,
+    roe: metrics?.roeTTM != null ? metrics.roeTTM * 100 : null,
+    debtToEquity: metrics?.debtToEquityTTM, currentRatio: metrics?.currentRatioTTM,
+    pbRatio: metrics?.pbRatioTTM, evToEbitda: metrics?.enterpriseValueOverEBITDATTM,
+    week52High: profile.range ? profile.range.split('-')[1]?.trim() : null,
+    week52Low: profile.range ? profile.range.split('-')[0]?.trim() : null,
+    avgVolume: profile.volAvg, image: profile.image
+  };
+  marketCache.set('stocks', symbol, data);
+  return data;
+}
+
+// ===== MARKET DATA UI FUNCTIONS =====
+function setMarketType(type) {
+  currentMarketType = type;
+  document.getElementById('tab-crypto').className = 'market-tab' + (type === 'crypto' ? ' active' : '');
+  document.getElementById('tab-stock').className = 'market-tab' + (type === 'stock' ? ' active' : '');
+  document.getElementById('market-search-input').placeholder = type === 'crypto' ? 'Search coin...' : 'Search stock...';
+  document.getElementById('market-search-input').value = '';
+  document.getElementById('market-search-results').classList.add('hidden');
+}
+
+function debouncedMarketSearch(q) {
+  clearTimeout(marketSearchTimeout);
+  if (!q || q.length < 2) { document.getElementById('market-search-results').classList.add('hidden'); return; }
+  marketSearchTimeout = setTimeout(() => doMarketSearch(q), 400);
+}
+
+async function doMarketSearch(q) {
+  const el = document.getElementById('market-search-results');
+  el.innerHTML = '<div class="market-loading">Searching...</div>';
+  el.classList.remove('hidden');
+  try {
+    let results;
+    if (currentMarketType === 'crypto') {
+      results = await searchCrypto(q);
+    } else {
+      if (!getFmpKey()) {
+        el.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text3);">Add your FMP API key in <a href="#" onclick="event.preventDefault();document.querySelector(\'[data-page=settings]\').click();" style="color:var(--accent);">Settings</a> to search stocks.</div>';
+        return;
+      }
+      results = await searchStocks(q);
+    }
+    if (!results.length) { el.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text3);">No results found</div>'; return; }
+    el.innerHTML = results.map(r => {
+      const inWatchlist = DB.watchlist.some(w => (w.coingeckoId === r.id && r.type === 'crypto') || (w.fmpSymbol === r.symbol && r.type === 'stock'));
+      const img = r.thumb ? '<img src="' + r.thumb + '" alt="">' : '<div style="width:24px;height:24px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);">' + (r.symbol || '?')[0] + '</div>';
+      const rank = r.marketCapRank ? '<span class="rank">#' + r.marketCapRank + '</span>' : (r.exchange ? '<span class="rank">' + r.exchange + '</span>' : '');
+      const addLabel = inWatchlist ? 'Watching' : '+ Watch';
+      const addDisabled = inWatchlist ? ' disabled style="opacity:0.5;cursor:default;"' : '';
+      if (r.type === 'crypto') {
+        return '<div class="market-search-item" onclick="selectSearchResult(\'crypto\',\'' + r.id + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + '<button class="add-btn"' + addDisabled + ' onclick="event.stopPropagation();addToWatchlist(\'crypto\',\'' + r.id + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + addLabel + '</button></div>';
+      } else {
+        return '<div class="market-search-item" onclick="selectSearchResult(\'stock\',\'' + r.symbol + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + '<button class="add-btn"' + addDisabled + ' onclick="event.stopPropagation();addToWatchlist(\'stock\',\'' + r.symbol + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'\')">' + addLabel + '</button></div>';
+      }
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--red);">API error — try again</div>';
+  }
+}
+
+async function selectSearchResult(type, id, symbol, name, thumb) {
+  document.getElementById('market-search-results').classList.add('hidden');
+  document.getElementById('market-search-input').value = '';
+  await showMarketDetail(type, id);
+}
+
+async function addToWatchlist(type, id, symbol, name, thumb) {
+  if (DB.watchlist.some(w => (type === 'crypto' && w.coingeckoId === id) || (type === 'stock' && w.fmpSymbol === id))) return;
+  const item = {
+    id: genId(), symbol: symbol, name: name, type: type,
+    coingeckoId: type === 'crypto' ? id : null, fmpSymbol: type === 'stock' ? id : null,
+    addedBy: MY_NAME, addedAt: today(), notes: '',
+    lastData: { price: null, marketCap: null, change24h: null, fetchedAt: null }
+  };
+  // Fetch current data immediately
+  try {
+    let data;
+    if (type === 'crypto') data = await fetchCryptoData(id);
+    else data = await fetchStockData(id);
+    if (data) {
+      item.lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, fetchedAt: Date.now() };
+      if (data.image) item.image = data.image;
+    }
+  } catch {}
+  if (firebaseReady && dbRef) { dbRef.child('watchlist').child(item.id).set(item); }
+  else { DB.watchlist.push(item); localStorage.setItem('fundHQ', JSON.stringify(DB)); debouncedRender(); }
+  document.getElementById('market-search-results').classList.add('hidden');
+}
+
+function removeFromWatchlist(id) {
+  if (firebaseReady && dbRef) { dbRef.child('watchlist').child(id).remove(); }
+  else { DB.watchlist = DB.watchlist.filter(w => w.id !== id); localStorage.setItem('fundHQ', JSON.stringify(DB)); debouncedRender(); }
+  if (selectedMarketDetail && selectedMarketDetail.watchlistId === id) {
+    document.getElementById('market-detail').innerHTML = '';
+    selectedMarketDetail = null;
+  }
+}
+
+async function refreshWatchlist() {
+  const btn = document.getElementById('btn-refresh-watchlist');
+  btn.textContent = '\u21BB Refreshing...';
+  btn.disabled = true;
+  const cryptoItems = DB.watchlist.filter(w => w.type === 'crypto');
+  const stockItems = DB.watchlist.filter(w => w.type === 'stock');
+  // Refresh crypto
+  for (let i = 0; i < cryptoItems.length; i++) {
+    try {
+      const data = await fetchCryptoData(cryptoItems[i].coingeckoId);
+      if (data) {
+        cryptoItems[i].lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, fetchedAt: Date.now() };
+        if (data.image) cryptoItems[i].image = data.image;
+        if (firebaseReady && dbRef) dbRef.child('watchlist').child(cryptoItems[i].id).update({ lastData: cryptoItems[i].lastData, image: cryptoItems[i].image || null });
+      }
+    } catch {}
+    if (i < cryptoItems.length - 1) await new Promise(r => setTimeout(r, 1200));
+  }
+  // Refresh stocks
+  for (let i = 0; i < stockItems.length; i++) {
+    try {
+      const data = await fetchStockData(stockItems[i].fmpSymbol);
+      if (data) {
+        stockItems[i].lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, pe: data.pe, fetchedAt: Date.now() };
+        if (data.image) stockItems[i].image = data.image;
+        if (firebaseReady && dbRef) dbRef.child('watchlist').child(stockItems[i].id).update({ lastData: stockItems[i].lastData, image: stockItems[i].image || null });
+      }
+    } catch {}
+  }
+  btn.textContent = '\u21BB Refresh All';
+  btn.disabled = false;
+  document.getElementById('watchlist-last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  if (!firebaseReady) { localStorage.setItem('fundHQ', JSON.stringify(DB)); debouncedRender(); }
+}
+
+async function showMarketDetail(type, id) {
+  const detailEl = document.getElementById('market-detail');
+  detailEl.innerHTML = '<div class="market-loading">Loading fundamentals...</div>';
+  try {
+    let data;
+    if (type === 'crypto') { data = await fetchCryptoData(id); }
+    else { data = await fetchStockData(id); }
+    if (!data) { detailEl.innerHTML = '<div class="market-loading" style="color:var(--red);">Could not load data</div>'; return; }
+    selectedMarketDetail = { type, id, data };
+    renderMarketDetail(data);
+  } catch(e) {
+    detailEl.innerHTML = '<div class="market-loading" style="color:var(--red);">API error \u2014 try again</div>';
+  }
+}
+
+function renderMarketDetail(data) {
+  const detailEl = document.getElementById('market-detail');
+  const imgHtml = data.image ? '<img src="' + data.image + '" alt="" style="width:36px;height:36px;border-radius:50%;">' : '';
+  let metricsHtml = '';
+  if (data.type === 'crypto') {
+    metricsHtml = buildMetricGrid([
+      ['Market Cap', '$' + fmtBigNum(data.marketCap)],
+      ['Rank', data.marketCapRank ? '#' + data.marketCapRank : '\u2014'],
+      ['FDV', '$' + fmtBigNum(data.fdv)],
+      ['Volume 24h', '$' + fmtBigNum(data.volume24h)],
+      ['24h Change', fmtPct(data.change24h), pctClass(data.change24h)],
+      ['7d Change', fmtPct(data.change7d), pctClass(data.change7d)],
+      ['30d Change', fmtPct(data.change30d), pctClass(data.change30d)],
+      ['ATH', '$' + fmtNum(data.ath)],
+      ['ATH Change', fmtPct(data.athChangePercent), 'down'],
+      ['ATL', '$' + fmtNum(data.atl)],
+      ['Circulating', data.circulatingSupply ? fmtBigNum(data.circulatingSupply) + ' ' + data.symbol : '\u2014'],
+      ['Total Supply', data.totalSupply ? fmtBigNum(data.totalSupply) : '\u2014'],
+      ['Max Supply', data.maxSupply ? fmtBigNum(data.maxSupply) : '\u221E'],
+      ['FDV/MC Ratio', (data.fdv && data.marketCap) ? (data.fdv / data.marketCap).toFixed(2) + 'x' : '\u2014'],
+      ['Vol/MC Ratio', (data.volume24h && data.marketCap) ? ((data.volume24h / data.marketCap) * 100).toFixed(1) + '%' : '\u2014'],
+      ['Genesis', data.genesisDate || '\u2014'],
+    ]);
+    if (data.categories?.length) metricsHtml += '<div style="margin-top:12px;font-size:12px;color:var(--text3);">Categories: ' + data.categories.filter(Boolean).join(', ') + '</div>';
+  } else {
+    metricsHtml = buildMetricGrid([
+      ['Market Cap', '$' + fmtBigNum(data.marketCap)],
+      ['P/E Ratio', data.pe ? data.pe.toFixed(1) : '\u2014'],
+      ['EPS', data.eps ? '$' + data.eps.toFixed(2) : '\u2014'],
+      ['P/B Ratio', data.pbRatio ? data.pbRatio.toFixed(1) : '\u2014'],
+      ['EV/EBITDA', data.evToEbitda ? data.evToEbitda.toFixed(1) : '\u2014'],
+      ['Beta', data.beta ? data.beta.toFixed(2) : '\u2014'],
+      ['ROE', data.roe != null ? data.roe.toFixed(1) + '%' : '\u2014'],
+      ['D/E Ratio', data.debtToEquity != null ? data.debtToEquity.toFixed(2) : '\u2014'],
+      ['Current Ratio', data.currentRatio ? data.currentRatio.toFixed(2) : '\u2014'],
+      ['Div Yield', data.dividendYield ? data.dividendYield.toFixed(2) + '%' : '\u2014'],
+      ['52W High', data.week52High ? '$' + data.week52High : '\u2014'],
+      ['52W Low', data.week52Low ? '$' + data.week52Low : '\u2014'],
+      ['Avg Volume', fmtBigNum(data.avgVolume)],
+      ['Sector', data.sector || '\u2014'],
+      ['Industry', data.industry || '\u2014'],
+      ['Exchange', data.exchange || '\u2014'],
+    ]);
+  }
+  const changeHtml = data.change24h != null ? '<span class="wc-change ' + pctClass(data.change24h) + '" style="font-size:16px;">' + fmtPct(data.change24h) + '</span>' : '';
+  detailEl.innerHTML = '<div class="metric-card">' +
+    '<div class="mc-header">' + imgHtml + '<div><div class="mc-title">' + esc(data.name) + ' <span style="color:var(--text3);font-weight:400;">(' + data.symbol + ')</span></div>' +
+    '<div class="mc-subtitle">' + (data.type === 'crypto' ? 'Cryptocurrency' : data.sector || 'Stock') + '</div></div></div>' +
+    '<div class="mc-price-row"><span class="mc-big-price">$' + fmtNum(data.price) + '</span>' + changeHtml + '</div>' +
+    '<div class="metric-grid">' + metricsHtml + '</div>' +
+    '<div class="metric-actions">' +
+    '<button class="btn btn-ghost btn-sm" onclick="autoFillFromDetail()">&#128200; Auto-fill Research</button>' +
+    '<button class="btn btn-ghost btn-sm" onclick="createReportFromDetail()">&#128203; Create Report</button>' +
+    '</div></div>';
+}
+
+function buildMetricGrid(rows) {
+  return rows.map(([label, value, cls]) =>
+    '<div class="metric-row"><span class="mr-label">' + label + '</span><span class="mr-value' + (cls ? ' ' + cls : '') + '">' + value + '</span></div>'
+  ).join('');
+}
+
+function renderMarketData() {
+  const grid = document.getElementById('watchlist-grid');
+  const badge = document.getElementById('badge-watchlist');
+  if (badge) badge.textContent = DB.watchlist.length || '';
+  if (!DB.watchlist.length) {
+    grid.innerHTML = '<div class="watchlist-empty"><span class="icon">&#128200;</span>No assets in watchlist yet.<br>Search for a coin or stock above to get started.</div>';
+    return;
+  }
+  grid.innerHTML = DB.watchlist.map(w => {
+    const ld = w.lastData || {};
+    const priceStr = ld.price != null ? '$' + fmtNum(ld.price) : 'Loading...';
+    const changeStr = ld.change24h != null ? fmtPct(ld.change24h) : '';
+    const cls = ld.change24h != null ? pctClass(ld.change24h) : '';
+    const keyMetric = w.type === 'crypto'
+      ? (ld.marketCap ? 'MCap $' + fmtBigNum(ld.marketCap) : '')
+      : (ld.pe ? 'P/E ' + ld.pe.toFixed(1) : (ld.marketCap ? 'MCap $' + fmtBigNum(ld.marketCap) : ''));
+    const imgHtml = w.image ? '<img src="' + w.image + '" alt="">' : '<div style="width:28px;height:28px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);">' + (w.symbol || '?')[0] + '</div>';
+    const lookupId = w.type === 'crypto' ? w.coingeckoId : w.fmpSymbol;
+    return '<div class="watchlist-card" onclick="showMarketDetail(\'' + w.type + '\',\'' + lookupId + '\')">' +
+      '<button class="wc-remove" onclick="event.stopPropagation();removeFromWatchlist(\'' + w.id + '\')" title="Remove">&times;</button>' +
+      '<div class="wc-header">' + imgHtml + '<div><div class="wc-name">' + esc(w.name) + '</div><div class="wc-symbol">' + w.symbol + '</div></div></div>' +
+      '<div class="wc-price">' + priceStr + '</div>' +
+      (changeStr ? '<div class="wc-change ' + cls + '">' + changeStr + '</div>' : '') +
+      (keyMetric ? '<div class="wc-metric">' + keyMetric + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+// ===== AUTO-FILL RESEARCH FROM MARKET DATA =====
+function autoFillFromDetail() {
+  if (!selectedMarketDetail) return;
+  // Navigate to research, then open a new research note pre-filled
+  document.querySelector('[data-page="research"]').click();
+  setTimeout(() => {
+    openModal('research');
+    setTimeout(() => fillResearchFromData(selectedMarketDetail.data), 100);
+  }, 100);
+}
+
+function createReportFromDetail() {
+  if (!selectedMarketDetail) return;
+  const data = selectedMarketDetail.data;
+  const templateType = data.type === 'crypto' ? 'crypto' : 'stock';
+  document.querySelector('[data-page="reports"]').click();
+  setTimeout(() => {
+    createReportFromTemplate(templateType, data.name || data.symbol, data);
+  }, 100);
+}
+
+function fillResearchFromData(data) {
+  const pEl = document.getElementById('m-project');
+  const marketEl = document.getElementById('m-market');
+  const tokenomicsEl = document.getElementById('m-tokenomics');
+  const thesisEl = document.getElementById('m-thesis');
+  const risksEl = document.getElementById('m-risks');
+  if (!pEl) return;
+  // Only fill empty fields
+  if (pEl && !pEl.value) pEl.value = data.name || '';
+  if (marketEl && !marketEl.value) {
+    let mkt = 'Market Cap: $' + fmtBigNum(data.marketCap);
+    if (data.fdv) mkt += ' | FDV: $' + fmtBigNum(data.fdv);
+    if (data.volume24h) mkt += ' | 24h Vol: $' + fmtBigNum(data.volume24h);
+    if (data.marketCapRank) mkt += ' | Rank #' + data.marketCapRank;
+    if (data.sector) mkt += ' | Sector: ' + data.sector;
+    marketEl.value = mkt;
+  }
+  if (tokenomicsEl && !tokenomicsEl.value && data.type === 'crypto') {
+    let tok = '';
+    if (data.circulatingSupply) tok += 'Circulating: ' + fmtBigNum(data.circulatingSupply) + ' ' + data.symbol;
+    if (data.totalSupply) tok += ' | Total: ' + fmtBigNum(data.totalSupply);
+    if (data.maxSupply) tok += ' | Max: ' + fmtBigNum(data.maxSupply);
+    else tok += ' | Max: Unlimited';
+    if (data.fdv && data.marketCap) tok += ' | FDV/MC: ' + (data.fdv / data.marketCap).toFixed(2) + 'x';
+    tokenomicsEl.value = tok;
+  }
+  if (thesisEl && !thesisEl.value) {
+    let thesis = data.name + ' (' + data.symbol + ') @ $' + fmtNum(data.price);
+    if (data.change30d != null) thesis += ' | 30d: ' + fmtPct(data.change30d);
+    if (data.athChangePercent != null) thesis += ' | From ATH: ' + data.athChangePercent.toFixed(0) + '%';
+    thesis += '\n\n[Your investment thesis here]';
+    thesisEl.value = thesis;
+  }
+  if (risksEl && !risksEl.value) {
+    let risks = [];
+    if (data.fdv && data.marketCap && data.fdv / data.marketCap > 2) risks.push('High FDV/MC ratio (' + (data.fdv / data.marketCap).toFixed(1) + 'x) \u2014 potential unlock pressure');
+    if (data.athChangePercent != null && data.athChangePercent > -15) risks.push('Near ATH (' + data.athChangePercent.toFixed(0) + '%) \u2014 limited upside?');
+    if (data.volume24h && data.marketCap && (data.volume24h / data.marketCap) < 0.01) risks.push('Low volume/mcap ratio \u2014 liquidity risk');
+    if (data.debtToEquity != null && data.debtToEquity > 2) risks.push('High D/E ratio (' + data.debtToEquity.toFixed(1) + ') \u2014 leverage risk');
+    risksEl.value = risks.length ? risks.join('\n') : '';
+  }
+}
+
+async function autoFillResearch() {
+  const pEl = document.getElementById('m-project');
+  const statusEl = document.getElementById('m-autofill-status');
+  if (!pEl || !pEl.value.trim()) { if (statusEl) statusEl.textContent = 'Enter a project name first'; return; }
+  const query = pEl.value.trim();
+  if (statusEl) { statusEl.textContent = 'Searching...'; statusEl.style.color = 'var(--text3)'; }
+  try {
+    // Try crypto first
+    const cryptoResults = await searchCrypto(query);
+    if (cryptoResults.length > 0) {
+      const data = await fetchCryptoData(cryptoResults[0].id);
+      if (data) {
+        fillResearchFromData(data);
+        if (statusEl) { statusEl.textContent = 'Filled with ' + data.name + ' data from CoinGecko'; statusEl.style.color = 'var(--green)'; }
+        return;
+      }
+    }
+    // Try stocks
+    if (getFmpKey()) {
+      const stockResults = await searchStocks(query);
+      if (stockResults.length > 0) {
+        const data = await fetchStockData(stockResults[0].symbol);
+        if (data) {
+          fillResearchFromData(data);
+          if (statusEl) { statusEl.textContent = 'Filled with ' + data.name + ' data from FMP'; statusEl.style.color = 'var(--green)'; }
+          return;
+        }
+      }
+    }
+    if (statusEl) { statusEl.textContent = 'No data found for "' + query + '"'; statusEl.style.color = 'var(--yellow)'; }
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = 'API error \u2014 try again'; statusEl.style.color = 'var(--red)'; }
+  }
+}
+
+// ===== FIREBASE REAL-TIME LISTENERS =====
+let initialLoad = { deals: false, projects: false, research: false, reports: false, tasks: false, watchlist: false };
+
+function allLoaded() { return initialLoad.deals && initialLoad.projects && initialLoad.research && initialLoad.reports && initialLoad.tasks && initialLoad.watchlist; }
 
 if (firebaseReady) {
   // Connection status
@@ -622,6 +1191,14 @@ if (firebaseReady) {
     const data = snap.val();
     DB.tasks = data ? Object.values(data) : [];
     initialLoad.tasks = true;
+    if (allLoaded()) debouncedRender();
+  });
+
+  // Watchlist listener
+  dbRef.child('watchlist').on('value', (snap) => {
+    const data = snap.val();
+    DB.watchlist = data ? Object.values(data) : [];
+    initialLoad.watchlist = true;
     if (allLoaded()) debouncedRender();
   });
 }
@@ -881,6 +1458,10 @@ function openModal(type, id) {
       <div class="form-row">
         <div class="form-group"><label>Project Name *</label><input id="m-project" value="${esc(r?.project||'')}" placeholder="e.g. Uniswap"></div>
         <div class="form-group"><label>Sector</label><select id="m-sector">${SECTORS.map(s=>`<option${(r?.sector||'')===s?' selected':''}>${s}</option>`).join('')}</select></div>
+      </div>
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="autoFillResearch()" style="font-size:12px;">&#128200; Fetch Live Data</button>
+        <span id="m-autofill-status" style="font-size:11px;color:var(--text3);"></span>
       </div>
       <div class="form-group"><label>Author</label><input id="m-author" value="${esc(r?.author||MY_NAME)}" placeholder="Your name"></div>
       <div class="form-group"><label>Investment Thesis</label><textarea id="m-thesis" placeholder="Why is this interesting? What's the angle?">${esc(r?.thesis||'')}</textarea></div>
@@ -1417,6 +1998,46 @@ function useTemplate(type) {
   }
 }
 
+function createReportFromTemplate(type, title, marketData) {
+  if (!title || !title.trim()) return;
+  const id = genId();
+  let content = type === 'stock' ? STOCK_TEMPLATE : CRYPTO_TEMPLATE;
+  content = content.replace(/\[TOKEN NAME\]/g, title.trim()).replace(/\[Company name[^\]]*\]/g, title.trim());
+  // Inject market data into template if available
+  if (marketData) {
+    const header = '\n--- LIVE DATA (auto-filled ' + today() + ') ---\n' +
+      'Price: $' + fmtNum(marketData.price) + '\n' +
+      'Market Cap: $' + fmtBigNum(marketData.marketCap) + '\n' +
+      (marketData.fdv ? 'FDV: $' + fmtBigNum(marketData.fdv) + '\n' : '') +
+      (marketData.volume24h ? 'Volume 24h: $' + fmtBigNum(marketData.volume24h) + '\n' : '') +
+      (marketData.pe ? 'P/E: ' + marketData.pe.toFixed(1) + '\n' : '') +
+      (marketData.circulatingSupply ? 'Circulating: ' + fmtBigNum(marketData.circulatingSupply) + ' ' + marketData.symbol + '\n' : '') +
+      (marketData.totalSupply ? 'Total Supply: ' + fmtBigNum(marketData.totalSupply) + '\n' : '') +
+      '---\n\n';
+    content = header + content;
+  }
+  const data = {
+    id, title: title.trim(), type,
+    content: content,
+    rating: '', conviction: '',
+    created: today(), updated: today(), editedBy: MY_NAME
+  };
+  if (dbRef) {
+    dbRef.child('reports').child(id).set(data).then(() => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('[data-page="reports"]').classList.add('active');
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('page-reports').classList.remove('hidden');
+      setTimeout(() => openModal('report', id), 300);
+    });
+  } else {
+    DB.reports.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+    openModal('report', id);
+  }
+}
+
 // ===== SAVE REPORT =====
 function saveReport(existingId) {
   const title = document.getElementById('m-title').value.trim();
@@ -1762,13 +2383,15 @@ const PAGE_ALIASES = {
   reports: 'reports', report: 'reports',
   tasks: 'tasks', task: 'tasks', kanban: 'tasks', board: 'tasks', 'task board': 'tasks', todos: 'tasks',
   roadmap: 'roadmap', milestones: 'roadmap', progress: 'roadmap', phases: 'roadmap',
-  settings: 'settings', config: 'settings', preferences: 'settings', backup: 'settings'
+  settings: 'settings', config: 'settings', preferences: 'settings', backup: 'settings',
+  'market data': 'marketdata', market: 'marketdata', markets: 'marketdata', marketdata: 'marketdata',
+  'live data': 'marketdata', prices: 'marketdata', watchlist: 'marketdata', fundamentals: 'marketdata'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  tasks: 'Tasks', roadmap: 'Roadmap', settings: 'Settings'
+  tasks: 'Tasks', roadmap: 'Roadmap', settings: 'Settings', marketdata: 'Market Data'
 };
 
 function toggleChat() {
@@ -2222,6 +2845,57 @@ function chatProcess(input) {
     return;
   }
 
+  // --- PRICE LOOKUP ---
+  const priceMatch = q.match(/^(?:price|quote|lookup|check)\s+(.+)$/i);
+  if (priceMatch) {
+    const query = priceMatch[1].trim();
+    chatAddMsg('bot', 'Looking up <strong>' + esc(query) + '</strong>...');
+    searchCrypto(query).then(async (results) => {
+      if (results.length > 0) {
+        try {
+          const data = await fetchCryptoData(results[0].id);
+          if (data) {
+            const changeColor = data.change24h >= 0 ? 'var(--green)' : 'var(--red)';
+            chatAddMsg('bot',
+              '<strong>' + esc(data.name) + ' (' + data.symbol + ')</strong><br>' +
+              'Price: <strong>$' + fmtNum(data.price) + '</strong> ' +
+              '<span style="color:' + changeColor + ';">' + fmtPct(data.change24h) + '</span><br>' +
+              'MCap: $' + fmtBigNum(data.marketCap) + (data.marketCapRank ? ' (#' + data.marketCapRank + ')' : '') + '<br>' +
+              'Vol: $' + fmtBigNum(data.volume24h),
+              [{ label: 'Add to watchlist', action: 'watch ' + data.name },
+               { label: 'Full detail', action: 'go to market data' }]
+            );
+            return;
+          }
+        } catch {}
+      }
+      chatAddMsg('bot', 'Could not find "<strong>' + esc(query) + '</strong>". Try the full name.');
+    }).catch(() => {
+      chatAddMsg('bot', 'API error. Try again in a moment.');
+    });
+    return;
+  }
+
+  // --- WATCH (add to watchlist) ---
+  const watchMatch = q.match(/^(?:watch|track|add\s*(?:to)?\s*watchlist)\s+(.+)$/i);
+  if (watchMatch) {
+    const query = watchMatch[1].trim();
+    chatAddMsg('bot', 'Searching for <strong>' + esc(query) + '</strong>...');
+    searchCrypto(query).then(async (results) => {
+      if (results.length > 0) {
+        const r = results[0];
+        await addToWatchlist('crypto', r.id, r.symbol, r.name, r.thumb || '');
+        chatAddMsg('bot', 'Added <strong>' + esc(r.name) + ' (' + r.symbol + ')</strong> to your watchlist. &#128200;',
+          [{ label: 'View watchlist', action: 'go to market data' }]);
+      } else {
+        chatAddMsg('bot', 'Could not find "<strong>' + esc(query) + '</strong>". Try the full name.');
+      }
+    }).catch(() => {
+      chatAddMsg('bot', 'API error. Try again in a moment.');
+    });
+    return;
+  }
+
   // --- SEARCH ---
   const searchMatch = q.match(/^(?:search|find|look\s*(?:for|up)?)\s+(.+)$/);
   if (searchMatch) {
@@ -2448,7 +3122,8 @@ function buildPageSuggestions(page) {
     reports: [{ label: 'New Report', action: 'new report' }, { label: 'Templates', action: 'go to templates' }],
     tasks: [{ label: 'New Task', action: 'new task' }, { label: 'My Tasks', action: 'my tasks' }, { label: 'High Priority', action: 'high priority' }],
     roadmap: [{ label: 'Go to Tasks', action: 'go to tasks' }, { label: 'Stats', action: 'stats' }],
-    settings: [{ label: 'Export Backup', action: 'export' }, { label: 'Status', action: 'status' }]
+    settings: [{ label: 'Export Backup', action: 'export' }, { label: 'Status', action: 'status' }],
+    marketdata: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Add to watchlist', action: 'watch ' }, { label: 'Refresh', action: 'go to market data' }]
   };
   return suggestions[page] || [];
 }
@@ -2466,6 +3141,10 @@ function renderAll() {
   renderReports();
   renderTasks();
   renderRoadmap();
+  renderMarketData();
+  // Load FMP key into settings field if present
+  const fmpInput = document.getElementById('settings-fmp-key');
+  if (fmpInput && !fmpInput.value) fmpInput.value = getFmpKey();
 }
 
 // ===== INIT =====
@@ -2480,6 +3159,7 @@ if (!firebaseReady) {
   if (!DB.research) DB.research = [];
   if (!DB.reports) DB.reports = [];
   if (!DB.tasks) DB.tasks = [];
+  if (!DB.watchlist) DB.watchlist = [];
   renderAll();
 }
 </script>
