@@ -460,13 +460,14 @@ tbody tr:hover { background: var(--bg3); }
 
     <div class="nav-section">Pipeline</div>
     <div class="nav-item" data-page="projects"><span class="icon">&#9733;</span> Project Dump <span class="badge" id="badge-projects">0</span></div>
+    <div class="nav-item" data-page="watchlist"><span class="icon">&#128065;</span> Watchlist <span class="badge" id="badge-watchlist">0</span></div>
 
     <div class="nav-section">Research</div>
     <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
     <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
 
     <div class="nav-section">Market</div>
-    <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data <span class="badge" id="badge-watchlist">0</span></div>
+    <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
 
     <div class="nav-section">Management</div>
     <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
@@ -500,7 +501,7 @@ tbody tr:hover { background: var(--bg3); }
       <div class="card" style="margin-bottom:20px;padding:16px 20px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:13px;color:var(--text3);font-weight:600;margin-right:6px;">Quick Actions</span>
-          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=market]').click()">&#128270; Search Market</button>
+          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=marketdata]').click()">&#128270; Search Market</button>
           <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=templates]').click()">&#128218; Research Templates</button>
           <button class="btn btn-sm btn-ghost" onclick="openModal('report')">&#128196; New Report</button>
           <button class="btn btn-sm btn-ghost" onclick="openModal('task')">&#10004; New Task</button>
@@ -513,7 +514,7 @@ tbody tr:hover { background: var(--bg3); }
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <h3 style="font-size:14px;color:var(--text2);margin:0;">&#128200; Watchlist</h3>
-            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=market]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
+            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=watchlist]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
           </div>
           <div id="dash-watchlist"></div>
         </div>
@@ -578,6 +579,29 @@ tbody tr:hover { background: var(--bg3); }
           <tbody id="projects-table"></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- ===== WATCHLIST ===== -->
+    <div id="page-watchlist" class="page hidden">
+      <div class="page-header">
+        <h1>Watchlist</h1>
+        <p>Track assets you're monitoring — prices, scores, and fundamentals</p>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="market-search" style="flex:1;min-width:240px;max-width:480px;position:relative;">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="wl-search-input" placeholder="Search coin or stock to add..." oninput="debouncedMarketSearch(this.value,'wl')" autocomplete="off">
+          <div class="market-search-results hidden" id="wl-search-results"></div>
+        </div>
+        <div class="market-tabs">
+          <button class="market-tab active" onclick="setMarketType('crypto')" id="wl-tab-crypto">Crypto</button>
+          <button class="market-tab" onclick="setMarketType('stock')" id="wl-tab-stock">Stocks</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="refreshWatchlist()" id="btn-refresh-watchlist">&#8635; Refresh All</button>
+        <span id="watchlist-last-refresh" style="font-size:11px;color:var(--text3);"></span>
+      </div>
+      <div class="watchlist-grid" id="watchlist-grid"></div>
+      <div id="wl-detail" style="margin-top:20px;"></div>
     </div>
 
     <!-- ===== RESEARCH ===== -->
@@ -649,23 +673,20 @@ tbody tr:hover { background: var(--bg3); }
     <div id="page-marketdata" class="page hidden">
       <div class="page-header">
         <h1>Market Data</h1>
-        <p>Live fundamentals for crypto and stocks</p>
+        <p>Search and explore live fundamentals for crypto and stocks</p>
       </div>
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
         <div class="market-search" style="flex:1;min-width:240px;max-width:480px;position:relative;">
           <span class="search-icon">&#128269;</span>
-          <input type="text" id="market-search-input" placeholder="Search coin or stock..." oninput="debouncedMarketSearch(this.value)" autocomplete="off">
+          <input type="text" id="market-search-input" placeholder="Search coin or stock..." oninput="debouncedMarketSearch(this.value,'md')" autocomplete="off">
           <div class="market-search-results hidden" id="market-search-results"></div>
         </div>
         <div class="market-tabs">
           <button class="market-tab active" onclick="setMarketType('crypto')" id="tab-crypto">Crypto</button>
           <button class="market-tab" onclick="setMarketType('stock')" id="tab-stock">Stocks</button>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="refreshWatchlist()" id="btn-refresh-watchlist">&#8635; Refresh All</button>
-        <span id="watchlist-last-refresh" style="font-size:11px;color:var(--text3);"></span>
       </div>
-      <div class="watchlist-grid" id="watchlist-grid"></div>
-      <div id="market-detail" style="margin-top:20px;"></div>
+      <div id="market-detail" style="margin-top:0;"></div>
     </div>
 
     <!-- ===== HELP ===== -->
@@ -770,7 +791,7 @@ tbody tr:hover { background: var(--bg3); }
         <div class="card">
           <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">5</span> Track — Watchlist Monitor</h3>
           <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;">Your <strong style="color:var(--text);">Market Data</strong> watchlist tracks live prices, 24h changes, key metrics, and scores.</p>
+            <p style="margin-bottom:8px;">Your <strong style="color:var(--text);">Watchlist</strong> tracks live prices, 24h changes, key metrics, and scores.</p>
             <p style="margin-bottom:8px;">Click any card to see the full <strong style="color:var(--text);">detail view</strong> with all metrics and the score breakdown.</p>
             <p>Hit <strong style="color:var(--text);">&#8635; Refresh All</strong> to update prices and re-compute scores for everything at once.</p>
           </div>
@@ -1552,23 +1573,38 @@ async function aiResearchCrypto() {
 }
 
 // ===== MARKET DATA UI FUNCTIONS =====
-function setMarketType(type) {
-  currentMarketType = type;
-  document.getElementById('tab-crypto').className = 'market-tab' + (type === 'crypto' ? ' active' : '');
-  document.getElementById('tab-stock').className = 'market-tab' + (type === 'stock' ? ' active' : '');
-  document.getElementById('market-search-input').placeholder = type === 'crypto' ? 'Search coin...' : 'Search stock...';
-  document.getElementById('market-search-input').value = '';
-  document.getElementById('market-search-results').classList.add('hidden');
+let _activeSearchCtx = 'md'; // 'md' = market data page, 'wl' = watchlist page
+function _searchResultsEl() { return document.getElementById(_activeSearchCtx === 'wl' ? 'wl-search-results' : 'market-search-results'); }
+function _searchInputEl() { return document.getElementById(_activeSearchCtx === 'wl' ? 'wl-search-input' : 'market-search-input'); }
+function _detailEl() {
+  // Use wl-detail if on watchlist page, otherwise market-detail
+  const wlPage = document.getElementById('page-watchlist');
+  if (wlPage && !wlPage.classList.contains('hidden')) return document.getElementById('wl-detail');
+  return document.getElementById('market-detail');
 }
 
-function debouncedMarketSearch(q) {
+function setMarketType(type) {
+  currentMarketType = type;
+  // Update both pages' tabs
+  ['tab-crypto','wl-tab-crypto'].forEach(id => { const e = document.getElementById(id); if (e) e.className = 'market-tab' + (type === 'crypto' ? ' active' : ''); });
+  ['tab-stock','wl-tab-stock'].forEach(id => { const e = document.getElementById(id); if (e) e.className = 'market-tab' + (type === 'stock' ? ' active' : ''); });
+  const inp = _searchInputEl();
+  if (inp) { inp.placeholder = type === 'crypto' ? 'Search coin...' : 'Search stock...'; inp.value = ''; }
+  const res = _searchResultsEl();
+  if (res) res.classList.add('hidden');
+}
+
+function debouncedMarketSearch(q, ctx) {
+  if (ctx) _activeSearchCtx = ctx;
   clearTimeout(marketSearchTimeout);
-  if (!q || q.length < 2) { document.getElementById('market-search-results').classList.add('hidden'); return; }
+  const el = _searchResultsEl();
+  if (!q || q.length < 2) { if (el) el.classList.add('hidden'); return; }
   marketSearchTimeout = setTimeout(() => doMarketSearch(q), 400);
 }
 
 async function doMarketSearch(q) {
-  const el = document.getElementById('market-search-results');
+  const el = _searchResultsEl();
+  if (!el) return;
   el.innerHTML = '<div class="market-loading">Searching...</div>';
   el.classList.remove('hidden');
   try {
@@ -1607,8 +1643,8 @@ async function doMarketSearch(q) {
 }
 
 async function selectSearchResult(type, id, symbol, name, thumb) {
-  document.getElementById('market-search-results').classList.add('hidden');
-  document.getElementById('market-search-input').value = '';
+  const res = _searchResultsEl(); if (res) res.classList.add('hidden');
+  const inp = _searchInputEl(); if (inp) inp.value = '';
   await showMarketDetail(type, id);
 }
 
@@ -1632,14 +1668,14 @@ async function addToWatchlist(type, id, symbol, name, thumb) {
   } catch {}
   if (firebaseReady && dbRef) { dbRef.child('watchlist').child(item.id).set(item); }
   else { DB.watchlist.push(item); localStorage.setItem('fundHQ', JSON.stringify(DB)); debouncedRender(); }
-  document.getElementById('market-search-results').classList.add('hidden');
+  const res = _searchResultsEl(); if (res) res.classList.add('hidden');
 }
 
 function removeFromWatchlist(id) {
   if (firebaseReady && dbRef) { dbRef.child('watchlist').child(id).remove(); }
   else { DB.watchlist = DB.watchlist.filter(w => w.id !== id); localStorage.setItem('fundHQ', JSON.stringify(DB)); debouncedRender(); }
   if (selectedMarketDetail && selectedMarketDetail.watchlistId === id) {
-    document.getElementById('market-detail').innerHTML = '';
+    const de = _detailEl(); if (de) de.innerHTML = '';
     selectedMarketDetail = null;
   }
 }
@@ -1654,7 +1690,7 @@ function addToDump(type, name, symbol) {
   };
   if (firebaseReady && dbRef) { dbRef.child('projects').child(id).set(data); }
   else { DB.projects.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
-  document.getElementById('market-search-results').classList.add('hidden');
+  const res = _searchResultsEl(); if (res) res.classList.add('hidden');
   // Navigate to Project Dump page
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector('[data-page="projects"]').classList.add('active');
@@ -1663,7 +1699,7 @@ function addToDump(type, name, symbol) {
 }
 
 async function aiResearchFromSearch(type, id, name) {
-  document.getElementById('market-search-results').classList.add('hidden');
+  const res = _searchResultsEl(); if (res) res.classList.add('hidden');
   if (!getAnthropicKey()) {
     alert('Add your Anthropic API key in Settings first.');
     document.querySelector('[data-page="settings"]').click();
@@ -1736,7 +1772,8 @@ async function refreshWatchlist() {
 }
 
 async function showMarketDetail(type, id) {
-  const detailEl = document.getElementById('market-detail');
+  const detailEl = _detailEl();
+  if (!detailEl) return;
   detailEl.innerHTML = '<div class="market-loading">Loading fundamentals...</div>';
   try {
     let data;
@@ -1746,12 +1783,13 @@ async function showMarketDetail(type, id) {
     selectedMarketDetail = { type, id, data };
     renderMarketDetail(data);
   } catch(e) {
-    detailEl.innerHTML = '<div class="market-loading" style="color:var(--red);">API error \u2014 try again</div>';
+    const de = _detailEl(); if (de) de.innerHTML = '<div class="market-loading" style="color:var(--red);">API error \u2014 try again</div>';
   }
 }
 
 function renderMarketDetail(data) {
-  const detailEl = document.getElementById('market-detail');
+  const detailEl = _detailEl();
+  if (!detailEl) return;
   const imgHtml = data.image ? '<img src="' + data.image + '" alt="" style="width:36px;height:36px;border-radius:50%;">' : '';
   let metricsHtml = '';
   if (data.type === 'crypto') {
@@ -2067,7 +2105,7 @@ function renderDashboard() {
 
   // Stats row
   document.getElementById('stats-row').innerHTML = `
-    <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-page=market]').click()">
+    <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-page=watchlist]').click()">
       <div class="stat-label">Watchlist</div>
       <div class="stat-value accent">${watchlistCount}</div>
     </div>
@@ -2099,7 +2137,7 @@ function renderDashboard() {
     const cls = ld.change24h != null ? pctClass(ld.change24h) : '';
     const lookupId = w.type === 'crypto' ? w.coingeckoId : w.fmpSymbol;
     const scoreHtml = ld.score != null ? renderStars(ld.score, 11) + ' <span style="font-size:11px;color:var(--text3);">' + ld.score.toFixed(1) + '</span>' : '';
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="document.querySelector(\'[data-page=market]\').click();setTimeout(()=>showMarketDetail(\'' + w.type + '\',\'' + lookupId + '\'),100)">' +
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="document.querySelector(\'[data-page=watchlist]\').click();setTimeout(()=>showMarketDetail(\'' + w.type + '\',\'' + lookupId + '\'),100)">' +
       '<div style="display:flex;align-items:center;gap:8px;">' +
         (w.image ? '<img src="' + w.image + '" style="width:22px;height:22px;border-radius:50%;">' : '<div style="width:22px;height:22px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);">' + (w.symbol||'?')[0] + '</div>') +
         '<div><div style="font-size:13px;font-weight:600;">' + esc(w.name) + ' <span style="color:var(--text3);font-weight:400;font-size:11px;">' + (w.symbol||'') + '</span></div>' +
@@ -2108,7 +2146,7 @@ function renderDashboard() {
       '<div style="text-align:right;"><div style="font-size:13px;font-weight:600;">' + priceStr + '</div>' +
         (changeStr ? '<div style="font-size:11px;" class="' + cls + '">' + changeStr + '</div>' : '') +
       '</div></div>';
-  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No assets in watchlist yet.<br>Search Market Data to add.</div>';
+  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No assets in watchlist yet.<br>Go to Watchlist or Market Data to add.</div>';
 
   // Recent reports — up to 5
   const rSorted = [...DB.reports].sort((a, b) => (b.created || '').localeCompare(a.created || '')).slice(0, 5);
@@ -4026,12 +4064,13 @@ const PAGE_ALIASES = {
   roadmap: 'roadmap', milestones: 'roadmap', progress: 'roadmap', phases: 'roadmap',
   settings: 'settings', config: 'settings', preferences: 'settings', backup: 'settings',
   'market data': 'marketdata', market: 'marketdata', markets: 'marketdata', marketdata: 'marketdata',
-  'live data': 'marketdata', prices: 'marketdata', watchlist: 'marketdata', fundamentals: 'marketdata'
+  'live data': 'marketdata', prices: 'marketdata', fundamentals: 'marketdata',
+  watchlist: 'watchlist', 'watch list': 'watchlist', watching: 'watchlist', tracked: 'watchlist'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
-  research: 'Research Notes', templates: 'Templates', reports: 'Reports',
+  watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
   tasks: 'Tasks', roadmap: 'Roadmap', settings: 'Settings', marketdata: 'Market Data'
 };
 
@@ -4559,7 +4598,7 @@ function chatProcess(input) {
         const r = results[0];
         await addToWatchlist('crypto', r.id, r.symbol, r.name, r.thumb || '');
         chatAddMsg('bot', 'Added <strong>' + esc(r.name) + ' (' + r.symbol + ')</strong> to your watchlist. &#128200;',
-          [{ label: 'View watchlist', action: 'go to market data' }]);
+          [{ label: 'View watchlist', action: 'go to watchlist' }]);
       } else {
         chatAddMsg('bot', 'Could not find "<strong>' + esc(query) + '</strong>". Try the full name.');
       }
@@ -4796,7 +4835,8 @@ function buildPageSuggestions(page) {
     tasks: [{ label: 'New Task', action: 'new task' }, { label: 'My Tasks', action: 'my tasks' }, { label: 'High Priority', action: 'high priority' }],
     roadmap: [{ label: 'Go to Tasks', action: 'go to tasks' }, { label: 'Stats', action: 'stats' }],
     settings: [{ label: 'Export Backup', action: 'export' }, { label: 'Status', action: 'status' }],
-    marketdata: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Add to watchlist', action: 'watch ' }, { label: 'Refresh', action: 'go to market data' }]
+    watchlist: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Add to watchlist', action: 'watch ' }, { label: 'Refresh', action: 'go to watchlist' }],
+    marketdata: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Search Market', action: 'go to market data' }]
   };
   return suggestions[page] || [];
 }

@@ -40,6 +40,8 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - [x] Custom template persistence (localStorage) with Reset to Default
 - [x] Help page — visual 5-step research pipeline, detail cards, quick reference
 - [x] Redesigned Dashboard — watchlist, reports, tasks, projects at a glance + quick actions
+- [x] Dedicated Watchlist page (under Pipeline) — separated from Market Data
+- [x] Market Data = search/discovery, Watchlist = tracked assets with detail view
 
 ## Deploy
 - **Live URL:** https://jumparo1.github.io/JumpTools/fund-hq.html
@@ -49,6 +51,8 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - API keys stored in browser localStorage (per-domain, need re-entry if domain changes)
 
 ## Recent Changes
+- 2026-03-11: Dedicated Watchlist page (Pipeline section) — search, add, track assets with detail view, scores, refresh
+- 2026-03-11: Market Data simplified to search/discovery only, Watchlist is now its own page
 - 2026-03-11: Redesigned Dashboard — stats (watchlist/reports/tasks/projects), quick actions, top watchlist, recent reports, open tasks, recent projects
 - 2026-03-11: Template View mode (read-only preview) and Edit mode (modify titles, prompts, bullets, add/remove/reorder sections)
 - 2026-03-11: Custom template edits saved to localStorage with getTemplateDef() merge layer
