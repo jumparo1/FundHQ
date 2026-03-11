@@ -28,6 +28,13 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - [x] Settings: Save buttons for API keys, autocomplete=off to prevent browser autofill
 - [x] Logo click refreshes page
 - [x] Migrated from Netlify to GitHub Pages (free, no bandwidth limits)
+- [x] Hybrid fundamental scoring system (5-star quant + AI overlay)
+- [x] Research workspace — clickable templates open section-by-section editor
+- [x] 3 research templates: Crypto (18 sections), Stock (10), Quick Thesis (5)
+- [x] Per-section AI research — run individual or all sections with Claude
+- [x] Section prompts, bullet guides, progress tracking, enable/disable toggles
+- [x] Live market data + score card in workspace header (auto-fetched)
+- [x] Export workspace to report (Save as Report button)
 
 ## Deploy
 - **Live URL:** https://jumparo1.github.io/JumpTools/fund-hq.html
@@ -37,6 +44,14 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - API keys stored in browser localStorage (per-domain, need re-entry if domain changes)
 
 ## Recent Changes
+- 2026-03-11: Research workspace — templates are now clickable, open section-by-section editor with prompts, bullets, AI per-section
+- 2026-03-11: 3 templates: Crypto Research (18 sections), Stock Research (10), Quick Thesis (5)
+- 2026-03-11: Per-section AI: run Claude on individual sections or "Run All with AI" / "Fill Empty Only"
+- 2026-03-11: Workspace auto-fetches live market data + shows score card (quant scoring) in header
+- 2026-03-11: Export workspace sections as a formatted report (Save as Report)
+- 2026-03-11: Hybrid fundamental scoring: 5-star rating (crypto: momentum/liquidity/value/position/recovery, stock: valuation/profitability/health/momentum/yield)
+- 2026-03-11: Score stars on watchlist cards and market detail view
+- 2026-03-11: AI score overlay (±0.5★) from research reports via SCORE_JSON parsing
 - 2026-03-11: Migrated hosting from Netlify to GitHub Pages (hit Netlify bandwidth limit)
 - 2026-03-11: Simplified UI — removed Deal Flow and Research Notes from sidebar
 - 2026-03-11: 3-action search results: + Watch (watchlist), + Dump (project dump), AI Report

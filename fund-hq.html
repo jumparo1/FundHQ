@@ -146,6 +146,22 @@ tbody tr:hover { background: var(--bg3); }
 .score-dot { width: 20px; height: 20px; border-radius: 4px; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
 .score-dot.filled { background: var(--accent); color: white; }
 
+/* ===== SCORING SYSTEM ===== */
+.star-rating { display: inline-flex; gap: 1px; vertical-align: middle; line-height: 1; }
+.wc-score { margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.wc-score-num { font-size: 11px; color: var(--text3); font-weight: 600; }
+.score-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.sc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.sc-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.sc-num { font-size: 13px; color: var(--text2); font-weight: 600; }
+.sc-cats { display: flex; flex-direction: column; gap: 6px; }
+.sc-row { display: flex; align-items: center; gap: 8px; }
+.sc-label { font-size: 12px; color: var(--text2); width: 100px; flex-shrink: 0; }
+.sc-bar { flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.sc-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+.sc-val { font-size: 11px; color: var(--text3); width: 28px; text-align: right; font-weight: 600; }
+.sc-ai { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--accent2); font-style: italic; }
+
 /* ===== EMPTY STATE ===== */
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
 .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
@@ -187,6 +203,55 @@ tbody tr:hover { background: var(--bg3); }
 .template-sections { list-style: none; padding: 0; margin: 16px 0; }
 .template-sections li { font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
 .template-sections li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.template-card { cursor: pointer; }
+.template-card .tc-stats { display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: var(--text3); }
+.template-card .tc-stats span { display: flex; align-items: center; gap: 4px; }
+
+/* ===== RESEARCH WORKSPACE ===== */
+.rw-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); cursor: pointer; margin-bottom: 16px; padding: 6px 12px; border-radius: var(--radius-sm); background: var(--bg3); border: 1px solid var(--border); transition: all 0.15s; }
+.rw-back:hover { color: var(--text); background: var(--bg4); }
+.rw-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+.rw-header-left h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.rw-header-left p { font-size: 13px; color: var(--text2); }
+.rw-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.rw-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; padding: 12px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); flex-wrap: wrap; }
+.rw-toolbar .rw-search { flex: 1; min-width: 200px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 12px; color: var(--text); font-size: 13px; }
+.rw-toolbar .rw-search:focus { outline: none; border-color: var(--accent); }
+.rw-toolbar .sep { width: 1px; height: 24px; background: var(--border); }
+.rw-count { font-size: 12px; color: var(--text3); }
+.rw-section { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; transition: border-color 0.15s; }
+.rw-section:hover { border-color: var(--accent); }
+.rw-section.disabled { opacity: 0.5; }
+.rw-section-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; }
+.rw-section-head .rw-num { font-size: 11px; font-weight: 700; color: var(--accent2); background: var(--accent-bg); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rw-section-head .rw-title { font-size: 14px; font-weight: 600; flex: 1; }
+.rw-section-head .rw-toggle { font-size: 18px; color: var(--text3); transition: transform 0.2s; }
+.rw-section-head .rw-toggle.open { transform: rotate(90deg); }
+.rw-section-actions { display: flex; gap: 6px; align-items: center; }
+.rw-section-actions button { padding: 4px 10px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.rw-section-actions button:hover { background: var(--bg4); color: var(--text); }
+.rw-section-actions button.rw-ai-btn { border-color: var(--accent); color: var(--accent2); }
+.rw-section-actions button.rw-ai-btn:hover { background: var(--accent-bg); }
+.rw-section-body { padding: 0 16px 16px; display: none; }
+.rw-section-body.open { display: block; }
+.rw-prompt { font-size: 12px; color: var(--text3); font-style: italic; margin-bottom: 10px; padding: 8px 12px; background: var(--bg); border-radius: var(--radius-sm); border-left: 3px solid var(--accent); }
+.rw-bullets { list-style: none; padding: 0; margin: 0 0 12px; }
+.rw-bullets li { font-size: 13px; color: var(--text2); padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+.rw-bullets li::before { content: '\2022'; color: var(--accent2); font-weight: 700; margin-top: 1px; flex-shrink: 0; }
+.rw-content-area { width: 100%; min-height: 120px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; color: var(--text); font-size: 13px; line-height: 1.6; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; resize: vertical; }
+.rw-content-area:focus { outline: none; border-color: var(--accent); }
+.rw-content-area.filled { border-color: var(--green); background: rgba(16,185,129,0.04); }
+.rw-status { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.rw-status.empty { background: var(--bg4); color: var(--text3); }
+.rw-status.filled { background: var(--green-bg); color: var(--green); }
+.rw-status.ai { background: var(--purple-bg); color: var(--purple); }
+.rw-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.rw-progress-bar { flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.rw-progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.3s; }
+.rw-progress-text { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.rw-ai-status { padding: 12px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+.rw-ai-status .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ===== REPORT CARDS ===== */
 .report-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.15s; }
@@ -465,11 +530,16 @@ tbody tr:hover { background: var(--bg3); }
 
     <!-- ===== TEMPLATES ===== -->
     <div id="page-templates" class="page hidden">
-      <div class="page-header">
-        <h1>Templates</h1>
-        <p>Research frameworks for stocks and crypto. Click "Use Template" to start a new report.</p>
+      <!-- Gallery View -->
+      <div id="tpl-gallery">
+        <div class="page-header">
+          <h1>Research Templates</h1>
+          <p>Click a template to open the research workspace. Customize sections, run AI analysis, or fill manually.</p>
+        </div>
+        <div class="template-grid" id="templates-list"></div>
       </div>
-      <div class="template-grid" id="templates-list"></div>
+      <!-- Detail / Workspace View -->
+      <div id="tpl-workspace" style="display:none;"></div>
     </div>
 
     <!-- ===== REPORTS ===== -->
@@ -891,6 +961,127 @@ async function callClaude(prompt, model) {
   return data.content[0].text;
 }
 
+// ===== FUNDAMENTAL SCORING ENGINE =====
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+function roundHalf(v) { return Math.round(v * 2) / 2; }
+
+function computeCryptoScore(data) {
+  if (!data) return null;
+  const cats = [];
+  // 1. Momentum (weighted: 20% 24h, 30% 7d, 50% 30d)
+  const c24 = data.change24h || 0, c7 = data.change7d || 0, c30 = data.change30d || 0;
+  const momo = c24 * 0.2 + c7 * 0.3 + c30 * 0.5;
+  // Map: -30% → 0, 0% → 0.5, +30% → 1
+  cats.push({ name: 'Momentum', score: clamp01((momo + 30) / 60), icon: '\u{1F4C8}' });
+
+  // 2. Liquidity (Volume/MCap ratio)
+  const volMc = (data.volume24h && data.marketCap) ? data.volume24h / data.marketCap : 0;
+  // Map: 0% → 0, 5% → 0.5, 15%+ → 1
+  cats.push({ name: 'Liquidity', score: clamp01(volMc / 0.15), icon: '\u{1F4A7}' });
+
+  // 3. Value (FDV/MCap — lower is better)
+  const fdvMc = (data.fdv && data.marketCap) ? data.fdv / data.marketCap : 1;
+  // Map: 1.0x → 1, 2x → 0.6, 5x → 0, higher → 0
+  cats.push({ name: 'Value', score: clamp01(1 - (fdvMc - 1) / 4), icon: '\u{1F4B0}' });
+
+  // 4. Market Position (Rank — lower is better)
+  const rank = data.marketCapRank || 500;
+  // Map: #1 → 1, #50 → 0.75, #200 → 0.25, #500+ → 0
+  cats.push({ name: 'Position', score: clamp01(1 - (rank - 1) / 500), icon: '\u{1F3C6}' });
+
+  // 5. Recovery (ATH distance)
+  const athDrop = data.athChangePercent != null ? Math.abs(data.athChangePercent) : 90;
+  // Map: 0% from ATH → 1, -50% → 0.5, -100% → 0
+  cats.push({ name: 'Recovery', score: clamp01(1 - athDrop / 100), icon: '\u{1F4AA}' });
+
+  const avg = cats.reduce((s, c) => s + c.score, 0) / cats.length;
+  return { overall: roundHalf(avg * 5), categories: cats, type: 'quant', updatedAt: Date.now() };
+}
+
+function computeStockScore(data) {
+  if (!data) return null;
+  const cats = [];
+  // 1. Valuation (P/E — sweet spot 10-20)
+  const pe = data.pe;
+  let valScore = 0.5;
+  if (pe != null && pe > 0) {
+    if (pe >= 10 && pe <= 20) valScore = 1;
+    else if (pe < 10) valScore = 0.7; // maybe value trap
+    else if (pe <= 30) valScore = 0.6;
+    else if (pe <= 50) valScore = 0.3;
+    else valScore = 0.1;
+  } else if (pe != null && pe < 0) valScore = 0.1; // negative earnings
+  cats.push({ name: 'Valuation', score: valScore, icon: '\u{1F4B2}' });
+
+  // 2. Profitability (ROE)
+  const roe = data.roe; // already in %
+  let profScore = 0.5;
+  if (roe != null) {
+    if (roe >= 20) profScore = 1;
+    else if (roe >= 15) profScore = 0.8;
+    else if (roe >= 10) profScore = 0.6;
+    else if (roe >= 5) profScore = 0.4;
+    else profScore = 0.1;
+  }
+  cats.push({ name: 'Profitability', score: profScore, icon: '\u{1F4C8}' });
+
+  // 3. Health (D/E + Current Ratio)
+  const de = data.debtToEquity, cr = data.currentRatio;
+  let healthScore = 0.5;
+  if (de != null && cr != null) {
+    const deScore = de < 0.5 ? 1 : de < 1 ? 0.7 : de < 2 ? 0.4 : 0.1;
+    const crScore = cr > 2 ? 1 : cr > 1.5 ? 0.8 : cr > 1 ? 0.5 : 0.2;
+    healthScore = deScore * 0.5 + crScore * 0.5;
+  }
+  cats.push({ name: 'Health', score: healthScore, icon: '\u{1F3E5}' });
+
+  // 4. Momentum (52-week range position)
+  let momoScore = 0.5;
+  if (data.week52High && data.week52Low && data.price) {
+    const range = data.week52High - data.week52Low;
+    momoScore = range > 0 ? clamp01((data.price - data.week52Low) / range) : 0.5;
+  }
+  cats.push({ name: 'Momentum', score: momoScore, icon: '\u{1F680}' });
+
+  // 5. Yield (Dividend)
+  const dy = data.dividendYield || 0;
+  cats.push({ name: 'Yield', score: clamp01(dy / 5), icon: '\u{1F4B5}' });
+
+  const avg = cats.reduce((s, c) => s + c.score, 0) / cats.length;
+  return { overall: roundHalf(avg * 5), categories: cats, type: 'quant', updatedAt: Date.now() };
+}
+
+function renderStars(score, size) {
+  if (score == null) return '';
+  const s = size || 14;
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    if (score >= i) html += '<span style="color:#f59e0b;font-size:' + s + 'px;">\u2605</span>';
+    else if (score >= i - 0.5) html += '<span style="color:#f59e0b;font-size:' + s + 'px;">\u2BEA</span>';
+    else html += '<span style="color:var(--bg4);font-size:' + s + 'px;">\u2605</span>';
+  }
+  return '<span class="star-rating" title="' + score.toFixed(1) + '/5">' + html + '</span>';
+}
+
+function renderScoreCard(scoreData) {
+  if (!scoreData) return '';
+  const cats = scoreData.categories || [];
+  const barsHtml = cats.map(c => {
+    const pct = (c.score * 100).toFixed(0);
+    const color = c.score >= 0.7 ? 'var(--green)' : c.score >= 0.4 ? 'var(--yellow)' : 'var(--red)';
+    return '<div class="sc-row">' +
+      '<span class="sc-label">' + (c.icon || '') + ' ' + c.name + '</span>' +
+      '<div class="sc-bar"><div class="sc-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<span class="sc-val">' + (c.score * 5).toFixed(1) + '</span>' +
+    '</div>';
+  }).join('');
+  const aiNote = scoreData.aiAdjust ? '<div class="sc-ai">AI adjust: ' + (scoreData.aiAdjust > 0 ? '+' : '') + scoreData.aiAdjust.toFixed(1) + '\u2605 \u2014 ' + (scoreData.aiReason || '') + '</div>' : '';
+  return '<div class="score-card">' +
+    '<div class="sc-header"><span class="sc-title">\u{1F3AF} Fundamental Score</span>' + renderStars(scoreData.overall, 18) + '<span class="sc-num">' + scoreData.overall.toFixed(1) + '/5</span></div>' +
+    '<div class="sc-cats">' + barsHtml + '</div>' + aiNote +
+  '</div>';
+}
+
 function buildCryptoResearchPrompt(projectName, marketData) {
   let dataContext = '';
   if (marketData) {
@@ -1056,7 +1247,15 @@ One-liner:   [single sentence summary]
 ═══════════════════════════════════════════════════════
 18. X / SUBSTACK PREVIEW
 ═══════════════════════════════════════════════════════
-[Write a ~300 word engaging teaser for social media / newsletter. Hook the reader, highlight key findings, end with the verdict.]`;
+[Write a ~300 word engaging teaser for social media / newsletter. Hook the reader, highlight key findings, end with the verdict.]
+
+═══════════════════════════════════════════════════════
+AI SCORE ADJUSTMENT (REQUIRED)
+═══════════════════════════════════════════════════════
+After the report, on a NEW line, output EXACTLY this JSON block (no markdown fences):
+SCORE_JSON:{"aiAdjust": [number from -0.5 to 0.5], "reason": "[1 sentence explaining your qualitative adjustment]"}
+
+The adjustment reflects factors the quantitative data misses: team quality, narrative strength, upcoming catalysts, competitive moat, community strength. Positive = bullish qualitative factors, negative = bearish.`;
 }
 
 async function aiResearchCrypto() {
@@ -1095,10 +1294,39 @@ async function aiResearchCrypto() {
     const prompt = buildCryptoResearchPrompt(projectName, marketData);
     const result = await callClaude(prompt, model);
 
-    // 3. Insert result into content textarea
-    contentEl.value = result;
+    // 3. Parse AI score adjustment if present
+    let aiAdjust = null, aiReason = '';
+    const scoreMatch = result.match(/SCORE_JSON:\s*(\{[^}]+\})/);
+    if (scoreMatch) {
+      try {
+        const parsed = JSON.parse(scoreMatch[1]);
+        aiAdjust = Math.max(-0.5, Math.min(0.5, parsed.aiAdjust || 0));
+        aiReason = parsed.reason || '';
+      } catch {}
+    }
+    // Remove SCORE_JSON line from displayed content
+    const cleanResult = result.replace(/SCORE_JSON:\s*\{[^}]+\}/, '').trim();
+    contentEl.value = cleanResult;
 
-    if (statusEl) { statusEl.textContent = 'Research complete! Review and edit below.'; statusEl.style.color = 'var(--green)'; }
+    // 4. Compute and display combined score
+    if (marketData) {
+      const quantScore = computeCryptoScore(marketData);
+      if (quantScore && aiAdjust != null) {
+        const combined = roundHalf(Math.max(0, Math.min(5, quantScore.overall + aiAdjust)));
+        quantScore.overall = combined;
+        quantScore.aiAdjust = aiAdjust;
+        quantScore.aiReason = aiReason;
+        quantScore.type = 'hybrid';
+        // Store score on the report modal for later save
+        window._lastAiScore = quantScore;
+        if (statusEl) statusEl.innerHTML = 'Research complete! ' + renderStars(combined, 14) + ' <b>' + combined.toFixed(1) + '/5</b>' + (aiReason ? ' — ' + esc(aiReason) : '');
+        statusEl.style.color = 'var(--green)';
+      } else {
+        if (statusEl) { statusEl.textContent = 'Research complete! Review and edit below.'; statusEl.style.color = 'var(--green)'; }
+      }
+    } else {
+      if (statusEl) { statusEl.textContent = 'Research complete! Review and edit below.'; statusEl.style.color = 'var(--green)'; }
+    }
   } catch(e) {
     if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.color = 'var(--red)'; }
   } finally {
@@ -1265,7 +1493,8 @@ async function refreshWatchlist() {
     try {
       const data = await fetchCryptoData(cryptoItems[i].coingeckoId);
       if (data) {
-        cryptoItems[i].lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, fetchedAt: Date.now() };
+        const score = computeCryptoScore(data);
+        cryptoItems[i].lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, score: score ? score.overall : null, scoreBreakdown: score ? score.categories : null, fetchedAt: Date.now() };
         if (data.image) cryptoItems[i].image = data.image;
         if (firebaseReady && dbRef) dbRef.child('watchlist').child(cryptoItems[i].id).update({ lastData: cryptoItems[i].lastData, image: cryptoItems[i].image || null });
       }
@@ -1277,7 +1506,8 @@ async function refreshWatchlist() {
     try {
       const data = await fetchStockData(stockItems[i].fmpSymbol);
       if (data) {
-        stockItems[i].lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, pe: data.pe, fetchedAt: Date.now() };
+        const score = computeStockScore(data);
+        stockItems[i].lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, pe: data.pe, score: score ? score.overall : null, scoreBreakdown: score ? score.categories : null, fetchedAt: Date.now() };
         if (data.image) stockItems[i].image = data.image;
         if (firebaseReady && dbRef) dbRef.child('watchlist').child(stockItems[i].id).update({ lastData: stockItems[i].lastData, image: stockItems[i].image || null });
       }
@@ -1349,10 +1579,14 @@ function renderMarketDetail(data) {
     ]);
   }
   const changeHtml = data.change24h != null ? '<span class="wc-change ' + pctClass(data.change24h) + '" style="font-size:16px;">' + fmtPct(data.change24h) + '</span>' : '';
+  // Compute score for detail view
+  const scoreData = data.type === 'crypto' ? computeCryptoScore(data) : computeStockScore(data);
+  const scoreCardHtml = renderScoreCard(scoreData);
   detailEl.innerHTML = '<div class="metric-card">' +
     '<div class="mc-header">' + imgHtml + '<div><div class="mc-title">' + esc(data.name) + ' <span style="color:var(--text3);font-weight:400;">(' + data.symbol + ')</span></div>' +
     '<div class="mc-subtitle">' + (data.type === 'crypto' ? 'Cryptocurrency' : data.sector || 'Stock') + '</div></div></div>' +
     '<div class="mc-price-row"><span class="mc-big-price">$' + fmtNum(data.price) + '</span>' + changeHtml + '</div>' +
+    scoreCardHtml +
     '<div class="metric-grid">' + metricsHtml + '</div>' +
     '<div class="metric-actions">' +
     '<button class="btn btn-ghost btn-sm" onclick="createReportFromDetail()">&#128203; Create Report</button>' +
@@ -1389,6 +1623,7 @@ function renderMarketData() {
       '<div class="wc-price">' + priceStr + '</div>' +
       (changeStr ? '<div class="wc-change ' + cls + '">' + changeStr + '</div>' : '') +
       (keyMetric ? '<div class="wc-metric">' + keyMetric + '</div>' : '') +
+      (ld.score != null ? '<div class="wc-score">' + renderStars(ld.score, 12) + '<span class="wc-score-num">' + ld.score.toFixed(1) + '</span></div>' : '') +
       '</div>';
   }).join('');
 }
@@ -2291,28 +2526,510 @@ DISCLAIMER: This report was AI-generated with human edits. For informational pur
 const STOCK_SECTIONS = ['Executive Summary', 'Investment Thesis', 'Financial Analysis', 'Valuation', 'Catalysts & Growth Drivers', 'Risk Assessment', 'Competitive Landscape', 'Technical Analysis', 'Management & Governance', 'Recommendation & Action Plan'];
 const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Code & GitHub', 'Tokenomics', 'Backers & Funding', 'Competitive Landscape', 'Users, Growth & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources'];
 
-// ===== RENDER TEMPLATES =====
+// ===== STRUCTURED TEMPLATE DEFINITIONS =====
+const TEMPLATE_DEFS = {
+  crypto: {
+    id: 'crypto', label: 'Crypto Research', badge: 'CRYPTO / ALTCOINS', badgeClass: 'template-type-crypto',
+    desc: 'Deep-dive crypto analysis with 18 sections. On-chain metrics, tokenomics, whale tracking, social sentiment, and AI prompts.',
+    sections: [
+      { id: 'intro', title: 'Intro', prompt: 'Write a short, professional intro for this project. Mention its relevance to the narrative (DePIN/DeAI/DeFi/etc). 3 sentences max. Substack-friendly tone.', bullets: ['Warm intro — why this project matters', '2-3 sentences max, no fluff'] },
+      { id: 'overview', title: 'Overview', prompt: 'Provide a concise overview: what it does, key metrics (FDV, MCap, volume), and links (X, website, GitHub).', bullets: ['What it does (1-2 sentences)', 'FDV / Market Cap / FDV-MC Ratio', 'Volume 24h & 7d with % change', 'Links: X handle, website, GitHub'] },
+      { id: 'tldr', title: 'TL;DR', prompt: 'Summarize in 3 bullet points: what it is, how it works, why it matters.', bullets: ['What it is (simple definition)', 'How it works (1-liner mechanism)', 'Why it matters (value prop or opportunity)'] },
+      { id: 'product', title: 'Product & Features', prompt: 'Describe the core product, how miners/nodes contribute, validator mechanics, tech stack, and key real-world utility features.', bullets: ['Core product / what it builds', 'How miners/nodes contribute & rewards', 'How validators secure it', 'Tech stack (infra, SDKs, tools)', 'Key features & real-world utility'] },
+      { id: 'moats', title: 'Moats', prompt: 'Analyze competitive moats: data advantage, tech differentiation, trust barriers, incentive lock-in, and fork resistance.', bullets: ['Data Advantage (proprietary? feedback loops?)', 'Model/Tech Differentiation (unique architecture?)', 'Trust Barrier (transparent scoring?)', 'Incentive Lock-in (long-term alignment?)', 'Fork Resistance (easily cloned?)'] },
+      { id: 'team', title: 'Team', prompt: 'Research the team: founders, key experience, links, and credibility assessment.', bullets: ['Founders (names, roles, background)', 'Key experience (crypto, AI, Web2)', 'Links (X, LinkedIn, GitHub)', 'Credibility (track record, why this team?)'] },
+      { id: 'code', title: 'Code & GitHub', prompt: 'Audit the GitHub presence: repo count, activity, code structure, and red flags.', bullets: ['Repos (count, main org/repo link)', 'Activity (last commit, active devs)', 'Structure (modular? clean? docs? tests?)', 'Red flags (abandoned? copy-paste? no tests?)'] },
+      { id: 'tokenomics', title: 'Tokenomics', prompt: 'Break down token economics: supply, distribution, vesting/unlocks, emissions, staking yield, and protocol revenue.', bullets: ['Launch date & price vs current', 'Circulating / Max supply & FDV', 'Distribution (Team/Investors/Community/Treasury %)', 'Next unlock (date, amount, % of circ)', 'Emissions (daily/weekly/yearly, inflation rate)', 'Staking (% staked, real yield, 30d revenue)'] },
+      { id: 'backers', title: 'Backers & Funding', prompt: 'List lead investors, round details, notable backers, and funding status.', bullets: ['Lead investors', 'Round details (stage, size, valuation)', 'Notable backers (angels, DAOs, funds)', 'Status (early/stealth/well-funded/no data)'] },
+      { id: 'competitive', title: 'Competitive Landscape', prompt: 'Map the competitive landscape: narrative fit, 3 peer comparisons (name, sector, FDV, edge), and competitive advantages.', bullets: ['Narrative fit (macro theme, why relevant now)', 'Peer 1-3 (name, sector, FDV, edge, narrative)', 'Competitive edge (hard-to-replicate features)', 'Asymmetric upside potential'] },
+      { id: 'growth', title: 'Users, Growth & Revenue', prompt: 'Analyze usage metrics (miners, validators, DAU, TVL), revenue model, and demand side economics.', bullets: ['Active miners/nodes, validators, DAU, TVL', '30d trend (rising/flat/falling)', 'Revenue model (rewards, fees, demand-side)', 'On-chain revenue (real or emission-driven?)'] },
+      { id: 'sentiment', title: 'Social Sentiment', prompt: 'Gauge community sentiment, influencer engagement, public alpha, and FUD signals.', bullets: ['Community vibe (positive/hyped/skeptical/quiet)', 'Influencer engagement (who, bullish/bearish?)', 'Public alpha (leaks, insider threads)', 'FUD/warnings (recurring CT concerns)', 'Signal Rating (Strong/Moderate/Weak)'] },
+      { id: 'whales', title: 'Top Holders & Whale Activity', prompt: 'Analyze top holder concentration, whale wallet behavior, and top trader PnL.', bullets: ['Top 10/30 concentration %', 'Whale wallets (flagged as whale/team/CEX)', 'Behavior (accumulating/distributing/idle)', 'Red flags (centralization, sell-offs, unknown multisigs)', 'Top trader entry clusters & PnL'] },
+      { id: 'technical', title: 'Chart & Technical Analysis', prompt: 'Provide technical analysis: trend, support/resistance, entry zones, stop loss, volume/momentum, targets, BTC pair strength, and market structure.', bullets: ['Trend (direction + strength)', 'Support / Resistance levels', 'Entry zone (breakout/retest/DCA)', 'Stop loss & targets (TP1, TP2)', 'BTC Pair (outperforming/underperforming)', 'Market Structure (Accumulation/Markup/Distribution/Markdown)'] },
+      { id: 'catalysts', title: 'Catalysts & FUD', prompt: 'List positive catalysts (launches, listings, upgrades) and risks/FUD (regulatory, tech failure, competition).', bullets: ['Positive catalysts (product launch, listing, partnership)', 'Upcoming events (unlock, airdrop, mainnet)', 'Risks (regulatory, tech failure, team drama)', 'FUD (whale dumping, low usage, competitor launch)'] },
+      { id: 'thesis', title: 'Final Thesis', prompt: 'Write the final bull/bear thesis with 3 strengths and 3 risks.', bullets: ['Bullish: 3 key strengths', 'Bearish: 3 key risks', 'Net assessment & conviction reasoning'] },
+      { id: 'signal', title: 'Signal', prompt: 'Provide final verdict (BUY/SPECULATE/HOLD-WAIT/AVOID), conviction level, timeframe, and a one-liner summary.', bullets: ['Verdict (BUY/SPECULATE/HOLD-WAIT/AVOID)', 'Conviction (High/Medium/Low)', 'Timeframe (Short/Medium/Long)', 'One-liner core reason'] },
+      { id: 'sources', title: 'Sources', prompt: 'List all data sources used for this research.', bullets: ['CoinGecko, DefiLlama, Artemis, TokenTerminal', 'Dexscreener, DropsTab, SpotOnChain, Etherscan', 'Holderscan, Crunchbase, CoinCarp, CryptoRank', 'Official Docs, GitHub, X (Twitter)'] }
+    ]
+  },
+  stock: {
+    id: 'stock', label: 'Stock Research', badge: 'STOCK / EQUITY', badgeClass: 'template-type-stock',
+    desc: 'Comprehensive equity analysis framework with 10 structured sections covering fundamentals, valuation, catalysts, risks, and trade setup.',
+    sections: [
+      { id: 'summary', title: 'Executive Summary', prompt: 'Provide company overview: name, ticker, exchange, current price, market cap, 52-week range. One paragraph on the business and primary recommendation.', bullets: ['Company name, ticker, exchange', 'Current price, market cap, 52-week range', 'Business overview (1 paragraph)', 'Primary investment recommendation'] },
+      { id: 'thesis', title: 'Investment Thesis', prompt: 'Present the bull case (3 arguments), bear case (3 arguments), and base case scenario with expected price target and probability-weighted return.', bullets: ['Bull case: 3 key arguments (growth, margins, moat)', 'Bear case: 3 key arguments (competition, regulation, valuation)', 'Base case: most likely 12-18 month outcome', 'Probability-weighted expected return'] },
+      { id: 'financials', title: 'Financial Analysis', prompt: 'Analyze income statement (revenue, margins, EPS, FCF), balance sheet (assets, debt, cash, ratios), cash flow, and key ratios (ROE, ROA, ROIC).', bullets: ['Revenue, growth, gross/operating/net margins', 'EPS, FCF, FCF margin/yield', 'Total debt, cash, D/E, current ratio', 'Operating CF, CapEx, FCF', 'ROE, ROA, ROIC, interest coverage'] },
+      { id: 'valuation', title: 'Valuation', prompt: 'Perform relative valuation (P/E, EV/EBITDA, P/S, PEG vs sector), DCF summary (WACC, terminal growth, implied price), and scenario analysis (bear/base/bull).', bullets: ['P/E (TTM & Forward) vs sector', 'EV/EBITDA, P/S, PEG, P/FCF', 'DCF: WACC, terminal growth, implied price', 'Scenario analysis: bear/base/bull with probabilities', 'Probability-weighted target & expected return'] },
+      { id: 'catalysts', title: 'Catalysts & Growth Drivers', prompt: 'Identify catalysts by timeframe: near-term (0-6mo), medium-term (6-18mo), and long-term (18mo+) growth drivers.', bullets: ['Near-term: earnings, product launch, regulatory', 'Medium-term: market expansion, margin opportunity', 'Long-term: secular trends, tech disruption, demographics'] },
+      { id: 'risks', title: 'Risk Assessment', prompt: 'Assess company risks, macro/sector risks, and tail risks. For each: impact level, probability, and mitigation strategy.', bullets: ['Company risks (execution, competition) with impact/probability', 'Macro/sector risks (rates, recession, regulation)', 'Tail risks (black swan scenarios)', 'Mitigation strategies for key risks'] },
+      { id: 'competitive', title: 'Competitive Landscape', prompt: 'Compare with 3 peers (name, mkt cap, P/E, rev growth, margin). Assess moat type, trend, and score brand/switching costs/network effects/cost advantage/IP.', bullets: ['3 peer comparisons (mkt cap, P/E, growth, margin)', 'Moat type (none/narrow/wide) & trend', 'Brand, switching costs, network effects (1-5)', 'Cost advantage, IP strength (1-5)'] },
+      { id: 'technical', title: 'Technical Analysis', prompt: 'Analyze price action: 52W high/low, support/resistance, moving averages (50/200 DMA), RSI, MACD, volume, and overall trend direction.', bullets: ['52-week high/low, support/resistance levels', '50-Day & 200-Day moving averages', 'RSI, MACD signal, volume profile', 'Trend direction & strength'] },
+      { id: 'management', title: 'Management & Governance', prompt: 'Evaluate CEO/CFO track record, board independence, insider/institutional ownership, ESG, compensation alignment, and red flags.', bullets: ['CEO: tenure, track record, alignment', 'CFO: capital allocation quality', 'Board independence %, insider/institutional ownership', 'ESG score, compensation alignment, red flags'] },
+      { id: 'recommendation', title: 'Recommendation & Action Plan', prompt: 'Final rating (Strong Buy to Strong Sell), conviction level, position sizing, entry/exit strategy, monitoring triggers, and review schedule.', bullets: ['Final rating & conviction & R/R score', 'Position sizing (% of portfolio, max size)', 'Entry strategy (limit/market, scale-in levels)', 'Stop loss & take profit with R/R ratio', 'Monitoring triggers (re-evaluate if / exit if)', 'Next review date & frequency'] }
+    ]
+  },
+  quick: {
+    id: 'quick', label: 'Quick Thesis', badge: 'QUICK THESIS', badgeClass: 'template-type-crypto',
+    desc: 'Fast 5-section analysis for rapid investment decisions. Great for initial screening before a full deep-dive.',
+    sections: [
+      { id: 'what', title: 'What Is It?', prompt: 'Explain what this project/company does in 2-3 sentences. Focus on the core value proposition and target market.', bullets: ['Core business in plain English', 'Target market / users', 'Key differentiator'] },
+      { id: 'why', title: 'Why Now?', prompt: 'Explain the timing: why is this interesting right now? What catalyst, trend, or narrative makes this relevant today?', bullets: ['Current catalyst or trigger', 'Narrative / sector momentum', 'Timing advantage (early/inflection/momentum)'] },
+      { id: 'numbers', title: 'Key Numbers', prompt: 'List the most important financial metrics: valuation, growth, profitability, and any standout data points.', bullets: ['Valuation (MCap, FDV, P/E)', 'Growth metrics (revenue growth, user growth)', 'Profitability (margins, FCF, yield)', 'Standout metric that defines the opportunity'] },
+      { id: 'risks', title: 'What Could Go Wrong?', prompt: 'List the top 3 risks that could invalidate this thesis. Be honest and specific.', bullets: ['Risk #1 (biggest threat)', 'Risk #2 (competitive or macro)', 'Risk #3 (execution or technical)'] },
+      { id: 'verdict', title: 'Verdict & Setup', prompt: 'Final call: buy/watch/avoid, conviction level, entry zone, stop loss, and target. One-line summary of the thesis.', bullets: ['Verdict (Buy/Watch/Avoid)', 'Conviction (High/Medium/Low)', 'Entry zone & stop loss', 'Target & R/R ratio', 'One-line thesis summary'] }
+    ]
+  }
+};
+
+// Active workspace state
+let _rwState = null; // { templateId, projectName, sections: [{...def, content, status, enabled}], marketData }
+
+// ===== RENDER TEMPLATES (Gallery) =====
 function renderTemplates() {
-  document.getElementById('templates-list').innerHTML = `
-    <div class="template-card">
-      <span class="template-type template-type-stock">STOCK / EQUITY</span>
-      <h3>Stock Research Template</h3>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Comprehensive equity analysis framework with 10 structured sections covering fundamentals, valuation, catalysts, risks, and trade setup.</p>
+  const tpls = Object.values(TEMPLATE_DEFS);
+  document.getElementById('templates-list').innerHTML = tpls.map(t => `
+    <div class="template-card" onclick="openTemplateWorkspace('${t.id}')">
+      <span class="template-type ${t.badgeClass}">${t.badge}</span>
+      <h3>${t.label}</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">${t.desc}</p>
       <ul class="template-sections">
-        ${STOCK_SECTIONS.map(s => `<li>${s}</li>`).join('')}
+        ${t.sections.slice(0, 6).map(s => `<li>${s.title}</li>`).join('')}
+        ${t.sections.length > 6 ? `<li style="color:var(--accent2);">+ ${t.sections.length - 6} more sections</li>` : ''}
       </ul>
-      <button class="btn btn-primary" onclick="useTemplate('stock')">Use Template</button>
+      <div class="tc-stats">
+        <span>&#128221; ${t.sections.length} sections</span>
+        <span>&#129302; AI-ready prompts</span>
+        <span>&#9998; Manual + Auto</span>
+      </div>
     </div>
-    <div class="template-card">
-      <span class="template-type template-type-crypto">CRYPTO / ALTCOINS</span>
-      <h3>Crypto Research Template</h3>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Deep-dive crypto analysis with 18 sections. Includes AI prompt guides for Claude and Grok, on-chain metrics, tokenomics, whale tracking, and social sentiment.</p>
-      <ul class="template-sections">
-        ${CRYPTO_SECTIONS.map(s => `<li>${s}</li>`).join('')}
-      </ul>
-      <button class="btn btn-primary" onclick="useTemplate('crypto')">Use Template</button>
+  `).join('');
+  // show gallery, hide workspace
+  document.getElementById('tpl-gallery').style.display = '';
+  document.getElementById('tpl-workspace').style.display = 'none';
+}
+
+// ===== OPEN TEMPLATE WORKSPACE =====
+function openTemplateWorkspace(templateId, projectName) {
+  const tpl = TEMPLATE_DEFS[templateId];
+  if (!tpl) return;
+  if (!projectName) {
+    const placeholder = templateId === 'stock' ? 'e.g. Tesla (TSLA)' : templateId === 'crypto' ? 'e.g. Ethereum (ETH)' : 'e.g. Bitcoin (BTC)';
+    projectName = prompt('Enter the name of the project/company:', '');
+    if (!projectName || !projectName.trim()) return;
+    projectName = projectName.trim();
+  }
+  // Initialize workspace state
+  _rwState = {
+    templateId, projectName,
+    sections: tpl.sections.map(s => ({ ...s, content: '', status: 'empty', enabled: true })),
+    marketData: null, aiModel: 'claude-haiku-4-5-20251001'
+  };
+  // Try to fetch market data in background
+  rwFetchMarketData(projectName, templateId);
+  renderWorkspace();
+}
+
+async function rwFetchMarketData(name, type) {
+  try {
+    if (type === 'stock') {
+      const results = await searchStocks(name);
+      if (results && results.length > 0) {
+        _rwState.marketData = await fetchStockData(results[0].symbol);
+        renderWorkspaceHeader();
+      }
+    } else {
+      const results = await searchCrypto(name);
+      if (results && results.length > 0) {
+        _rwState.marketData = await fetchCryptoData(results[0].id);
+        renderWorkspaceHeader();
+      }
+    }
+  } catch (e) { console.log('Market data fetch failed:', e); }
+}
+
+function renderWorkspace() {
+  if (!_rwState) return;
+  const ws = document.getElementById('tpl-workspace');
+  const gallery = document.getElementById('tpl-gallery');
+  gallery.style.display = 'none';
+  ws.style.display = '';
+  ws.innerHTML = `
+    <div class="rw-back" onclick="closeWorkspace()">&#8592; Back to Templates</div>
+    <div id="rw-header-area"></div>
+    <div id="rw-ai-status-area"></div>
+    <div id="rw-progress-area"></div>
+    <div class="rw-toolbar">
+      <input class="rw-search" type="text" placeholder="Filter sections..." oninput="rwFilterSections(this.value)">
+      <div class="sep"></div>
+      <button class="btn btn-ghost btn-sm" onclick="rwToggleAll(true)" title="Expand all">&#9660; Expand All</button>
+      <button class="btn btn-ghost btn-sm" onclick="rwToggleAll(false)" title="Collapse all">&#9650; Collapse All</button>
+      <div class="sep"></div>
+      <span class="rw-count" id="rw-section-count"></span>
+    </div>
+    <div id="rw-sections-list"></div>
+  `;
+  renderWorkspaceHeader();
+  renderWorkspaceSections();
+  updateRwProgress();
+}
+
+function renderWorkspaceHeader() {
+  if (!_rwState) return;
+  const tpl = TEMPLATE_DEFS[_rwState.templateId];
+  const md = _rwState.marketData;
+  const hasKey = !!getAnthropicKey();
+  let marketInfo = '';
+  if (md) {
+    const scoreData = _rwState.templateId === 'stock' ? computeStockScore(md) : computeCryptoScore(md);
+    const priceStr = md.price ? '$' + fmtNum(md.price) : '';
+    const changeStr = md.change24h != null ? ` (${md.change24h >= 0 ? '+' : ''}${md.change24h.toFixed(1)}%)` : '';
+    const mcapStr = md.marketCap ? ' · MCap $' + fmtBigNum(md.marketCap) : '';
+    marketInfo = `<div style="display:flex;align-items:center;gap:10px;margin-top:6px;font-size:13px;">
+      ${md.image ? `<img src="${md.image}" style="width:20px;height:20px;border-radius:50%;">` : ''}
+      <span style="color:var(--text);">${priceStr}</span>
+      <span style="color:${md.change24h >= 0 ? 'var(--green)' : 'var(--red)'};">${changeStr}</span>
+      <span style="color:var(--text3);">${mcapStr}</span>
+      ${scoreData ? `<span style="margin-left:8px;">${renderStars(scoreData.overall, 12)}</span><span style="font-size:11px;color:var(--text3);">${scoreData.overall}/5</span>` : ''}
+    </div>`;
+  }
+  document.getElementById('rw-header-area').innerHTML = `
+    <div class="rw-header">
+      <div class="rw-header-left">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="template-type ${tpl.badgeClass}">${tpl.badge}</span>
+        </div>
+        <h1 style="margin-top:6px;">${esc(_rwState.projectName)}</h1>
+        <p>${tpl.label} · ${_rwState.sections.length} sections</p>
+        ${marketInfo}
+      </div>
+      <div class="rw-actions">
+        ${hasKey ? `
+          <select id="rw-model-select" style="padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            ${AI_MODELS.map(m => `<option value="${m.id}" ${m.id === _rwState.aiModel ? 'selected' : ''}>${m.label}</option>`).join('')}
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="rwRunAllAI()" id="rw-run-all-btn">&#129302; Run All with AI</button>
+          <button class="btn btn-ghost btn-sm" onclick="rwRunEmptyAI()">&#9889; Fill Empty Only</button>
+        ` : `<span style="font-size:12px;color:var(--text3);">Add Anthropic API key in <a href="#" onclick="event.preventDefault();document.querySelector('[data-page=settings]').click();" style="color:var(--accent);">Settings</a> for AI</span>`}
+        <button class="btn btn-primary btn-sm" onclick="rwExportAsReport()">&#128190; Save as Report</button>
+      </div>
     </div>
   `;
+}
+
+function renderWorkspaceSections(filter) {
+  if (!_rwState) return;
+  const f = (filter || '').toLowerCase();
+  const container = document.getElementById('rw-sections-list');
+  const enabledCount = _rwState.sections.filter(s => s.enabled).length;
+  document.getElementById('rw-section-count').textContent = `${enabledCount}/${_rwState.sections.length} sections enabled`;
+
+  container.innerHTML = _rwState.sections.map((s, i) => {
+    if (f && !s.title.toLowerCase().includes(f) && !s.id.toLowerCase().includes(f)) return '';
+    const statusClass = s.content.trim() ? (s.status === 'ai' ? 'ai' : 'filled') : 'empty';
+    const statusLabel = s.content.trim() ? (s.status === 'ai' ? '&#129302; AI' : '&#9989; Filled') : '&#9744; Empty';
+    return `
+      <div class="rw-section ${s.enabled ? '' : 'disabled'}" id="rw-sec-${i}">
+        <div class="rw-section-head" onclick="rwToggleSection(${i})">
+          <span class="rw-num">${i + 1}</span>
+          <span class="rw-title">${esc(s.title)}</span>
+          <span class="rw-status ${statusClass}">${statusLabel}</span>
+          <div class="rw-section-actions" onclick="event.stopPropagation();">
+            <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer;">
+              <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="rwToggleEnabled(${i}, this.checked)"> On
+            </label>
+            ${getAnthropicKey() ? `<button class="rw-ai-btn" onclick="rwRunSectionAI(${i})">&#129302; AI</button>` : ''}
+            <button onclick="rwClearSection(${i})">Clear</button>
+          </div>
+          <span class="rw-toggle ${s._open ? 'open' : ''}">&#9654;</span>
+        </div>
+        <div class="rw-section-body ${s._open ? 'open' : ''}">
+          <div class="rw-prompt">&#128161; <strong>Prompt:</strong> ${esc(s.prompt)}</div>
+          <ul class="rw-bullets">
+            ${s.bullets.map(b => `<li>${esc(b)}</li>`).join('')}
+          </ul>
+          <textarea class="rw-content-area ${s.content.trim() ? 'filled' : ''}" id="rw-ta-${i}"
+            placeholder="Write your analysis here or click AI to auto-fill..."
+            oninput="rwUpdateContent(${i}, this.value)">${esc(s.content)}</textarea>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateRwProgress() {
+  if (!_rwState) return;
+  const enabled = _rwState.sections.filter(s => s.enabled);
+  const filled = enabled.filter(s => s.content.trim());
+  const pct = enabled.length ? Math.round((filled.length / enabled.length) * 100) : 0;
+  document.getElementById('rw-progress-area').innerHTML = `
+    <div class="rw-progress">
+      <div class="rw-progress-bar"><div class="rw-progress-fill" style="width:${pct}%"></div></div>
+      <span class="rw-progress-text">${filled.length}/${enabled.length} sections complete (${pct}%)</span>
+    </div>
+  `;
+}
+
+// ===== WORKSPACE INTERACTIONS =====
+function rwToggleSection(idx) {
+  _rwState.sections[idx]._open = !_rwState.sections[idx]._open;
+  const sec = document.getElementById('rw-sec-' + idx);
+  const body = sec.querySelector('.rw-section-body');
+  const toggle = sec.querySelector('.rw-toggle');
+  body.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+function rwToggleAll(open) {
+  _rwState.sections.forEach((s, i) => { s._open = open; });
+  renderWorkspaceSections();
+}
+
+function rwFilterSections(q) { renderWorkspaceSections(q); }
+
+function rwToggleEnabled(idx, enabled) {
+  _rwState.sections[idx].enabled = enabled;
+  document.getElementById('rw-sec-' + idx).classList.toggle('disabled', !enabled);
+  updateRwProgress();
+}
+
+function rwUpdateContent(idx, val) {
+  _rwState.sections[idx].content = val;
+  if (val.trim() && _rwState.sections[idx].status === 'empty') _rwState.sections[idx].status = 'manual';
+  const ta = document.getElementById('rw-ta-' + idx);
+  ta.classList.toggle('filled', !!val.trim());
+  // Update status badge
+  const sec = document.getElementById('rw-sec-' + idx);
+  const badge = sec.querySelector('.rw-status');
+  if (val.trim()) {
+    badge.className = 'rw-status ' + (_rwState.sections[idx].status === 'ai' ? 'ai' : 'filled');
+    badge.innerHTML = _rwState.sections[idx].status === 'ai' ? '&#129302; AI' : '&#9989; Filled';
+  } else {
+    badge.className = 'rw-status empty';
+    badge.innerHTML = '&#9744; Empty';
+    _rwState.sections[idx].status = 'empty';
+  }
+  updateRwProgress();
+}
+
+function rwClearSection(idx) {
+  _rwState.sections[idx].content = '';
+  _rwState.sections[idx].status = 'empty';
+  const ta = document.getElementById('rw-ta-' + idx);
+  if (ta) { ta.value = ''; ta.classList.remove('filled'); }
+  const sec = document.getElementById('rw-sec-' + idx);
+  const badge = sec.querySelector('.rw-status');
+  badge.className = 'rw-status empty';
+  badge.innerHTML = '&#9744; Empty';
+  updateRwProgress();
+}
+
+function closeWorkspace() {
+  _rwState = null;
+  renderTemplates();
+}
+
+// ===== AI RESEARCH PER SECTION =====
+async function rwRunSectionAI(idx) {
+  const key = getAnthropicKey();
+  if (!key) return alert('Add your Anthropic API key in Settings first.');
+  const s = _rwState.sections[idx];
+  if (!s.enabled) return;
+  const modelEl = document.getElementById('rw-model-select');
+  const model = modelEl ? modelEl.value : 'claude-haiku-4-5-20251001';
+
+  // Show loading state
+  const sec = document.getElementById('rw-sec-' + idx);
+  const badge = sec.querySelector('.rw-status');
+  badge.className = 'rw-status ai';
+  badge.innerHTML = '&#8987; Running...';
+
+  // Open section if closed
+  if (!s._open) { rwToggleSection(idx); }
+
+  try {
+    const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData);
+    const result = await callClaude(prompt, model);
+    _rwState.sections[idx].content = result;
+    _rwState.sections[idx].status = 'ai';
+    const ta = document.getElementById('rw-ta-' + idx);
+    if (ta) { ta.value = result; ta.classList.add('filled'); }
+    badge.className = 'rw-status ai';
+    badge.innerHTML = '&#129302; AI';
+  } catch (e) {
+    badge.className = 'rw-status empty';
+    badge.innerHTML = '&#10060; Error';
+    console.error('AI section error:', e);
+    alert('AI error: ' + e.message);
+  }
+  updateRwProgress();
+}
+
+async function rwRunAllAI() {
+  const key = getAnthropicKey();
+  if (!key) return alert('Add your Anthropic API key in Settings first.');
+  const modelEl = document.getElementById('rw-model-select');
+  const model = modelEl ? modelEl.value : 'claude-haiku-4-5-20251001';
+  _rwState.aiModel = model;
+
+  const enabled = _rwState.sections.map((s, i) => ({ s, i })).filter(x => x.s.enabled);
+  const statusArea = document.getElementById('rw-ai-status-area');
+  const runBtn = document.getElementById('rw-run-all-btn');
+  if (runBtn) { runBtn.disabled = true; runBtn.innerHTML = '&#8987; Running...'; }
+
+  for (let k = 0; k < enabled.length; k++) {
+    const { s, i } = enabled[k];
+    statusArea.innerHTML = `<div class="rw-ai-status"><div class="spinner"></div> Researching section ${k+1}/${enabled.length}: <strong>${esc(s.title)}</strong>...</div>`;
+    try {
+      const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData);
+      const result = await callClaude(prompt, model);
+      _rwState.sections[i].content = result;
+      _rwState.sections[i].status = 'ai';
+      // Update UI
+      const ta = document.getElementById('rw-ta-' + i);
+      if (ta) { ta.value = result; ta.classList.add('filled'); }
+      const sec = document.getElementById('rw-sec-' + i);
+      if (sec) {
+        const badge = sec.querySelector('.rw-status');
+        badge.className = 'rw-status ai';
+        badge.innerHTML = '&#129302; AI';
+      }
+      updateRwProgress();
+    } catch (e) {
+      console.error('AI error on section ' + s.title + ':', e);
+      const sec = document.getElementById('rw-sec-' + i);
+      if (sec) {
+        const badge = sec.querySelector('.rw-status');
+        badge.className = 'rw-status empty';
+        badge.innerHTML = '&#10060; Error';
+      }
+    }
+  }
+  statusArea.innerHTML = `<div class="rw-ai-status" style="border-color:var(--green);"><span style="color:var(--green);">&#9989;</span> All ${enabled.length} sections complete!</div>`;
+  setTimeout(() => { statusArea.innerHTML = ''; }, 5000);
+  if (runBtn) { runBtn.disabled = false; runBtn.innerHTML = '&#129302; Run All with AI'; }
+}
+
+async function rwRunEmptyAI() {
+  const key = getAnthropicKey();
+  if (!key) return alert('Add your Anthropic API key in Settings first.');
+  const modelEl = document.getElementById('rw-model-select');
+  const model = modelEl ? modelEl.value : 'claude-haiku-4-5-20251001';
+  _rwState.aiModel = model;
+
+  const empty = _rwState.sections.map((s, i) => ({ s, i })).filter(x => x.s.enabled && !x.s.content.trim());
+  if (!empty.length) return alert('All enabled sections already have content!');
+
+  const statusArea = document.getElementById('rw-ai-status-area');
+
+  for (let k = 0; k < empty.length; k++) {
+    const { s, i } = empty[k];
+    statusArea.innerHTML = `<div class="rw-ai-status"><div class="spinner"></div> Filling section ${k+1}/${empty.length}: <strong>${esc(s.title)}</strong>...</div>`;
+    try {
+      const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData);
+      const result = await callClaude(prompt, model);
+      _rwState.sections[i].content = result;
+      _rwState.sections[i].status = 'ai';
+      const ta = document.getElementById('rw-ta-' + i);
+      if (ta) { ta.value = result; ta.classList.add('filled'); }
+      const sec = document.getElementById('rw-sec-' + i);
+      if (sec) {
+        const badge = sec.querySelector('.rw-status');
+        badge.className = 'rw-status ai';
+        badge.innerHTML = '&#129302; AI';
+      }
+      updateRwProgress();
+    } catch (e) {
+      console.error('AI error on section ' + s.title + ':', e);
+    }
+  }
+  statusArea.innerHTML = `<div class="rw-ai-status" style="border-color:var(--green);"><span style="color:var(--green);">&#9989;</span> Filled ${empty.length} empty sections!</div>`;
+  setTimeout(() => { statusArea.innerHTML = ''; }, 5000);
+}
+
+function buildSectionPrompt(section, projectName, templateType, marketData) {
+  let ctx = `You are a professional investment analyst. Write the "${section.title}" section for a research report on ${projectName}.\n\n`;
+  ctx += `TASK: ${section.prompt}\n\n`;
+  ctx += `BULLET POINTS TO COVER:\n`;
+  section.bullets.forEach(b => { ctx += `- ${b}\n`; });
+  ctx += '\n';
+
+  if (marketData) {
+    ctx += '--- LIVE MARKET DATA ---\n';
+    if (marketData.price) ctx += `Price: $${fmtNum(marketData.price)}\n`;
+    if (marketData.marketCap) ctx += `Market Cap: $${fmtBigNum(marketData.marketCap)}\n`;
+    if (marketData.fdv) ctx += `FDV: $${fmtBigNum(marketData.fdv)}\n`;
+    if (marketData.volume24h) ctx += `Volume 24h: $${fmtBigNum(marketData.volume24h)}\n`;
+    if (marketData.change24h != null) ctx += `24h Change: ${marketData.change24h.toFixed(2)}%\n`;
+    if (marketData.change7d != null) ctx += `7d Change: ${marketData.change7d.toFixed(2)}%\n`;
+    if (marketData.change30d != null) ctx += `30d Change: ${marketData.change30d.toFixed(2)}%\n`;
+    if (marketData.pe) ctx += `P/E Ratio: ${marketData.pe.toFixed(1)}\n`;
+    if (marketData.roe) ctx += `ROE: ${(marketData.roe * 100).toFixed(1)}%\n`;
+    if (marketData.debtToEquity != null) ctx += `D/E Ratio: ${marketData.debtToEquity.toFixed(2)}\n`;
+    if (marketData.divYield != null) ctx += `Div Yield: ${(marketData.divYield * 100).toFixed(2)}%\n`;
+    if (marketData.circulatingSupply) ctx += `Circulating Supply: ${fmtBigNum(marketData.circulatingSupply)}\n`;
+    if (marketData.totalSupply) ctx += `Total Supply: ${fmtBigNum(marketData.totalSupply)}\n`;
+    if (marketData.athChangePercent != null) ctx += `ATH Change: ${marketData.athChangePercent.toFixed(1)}%\n`;
+    if (marketData.marketCapRank) ctx += `Rank: #${marketData.marketCapRank}\n`;
+    ctx += '---\n\n';
+  }
+
+  ctx += 'RULES:\n';
+  ctx += '- Be specific and data-driven. Use real numbers where available.\n';
+  ctx += '- Be concise but thorough. Use bullet points for clarity.\n';
+  ctx += '- If data is unavailable, note it as [DATA NEEDED] rather than making it up.\n';
+  ctx += '- Write in a professional analyst tone suitable for a fund research memo.\n';
+  ctx += '- Do NOT include the section title/header — just the content.\n';
+  return ctx;
+}
+
+// ===== EXPORT WORKSPACE AS REPORT =====
+function rwExportAsReport() {
+  if (!_rwState) return;
+  const enabled = _rwState.sections.filter(s => s.enabled);
+  const filled = enabled.filter(s => s.content.trim());
+  if (!filled.length) return alert('No sections have content yet. Fill in some sections first (manually or with AI).');
+
+  // Build report content from sections
+  const tpl = TEMPLATE_DEFS[_rwState.templateId];
+  let content = `PROJECT: ${_rwState.projectName} | DATE: ${today()} | ANALYST: ${MY_NAME} | TEMPLATE: ${tpl.label}\n\n`;
+
+  enabled.forEach((s, i) => {
+    content += `${'='.repeat(50)}\n`;
+    content += `${i + 1}. ${s.title.toUpperCase()}\n`;
+    content += `${'='.repeat(50)}\n`;
+    content += (s.content.trim() || '[NOT COMPLETED]') + '\n\n';
+  });
+
+  content += `${'='.repeat(50)}\nDISCLAIMER: This report was ${filled.some(s => s.status === 'ai') ? 'AI-generated with human edits' : 'manually written'}. For informational purposes only - not financial advice. Always DYOR.\n`;
+
+  // Compute score if market data available
+  let scoreInfo = null;
+  if (_rwState.marketData) {
+    scoreInfo = _rwState.templateId === 'stock' ? computeStockScore(_rwState.marketData) : computeCryptoScore(_rwState.marketData);
+  }
+
+  const id = genId();
+  const data = {
+    id, title: _rwState.projectName, type: _rwState.templateId === 'stock' ? 'stock' : 'crypto',
+    content, rating: '', conviction: '',
+    created: today(), updated: today(), editedBy: MY_NAME,
+    score: scoreInfo ? scoreInfo.overall : null
+  };
+
+  if (dbRef) {
+    dbRef.child('reports').child(id).set(data).then(() => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('[data-page="reports"]').classList.add('active');
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('page-reports').classList.remove('hidden');
+      setTimeout(() => openModal('report', id), 300);
+    });
+  } else {
+    DB.reports.push(data);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAll();
+    openModal('report', id);
+  }
 }
 
 // ===== RENDER REPORTS =====
