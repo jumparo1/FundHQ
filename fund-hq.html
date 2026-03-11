@@ -288,8 +288,17 @@ tbody tr:hover { background: var(--bg3); }
 .market-search-item .name { font-size: 13px; font-weight: 600; color: var(--text); }
 .market-search-item .symbol { font-size: 11px; color: var(--text3); text-transform: uppercase; }
 .market-search-item .rank { font-size: 11px; color: var(--text3); margin-left: auto; }
-.market-search-item .add-btn { margin-left: auto; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--accent); background: transparent; color: var(--accent); transition: all 0.15s; }
-.market-search-item .add-btn:hover { background: var(--accent); color: white; }
+.market-search-item .search-actions { display: flex; gap: 4px; margin-left: auto; flex-shrink: 0; }
+.market-search-item .act-btn { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text3); transition: all 0.15s; white-space: nowrap; }
+.market-search-item .act-btn:hover { border-color: var(--accent); color: var(--accent); }
+.market-search-item .act-btn.act-watch { border-color: var(--accent); color: var(--accent); }
+.market-search-item .act-btn.act-watch:hover { background: var(--accent); color: white; }
+.market-search-item .act-btn.act-pipeline { border-color: var(--yellow, #f0b429); color: var(--yellow, #f0b429); }
+.market-search-item .act-btn.act-pipeline:hover { background: var(--yellow, #f0b429); color: var(--bg); }
+.market-search-item .act-btn.act-ai { border-color: var(--green); color: var(--green); }
+.market-search-item .act-btn.act-ai:hover { background: var(--green); color: var(--bg); }
+.market-search-item .act-btn:disabled { opacity: 0.4; cursor: default; }
+.market-search-item .act-btn:disabled:hover { background: transparent; }
 .market-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 8px; padding: 3px; }
 .market-tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text3); transition: all 0.15s; }
 .market-tab.active { background: var(--accent); color: white; }
@@ -646,7 +655,7 @@ try {
 // ===== DATA LAYER =====
 const STAGES = ['Sourcing', 'Due Diligence', 'Term Sheet', 'Closed', 'Passed'];
 const STAGE_COLORS = { 'Sourcing': '#3b82f6', 'Due Diligence': '#f59e0b', 'Term Sheet': '#a855f7', 'Closed': '#10b981', 'Passed': '#ef4444' };
-const SECTORS = ['Stocks', 'AI', 'DeFi', 'AI Crypto', 'Privacy', 'Other'];
+const SECTORS = ['Stocks', 'Crypto', 'AI', 'DeFi', 'AI Crypto', 'Privacy', 'Other'];
 const SECTOR_TAG = { 'Stocks': 'stocks', 'AI': 'ai', 'DeFi': 'defi', 'AI Crypto': 'aicrypto', 'Privacy': 'privacy', 'Other': 'other' };
 
 let DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [] };
@@ -1121,15 +1130,21 @@ async function doMarketSearch(q) {
     if (!results.length) { el.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text3);">No results found</div>'; return; }
     el.innerHTML = results.map(r => {
       const inWatchlist = DB.watchlist.some(w => (w.coingeckoId === r.id && r.type === 'crypto') || (w.fmpSymbol === r.symbol && r.type === 'stock'));
+      const inPipeline = DB.deals.some(d => d.name.toLowerCase() === r.name.toLowerCase());
       const img = r.thumb ? '<img src="' + r.thumb + '" alt="">' : '<div style="width:24px;height:24px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);">' + (r.symbol || '?')[0] + '</div>';
       const rank = r.marketCapRank ? '<span class="rank">#' + r.marketCapRank + '</span>' : (r.exchange ? '<span class="rank">' + r.exchange + '</span>' : '');
-      const addLabel = inWatchlist ? 'Watching' : '+ Watch';
-      const addDisabled = inWatchlist ? ' disabled style="opacity:0.5;cursor:default;"' : '';
-      if (r.type === 'crypto') {
-        return '<div class="market-search-item" onclick="selectSearchResult(\'crypto\',\'' + r.id + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + '<button class="add-btn"' + addDisabled + ' onclick="event.stopPropagation();addToWatchlist(\'crypto\',\'' + r.id + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + addLabel + '</button></div>';
-      } else {
-        return '<div class="market-search-item" onclick="selectSearchResult(\'stock\',\'' + r.symbol + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + '<button class="add-btn"' + addDisabled + ' onclick="event.stopPropagation();addToWatchlist(\'stock\',\'' + r.symbol + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'\')">' + addLabel + '</button></div>';
-      }
+      const typeStr = r.type === 'crypto' ? 'crypto' : 'stock';
+      const idStr = r.type === 'crypto' ? r.id : r.symbol;
+      const watchLabel = inWatchlist ? 'Watching' : '+ Watch';
+      const watchDis = inWatchlist ? ' disabled' : '';
+      const pipLabel = inPipeline ? 'In Pipeline' : '+ Pipeline';
+      const pipDis = inPipeline ? ' disabled' : '';
+      const actions = '<div class="search-actions">' +
+        '<button class="act-btn act-watch"' + watchDis + ' onclick="event.stopPropagation();addToWatchlist(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')" title="Add to watchlist">' + watchLabel + '</button>' +
+        '<button class="act-btn act-pipeline"' + pipDis + ' onclick="event.stopPropagation();addToPipeline(\'' + typeStr + '\',\'' + esc(r.name) + '\',\'' + r.symbol + '\')" title="Add to Deal Flow pipeline">' + pipLabel + '</button>' +
+        '<button class="act-btn act-ai" onclick="event.stopPropagation();aiResearchFromSearch(\'' + typeStr + '\',\'' + idStr + '\',\'' + esc(r.name) + '\')" title="Generate AI research report">AI Report</button>' +
+        '</div>';
+      return '<div class="market-search-item" onclick="selectSearchResult(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + actions + '</div>';
     }).join('');
   } catch (e) {
     el.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--red);">API error — try again</div>';
@@ -1172,6 +1187,63 @@ function removeFromWatchlist(id) {
     document.getElementById('market-detail').innerHTML = '';
     selectedMarketDetail = null;
   }
+}
+
+function addToPipeline(type, name, symbol) {
+  if (DB.deals.some(d => d.name.toLowerCase() === name.toLowerCase())) return;
+  const id = genId();
+  const sector = type === 'crypto' ? 'Crypto' : 'Equities';
+  const data = {
+    id, name: name,
+    sector: sector, size: '', stage: 'Sourcing',
+    lead: MY_NAME, desc: symbol.toUpperCase() + ' — added from Market Data search',
+    links: '', tags: type === 'crypto' ? 'crypto' : 'stock',
+    created: today(), updated: today(), editedBy: MY_NAME
+  };
+  if (firebaseReady && dbRef) { dbRef.child('deals').child(id).set(data); }
+  else { DB.deals.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+  document.getElementById('market-search-results').classList.add('hidden');
+  // Navigate to Deal Flow page
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector('[data-page="deals"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-deals').classList.remove('hidden');
+}
+
+async function aiResearchFromSearch(type, id, name) {
+  document.getElementById('market-search-results').classList.add('hidden');
+  if (!getAnthropicKey()) {
+    alert('Add your Anthropic API key in Settings first.');
+    document.querySelector('[data-page="settings"]').click();
+    return;
+  }
+  // Create report and navigate to it
+  const reportId = genId();
+  const reportType = type === 'crypto' ? 'crypto' : 'stock';
+  const template = type === 'crypto' ? CRYPTO_TEMPLATE : STOCK_TEMPLATE;
+  let content = template.replace(/\[TOKEN NAME\]/g, name).replace(/\[Company name[^\]]*\]/g, name);
+  const data = {
+    id: reportId, title: name, type: reportType,
+    content: content, rating: '', conviction: '',
+    created: today(), updated: today(), editedBy: MY_NAME
+  };
+  // Save report
+  if (firebaseReady && dbRef) { await dbRef.child('reports').child(reportId).set(data); }
+  else { DB.reports.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+  // Navigate to reports page
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector('[data-page="reports"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-reports').classList.remove('hidden');
+  renderAll();
+  // Open report modal and trigger AI research
+  await new Promise(r => setTimeout(r, 300));
+  openModal('report', reportId);
+  await new Promise(r => setTimeout(r, 200));
+  // Auto-trigger AI research with Haiku (fast + cheap)
+  const modelEl = document.getElementById('ai-model-select');
+  if (modelEl) modelEl.value = 'claude-haiku-4-5-20251001';
+  aiResearchCrypto();
 }
 
 async function refreshWatchlist() {
