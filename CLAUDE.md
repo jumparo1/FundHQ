@@ -35,6 +35,11 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - [x] Section prompts, bullet guides, progress tracking, enable/disable toggles
 - [x] Live market data + score card in workspace header (auto-fetched)
 - [x] Export workspace to report (Save as Report button)
+- [x] Template View mode — read-only preview with expandable sections
+- [x] Template Edit mode — modify titles, prompts, bullets; add/remove/reorder sections
+- [x] Custom template persistence (localStorage) with Reset to Default
+- [x] Help page — visual 5-step research pipeline, detail cards, quick reference
+- [x] Redesigned Dashboard — watchlist, reports, tasks, projects at a glance + quick actions
 
 ## Deploy
 - **Live URL:** https://jumparo1.github.io/JumpTools/fund-hq.html
@@ -44,6 +49,10 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - API keys stored in browser localStorage (per-domain, need re-entry if domain changes)
 
 ## Recent Changes
+- 2026-03-11: Redesigned Dashboard — stats (watchlist/reports/tasks/projects), quick actions, top watchlist, recent reports, open tasks, recent projects
+- 2026-03-11: Template View mode (read-only preview) and Edit mode (modify titles, prompts, bullets, add/remove/reorder sections)
+- 2026-03-11: Custom template edits saved to localStorage with getTemplateDef() merge layer
+- 2026-03-11: Help page with visual 5-step pipeline flow and quick reference
 - 2026-03-11: Research workspace — templates are now clickable, open section-by-section editor with prompts, bullets, AI per-section
 - 2026-03-11: 3 templates: Crypto Research (18 sections), Stock Research (10), Quick Thesis (5)
 - 2026-03-11: Per-section AI: run Claude on individual sections or "Run All with AI" / "Fill Empty Only"

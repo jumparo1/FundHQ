@@ -492,17 +492,57 @@ tbody tr:hover { background: var(--bg3); }
     <div id="page-dashboard" class="page">
       <div class="page-header">
         <h1>Dashboard</h1>
-        <p>Fund overview and activity</p>
+        <p>Fund overview — watchlist, research, and tasks at a glance</p>
       </div>
       <div class="stats-row" id="stats-row"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-        <div class="card">
-          <h3 style="font-size:14px;margin-bottom:14px;color:var(--text2);">Recent Deals</h3>
-          <div id="recent-deals"></div>
+
+      <!-- Quick Actions -->
+      <div class="card" style="margin-bottom:20px;padding:16px 20px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:13px;color:var(--text3);font-weight:600;margin-right:6px;">Quick Actions</span>
+          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=market]').click()">&#128270; Search Market</button>
+          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=templates]').click()">&#128218; Research Templates</button>
+          <button class="btn btn-sm btn-ghost" onclick="openModal('report')">&#128196; New Report</button>
+          <button class="btn btn-sm btn-ghost" onclick="openModal('task')">&#10004; New Task</button>
+          <button class="btn btn-sm btn-ghost" onclick="openModal('project')">&#9889; Quick Dump</button>
         </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <!-- Top Watchlist -->
         <div class="card">
-          <h3 style="font-size:14px;margin-bottom:14px;color:var(--text2);">Recent Research</h3>
-          <div id="recent-research"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:14px;color:var(--text2);margin:0;">&#128200; Watchlist</h3>
+            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=market]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
+          </div>
+          <div id="dash-watchlist"></div>
+        </div>
+        <!-- Recent Reports -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:14px;color:var(--text2);margin:0;">&#128196; Recent Reports</h3>
+            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=reports]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
+          </div>
+          <div id="dash-reports"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <!-- Open Tasks -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:14px;color:var(--text2);margin:0;">&#9745; Open Tasks</h3>
+            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=tasks]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
+          </div>
+          <div id="dash-tasks"></div>
+        </div>
+        <!-- Recent Projects -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:14px;color:var(--text2);margin:0;">&#9889; Recent Projects</h3>
+            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=projects]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
+          </div>
+          <div id="dash-projects"></div>
         </div>
       </div>
     </div>
@@ -2019,33 +2059,100 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el => {
 
 // ===== RENDER DASHBOARD =====
 function renderDashboard() {
-  const activeDeals = DB.deals.filter(d => d.stage !== 'Passed').length;
-  const inDD = DB.deals.filter(d => d.stage === 'Due Diligence').length;
-  const closed = DB.deals.filter(d => d.stage === 'Closed').length;
+  const watchlistCount = DB.watchlist.length;
+  const reportsCount = DB.reports.length;
+  const openTasks = DB.tasks.filter(t => t.status !== 'Done').length;
+  const totalTasks = DB.tasks.length;
   const totalProjects = DB.projects.length;
 
+  // Stats row
   document.getElementById('stats-row').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Active Deals</div><div class="stat-value accent">${activeDeals}</div></div>
-    <div class="stat-card"><div class="stat-label">In Due Diligence</div><div class="stat-value yellow">${inDD}</div></div>
-    <div class="stat-card"><div class="stat-label">Closed</div><div class="stat-value green">${closed}</div></div>
-    <div class="stat-card"><div class="stat-label">Projects Tracked</div><div class="stat-value blue">${totalProjects}</div></div>
+    <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-page=market]').click()">
+      <div class="stat-label">Watchlist</div>
+      <div class="stat-value accent">${watchlistCount}</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-page=reports]').click()">
+      <div class="stat-label">Reports</div>
+      <div class="stat-value blue">${reportsCount}</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-page=tasks]').click()">
+      <div class="stat-label">Open Tasks</div>
+      <div class="stat-value yellow">${openTasks}</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-page=projects]').click()">
+      <div class="stat-label">Projects</div>
+      <div class="stat-value green">${totalProjects}</div>
+    </div>
   `;
 
-  const recent = [...DB.deals].sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||'')).slice(0,5);
-  document.getElementById('recent-deals').innerHTML = recent.length ? recent.map(d => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
-      <div><div style="font-size:13px;font-weight:600;">${esc(d.name)}</div><div style="font-size:11px;color:var(--text3);">${esc(d.sector||'')}${d.editedBy ? ' &middot; by '+esc(d.editedBy) : ''}</div></div>
-      <span class="status-pill status-${d.stage==='Closed'?'closed':d.stage==='Passed'?'passed':d.stage==='Due Diligence'?'review':'active'}">${d.stage}</span>
-    </div>
-  `).join('') : '<div class="empty-state" style="padding:20px;"><p>No deals yet</p></div>';
+  // Watchlist — top scored or most recent, up to 5
+  const wSorted = [...DB.watchlist].sort((a, b) => {
+    const sA = a.lastData?.score ?? -1, sB = b.lastData?.score ?? -1;
+    if (sA !== sB) return sB - sA;
+    return (b.addedAt || '').localeCompare(a.addedAt || '');
+  }).slice(0, 5);
+  const dashWl = document.getElementById('dash-watchlist');
+  if (dashWl) dashWl.innerHTML = wSorted.length ? wSorted.map(w => {
+    const ld = w.lastData || {};
+    const priceStr = ld.price != null ? '$' + fmtNum(ld.price) : '—';
+    const changeStr = ld.change24h != null ? fmtPct(ld.change24h) : '';
+    const cls = ld.change24h != null ? pctClass(ld.change24h) : '';
+    const lookupId = w.type === 'crypto' ? w.coingeckoId : w.fmpSymbol;
+    const scoreHtml = ld.score != null ? renderStars(ld.score, 11) + ' <span style="font-size:11px;color:var(--text3);">' + ld.score.toFixed(1) + '</span>' : '';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="document.querySelector(\'[data-page=market]\').click();setTimeout(()=>showMarketDetail(\'' + w.type + '\',\'' + lookupId + '\'),100)">' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        (w.image ? '<img src="' + w.image + '" style="width:22px;height:22px;border-radius:50%;">' : '<div style="width:22px;height:22px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);">' + (w.symbol||'?')[0] + '</div>') +
+        '<div><div style="font-size:13px;font-weight:600;">' + esc(w.name) + ' <span style="color:var(--text3);font-weight:400;font-size:11px;">' + (w.symbol||'') + '</span></div>' +
+        (scoreHtml ? '<div style="margin-top:2px;">' + scoreHtml + '</div>' : '') +
+        '</div></div>' +
+      '<div style="text-align:right;"><div style="font-size:13px;font-weight:600;">' + priceStr + '</div>' +
+        (changeStr ? '<div style="font-size:11px;" class="' + cls + '">' + changeStr + '</div>' : '') +
+      '</div></div>';
+  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No assets in watchlist yet.<br>Search Market Data to add.</div>';
 
-  const recentR = [...DB.research].sort((a,b) => (b.created||'').localeCompare(a.created||'')).slice(0,5);
-  document.getElementById('recent-research').innerHTML = recentR.length ? recentR.map(r => `
-    <div style="padding:8px 0;border-bottom:1px solid var(--border);">
-      <div style="font-size:13px;font-weight:600;">${esc(r.project)}</div>
-      <div style="font-size:11px;color:var(--text3);">${fmtDate(r.created)} &middot; Score: ${r.overallScore||'N/A'}/10${r.editedBy ? ' &middot; by '+esc(r.editedBy) : ''}</div>
-    </div>
-  `).join('') : '<div class="empty-state" style="padding:20px;"><p>No research yet</p></div>';
+  // Recent reports — up to 5
+  const rSorted = [...DB.reports].sort((a, b) => (b.created || '').localeCompare(a.created || '')).slice(0, 5);
+  const dashRp = document.getElementById('dash-reports');
+  if (dashRp) dashRp.innerHTML = rSorted.length ? rSorted.map(r => {
+    const scoreHtml = r.score != null ? renderStars(r.score, 11) : '';
+    const typeLabel = r.template === 'crypto' ? '🪙' : r.template === 'stock' ? '📈' : r.template === 'quick' ? '⚡' : '📄';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openModal(\'report\',\'' + r.id + '\')">' +
+      '<div><div style="font-size:13px;font-weight:600;">' + typeLabel + ' ' + esc(r.title || r.project || 'Untitled') + '</div>' +
+      '<div style="font-size:11px;color:var(--text3);">' + fmtDate(r.created) + (r.editedBy ? ' · by ' + esc(r.editedBy) : '') + '</div></div>' +
+      (scoreHtml ? '<div>' + scoreHtml + '</div>' : '') +
+    '</div>';
+  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No reports yet.<br>Use Templates to create one.</div>';
+
+  // Open tasks — up to 5
+  const openTasksList = DB.tasks.filter(t => t.status !== 'Done').sort((a, b) => {
+    const prio = { High: 0, Medium: 1, Low: 2 };
+    return (prio[a.priority] ?? 3) - (prio[b.priority] ?? 3);
+  }).slice(0, 5);
+  const dashTk = document.getElementById('dash-tasks');
+  if (dashTk) dashTk.innerHTML = openTasksList.length ? openTasksList.map(t => {
+    const prioColor = t.priority === 'High' ? 'var(--red)' : t.priority === 'Medium' ? 'var(--yellow)' : 'var(--green)';
+    const statusIcon = t.status === 'In Progress' ? '🔄' : '⬜';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openModal(\'task\',\'' + t.id + '\')">' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<span style="font-size:14px;">' + statusIcon + '</span>' +
+        '<div><div style="font-size:13px;font-weight:600;">' + esc(t.title || t.name || 'Untitled') + '</div>' +
+        (t.milestone ? '<div style="font-size:11px;color:var(--text3);">' + esc(t.milestone) + '</div>' : '') +
+        '</div></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + prioColor + '22;color:' + prioColor + ';font-weight:600;">' + (t.priority || 'Normal') + '</span>' +
+      '</div></div>';
+  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No open tasks.<br>All caught up! 🎉</div>';
+
+  // Recent projects — up to 5
+  const pSorted = [...DB.projects].sort((a, b) => (b.created || '').localeCompare(a.created || '')).slice(0, 5);
+  const dashPj = document.getElementById('dash-projects');
+  if (dashPj) dashPj.innerHTML = pSorted.length ? pSorted.map(p => {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openModal(\'project\',\'' + p.id + '\')">' +
+      '<div><div style="font-size:13px;font-weight:600;">' + esc(p.name) + '</div>' +
+      '<div style="font-size:11px;color:var(--text3);">' + esc(p.sector || '') + (p.created ? ' · ' + fmtDate(p.created) : '') + '</div></div>' +
+      (p.notes ? '<div style="font-size:11px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(p.notes.slice(0,50)) + '</div>' : '') +
+    '</div>';
+  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">No projects yet.<br>Use Quick Dump to add one.</div>';
 
   updateBadges();
 }
