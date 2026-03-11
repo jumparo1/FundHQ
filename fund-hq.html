@@ -705,10 +705,16 @@ async function testFmpKey() {
   if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
   try {
     el.textContent = 'Testing...'; el.style.color = 'var(--text3)';
-    const resp = await fetch('https://financialmodelingprep.com/api/v3/profile/AAPL?apikey=' + key);
-    if (resp.ok) { el.textContent = 'Connected! Stock data enabled.'; el.style.color = 'var(--green)'; }
-    else { el.textContent = 'Invalid key or API error'; el.style.color = 'var(--red)'; }
-  } catch(e) { el.textContent = 'Connection failed'; el.style.color = 'var(--red)'; }
+    const resp = await fetch('https://financialmodelingprep.com/stable/profile?symbol=AAPL&apikey=' + key);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.length > 0) { el.textContent = 'Connected! Stock data enabled.'; el.style.color = 'var(--green)'; }
+      else { el.textContent = 'Key works but no data returned'; el.style.color = 'var(--yellow)'; }
+    } else {
+      const errText = await resp.text().catch(() => '');
+      el.textContent = 'Error ' + resp.status + ': ' + (errText.substring(0, 80) || 'API error'); el.style.color = 'var(--red)';
+    }
+  } catch(e) { el.textContent = 'Connection failed: ' + e.message; el.style.color = 'var(--red)'; }
 }
 
 // --- CoinGecko API ---
@@ -771,7 +777,7 @@ async function searchStocks(query) {
   if (!key || !query || query.length < 2) return [];
   const cached = marketCache.get('searches', 'stock:' + query);
   if (cached) return cached;
-  const resp = await fetch('https://financialmodelingprep.com/api/v3/search?query=' + encodeURIComponent(query) + '&limit=10&apikey=' + key);
+  const resp = await fetch('https://financialmodelingprep.com/stable/search?query=' + encodeURIComponent(query) + '&limit=10&apikey=' + key);
   if (!resp.ok) throw new Error('FMP search failed');
   const data = await resp.json();
   const results = (data || []).map(s => ({
@@ -787,8 +793,8 @@ async function fetchStockData(symbol) {
   const cached = marketCache.get('stocks', symbol);
   if (cached) return cached;
   const [profileResp, metricsResp] = await Promise.all([
-    fetch('https://financialmodelingprep.com/api/v3/profile/' + symbol + '?apikey=' + key),
-    fetch('https://financialmodelingprep.com/api/v3/key-metrics-ttm/' + symbol + '?apikey=' + key)
+    fetch('https://financialmodelingprep.com/stable/profile?symbol=' + symbol + '&apikey=' + key),
+    fetch('https://financialmodelingprep.com/stable/key-metrics-ttm?symbol=' + symbol + '&apikey=' + key)
   ]);
   const profile = (await profileResp.json())?.[0];
   const metrics = (await metricsResp.json())?.[0];
