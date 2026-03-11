@@ -3,11 +3,11 @@
 Central dashboard for fund management — deals, research, tasks, roadmap, live market data.
 
 ## Stack
-- **Frontend:** `fund-hq.html` (single file, ~180KB)
+- **Frontend:** `fund-hq.html` (single file, ~195KB)
 - **Database:** Firebase Realtime Database + localStorage fallback
 - **Users:** Jumparo (crypto) & Tihomir (equities)
 - **Assistant:** "Pamela" chat bot for navigation, search, CRUD, price lookup
-- **APIs:** CoinGecko (crypto, free), Financial Modeling Prep (stocks, free key), DefiLlama (TVL)
+- **APIs:** CoinGecko (crypto, free), Financial Modeling Prep (stocks, free key), DefiLlama (TVL), Anthropic Claude (AI research)
 
 ## Status
 - [x] Deal flow pipeline (Kanban: Sourcing → Closed/Passed)
@@ -24,8 +24,15 @@ Central dashboard for fund management — deals, research, tasks, roadmap, live 
 - [x] Create reports pre-filled with market data
 - [x] Stock support via FMP API (key in Settings)
 - [x] Pamela commands: price lookup, watchlist add
+- [x] AI-powered crypto research (Claude API, model selector: Haiku/Sonnet/Opus)
+- [x] "Research with AI" button in report modal — full 18-section report generation
+- [x] Pamela command: "research {coin}" for instant AI reports
 
 ## Recent Changes
+- 2026-03-11: Added AI crypto research via Claude API (direct browser access, key in Settings)
+- 2026-03-11: Model selector (Haiku/Sonnet/Opus) in report editor for cost/quality tradeoff
+- 2026-03-11: "Research with AI" button generates full 18-section report with live CoinGecko data
+- 2026-03-11: Pamela "research solana" command creates AI report automatically
 - 2026-03-11: Added Market Data page with live fundamentals (CoinGecko + FMP + DefiLlama)
 - 2026-03-11: Added watchlist (add/remove/refresh, Firebase synced, offline fallback)
 - 2026-03-11: Added auto-fill for Research Notes (fetches live data into empty fields)
