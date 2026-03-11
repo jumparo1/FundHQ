@@ -1640,11 +1640,13 @@ function renderDashboard() {
 }
 
 function updateBadges() {
-  document.getElementById('badge-deals').textContent = DB.deals.filter(d=>d.stage!=='Passed').length;
-  document.getElementById('badge-projects').textContent = DB.projects.length;
-  document.getElementById('badge-research').textContent = DB.research.length;
-  document.getElementById('badge-reports').textContent = DB.reports.length;
-  document.getElementById('badge-tasks').textContent = DB.tasks.filter(t=>t.status!=='Done').length;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('badge-deals', DB.deals.filter(d=>d.stage!=='Passed').length);
+  set('badge-projects', DB.projects.length);
+  set('badge-research', DB.research.length);
+  set('badge-reports', DB.reports.length);
+  set('badge-tasks', DB.tasks.filter(t=>t.status!=='Done').length);
+  set('badge-watchlist', DB.watchlist.length);
 }
 
 // ===== RENDER PIPELINE =====
