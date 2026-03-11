@@ -371,11 +371,9 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item active" data-page="dashboard"><span class="icon">&#9632;</span> Dashboard</div>
 
     <div class="nav-section">Pipeline</div>
-    <div class="nav-item" data-page="dealflow"><span class="icon">&#9654;</span> Deal Flow <span class="badge" id="badge-deals">0</span></div>
     <div class="nav-item" data-page="projects"><span class="icon">&#9733;</span> Project Dump <span class="badge" id="badge-projects">0</span></div>
 
     <div class="nav-section">Research</div>
-    <div class="nav-item" data-page="research"><span class="icon">&#9998;</span> Research Notes <span class="badge" id="badge-research">0</span></div>
     <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
     <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
 
@@ -813,21 +811,24 @@ async function fetchStockData(symbol) {
     fetch('https://financialmodelingprep.com/stable/profile?symbol=' + symbol + '&apikey=' + key),
     fetch('https://financialmodelingprep.com/stable/key-metrics-ttm?symbol=' + symbol + '&apikey=' + key)
   ]);
-  const profile = (await profileResp.json())?.[0];
-  const metrics = (await metricsResp.json())?.[0];
-  if (!profile) return null;
+  const profileData = await profileResp.json();
+  const metricsData = await metricsResp.json();
+  const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+  const metrics = Array.isArray(metricsData) ? metricsData[0] : (metricsData?.Error ? null : metricsData);
+  if (!profile || profile.Error) return null;
+  const p = profile; const m = metrics || {};
   const data = {
-    symbol: profile.symbol, name: profile.companyName, type: 'stock',
-    price: profile.price, marketCap: profile.mktCap, change24h: profile.changes,
-    pe: profile.pe || metrics?.peRatioTTM, eps: metrics?.netIncomePerShareTTM,
-    beta: profile.beta, sector: profile.sector, industry: profile.industry,
-    exchange: profile.exchangeShortName, dividendYield: profile.lastDiv ? (profile.lastDiv / profile.price * 100) : null,
-    roe: metrics?.roeTTM != null ? metrics.roeTTM * 100 : null,
-    debtToEquity: metrics?.debtToEquityTTM, currentRatio: metrics?.currentRatioTTM,
-    pbRatio: metrics?.pbRatioTTM, evToEbitda: metrics?.enterpriseValueOverEBITDATTM,
-    week52High: profile.range ? profile.range.split('-')[1]?.trim() : null,
-    week52Low: profile.range ? profile.range.split('-')[0]?.trim() : null,
-    avgVolume: profile.volAvg, image: profile.image
+    symbol: p.symbol, name: p.companyName, type: 'stock',
+    price: p.price, marketCap: p.marketCap || p.mktCap, change24h: p.changes,
+    pe: p.pe || m.peRatio || m.peRatioTTM, eps: m.netIncomePerShare || m.netIncomePerShareTTM || p.eps,
+    beta: p.beta, sector: p.sector, industry: p.industry,
+    exchange: p.exchangeShortName || p.exchange, dividendYield: p.lastDiv ? (p.lastDiv / p.price * 100) : (m.dividendYield || m.dividendYieldTTM || null),
+    roe: (m.roe ?? m.roeTTM) != null ? (m.roe ?? m.roeTTM) * 100 : null,
+    debtToEquity: m.debtToEquity || m.debtToEquityTTM, currentRatio: m.currentRatio || m.currentRatioTTM,
+    pbRatio: m.pbRatio || m.pbRatioTTM || m.priceToBookRatio, evToEbitda: m.enterpriseValueOverEBITDA || m.enterpriseValueOverEBITDATTM,
+    week52High: p.range ? parseFloat(p.range.split('-')[1]) || null : null,
+    week52Low: p.range ? parseFloat(p.range.split('-')[0]) || null : null,
+    avgVolume: p.volAvg || p.averageVolume, image: p.image
   };
   marketCache.set('stocks', symbol, data);
   return data;
@@ -1140,18 +1141,18 @@ async function doMarketSearch(q) {
     if (!results.length) { el.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text3);">No results found</div>'; return; }
     el.innerHTML = results.map(r => {
       const inWatchlist = DB.watchlist.some(w => (w.coingeckoId === r.id && r.type === 'crypto') || (w.fmpSymbol === r.symbol && r.type === 'stock'));
-      const inPipeline = DB.deals.some(d => d.name.toLowerCase() === r.name.toLowerCase());
+      const inDump = DB.projects.some(p => p.name.toLowerCase() === r.name.toLowerCase());
       const img = r.thumb ? '<img src="' + r.thumb + '" alt="">' : '<div style="width:24px;height:24px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);">' + (r.symbol || '?')[0] + '</div>';
       const rank = r.marketCapRank ? '<span class="rank">#' + r.marketCapRank + '</span>' : (r.exchange ? '<span class="rank">' + r.exchange + '</span>' : '');
       const typeStr = r.type === 'crypto' ? 'crypto' : 'stock';
       const idStr = r.type === 'crypto' ? r.id : r.symbol;
       const watchLabel = inWatchlist ? 'Watching' : '+ Watch';
       const watchDis = inWatchlist ? ' disabled' : '';
-      const pipLabel = inPipeline ? 'In Pipeline' : '+ Pipeline';
-      const pipDis = inPipeline ? ' disabled' : '';
+      const dumpLabel = inDump ? 'In Dump' : '+ Dump';
+      const dumpDis = inDump ? ' disabled' : '';
       const actions = '<div class="search-actions">' +
         '<button class="act-btn act-watch"' + watchDis + ' onclick="event.stopPropagation();addToWatchlist(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')" title="Add to watchlist">' + watchLabel + '</button>' +
-        '<button class="act-btn act-pipeline"' + pipDis + ' onclick="event.stopPropagation();addToPipeline(\'' + typeStr + '\',\'' + esc(r.name) + '\',\'' + r.symbol + '\')" title="Add to Deal Flow pipeline">' + pipLabel + '</button>' +
+        '<button class="act-btn act-pipeline"' + dumpDis + ' onclick="event.stopPropagation();addToDump(\'' + typeStr + '\',\'' + esc(r.name) + '\',\'' + r.symbol + '\')" title="Add to Project Dump">' + dumpLabel + '</button>' +
         '<button class="act-btn act-ai" onclick="event.stopPropagation();aiResearchFromSearch(\'' + typeStr + '\',\'' + idStr + '\',\'' + esc(r.name) + '\')" title="Generate AI research report">AI Report</button>' +
         '</div>';
       return '<div class="market-search-item" onclick="selectSearchResult(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + actions + '</div>';
@@ -1199,25 +1200,22 @@ function removeFromWatchlist(id) {
   }
 }
 
-function addToPipeline(type, name, symbol) {
-  if (DB.deals.some(d => d.name.toLowerCase() === name.toLowerCase())) return;
+function addToDump(type, name, symbol) {
+  if (DB.projects.some(p => p.name.toLowerCase() === name.toLowerCase())) return;
   const id = genId();
-  const sector = type === 'crypto' ? 'Crypto' : 'Equities';
   const data = {
     id, name: name,
-    sector: sector, size: '', stage: 'Sourcing',
-    lead: MY_NAME, desc: symbol.toUpperCase() + ' — added from Market Data search',
-    links: '', tags: type === 'crypto' ? 'crypto' : 'stock',
+    notes: symbol.toUpperCase() + ' (' + type + ') — added from Market Data',
     created: today(), updated: today(), editedBy: MY_NAME
   };
-  if (firebaseReady && dbRef) { dbRef.child('deals').child(id).set(data); }
-  else { DB.deals.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+  if (firebaseReady && dbRef) { dbRef.child('projects').child(id).set(data); }
+  else { DB.projects.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
   document.getElementById('market-search-results').classList.add('hidden');
-  // Navigate to Deal Flow page
+  // Navigate to Project Dump page
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelector('[data-page="deals"]').classList.add('active');
+  document.querySelector('[data-page="projects"]').classList.add('active');
   document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-  document.getElementById('page-deals').classList.remove('hidden');
+  document.getElementById('page-projects').classList.remove('hidden');
 }
 
 async function aiResearchFromSearch(type, id, name) {
@@ -1357,7 +1355,6 @@ function renderMarketDetail(data) {
     '<div class="mc-price-row"><span class="mc-big-price">$' + fmtNum(data.price) + '</span>' + changeHtml + '</div>' +
     '<div class="metric-grid">' + metricsHtml + '</div>' +
     '<div class="metric-actions">' +
-    '<button class="btn btn-ghost btn-sm" onclick="autoFillFromDetail()">&#128200; Auto-fill Research</button>' +
     '<button class="btn btn-ghost btn-sm" onclick="createReportFromDetail()">&#128203; Create Report</button>' +
     '</div></div>';
 }
