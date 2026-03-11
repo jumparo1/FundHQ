@@ -253,6 +253,29 @@ tbody tr:hover { background: var(--bg3); }
 .rw-ai-status .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ===== TEMPLATE VIEW / EDIT MODES ===== */
+.tc-buttons { display: flex; gap: 8px; margin-top: 14px; }
+.tv-section { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.tv-section-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; user-select: none; }
+.tv-section-head .rw-num { font-size: 11px; font-weight: 700; color: var(--accent2); background: var(--accent-bg); width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tv-section-head .tv-title { font-size: 14px; font-weight: 600; flex: 1; }
+.tv-section-head .rw-toggle { font-size: 18px; color: var(--text3); transition: transform 0.2s; }
+.tv-section-head .rw-toggle.open { transform: rotate(90deg); }
+.tv-section-body { padding: 0 16px 16px; display: none; }
+.tv-section-body.open { display: block; }
+.te-input { width: 100%; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; }
+.te-input:focus { outline: none; border-color: var(--accent); }
+.te-bullet-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.te-bullet-row input { flex: 1; }
+.te-bullet-row button { padding: 4px 8px; font-size: 11px; border: 1px solid var(--border); background: var(--bg3); color: var(--text3); border-radius: 4px; cursor: pointer; }
+.te-bullet-row button:hover { color: var(--red); border-color: var(--red); }
+.te-add-btn { font-size: 12px; color: var(--accent2); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; }
+.te-add-btn:hover { text-decoration: underline; }
+.te-section-actions { display: flex; gap: 6px; }
+.te-section-actions button { padding: 4px 10px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); cursor: pointer; }
+.te-section-actions button:hover { color: var(--text); background: var(--bg4); }
+.te-section-actions button.te-del:hover { color: var(--red); border-color: var(--red); }
+
 /* ===== REPORT CARDS ===== */
 .report-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.15s; }
 .report-card:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -2740,9 +2763,14 @@ let _rwState = null; // { templateId, projectName, sections: [{...def, content, 
 // ===== RENDER TEMPLATES (Gallery) =====
 function renderTemplates() {
   const tpls = Object.values(TEMPLATE_DEFS);
-  document.getElementById('templates-list').innerHTML = tpls.map(t => `
-    <div class="template-card" onclick="openTemplateWorkspace('${t.id}')">
+  // Check for custom edits in localStorage
+  const customTpls = JSON.parse(localStorage.getItem('fundHQ_customTemplates') || '{}');
+  document.getElementById('templates-list').innerHTML = tpls.map(t => {
+    const isCustomized = !!customTpls[t.id];
+    return `
+    <div class="template-card" style="cursor:default;">
       <span class="template-type ${t.badgeClass}">${t.badge}</span>
+      ${isCustomized ? '<span style="font-size:10px;color:var(--green);margin-left:8px;font-weight:600;">&#9998; Customized</span>' : ''}
       <h3>${t.label}</h3>
       <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">${t.desc}</p>
       <ul class="template-sections">
@@ -2754,16 +2782,280 @@ function renderTemplates() {
         <span>&#129302; AI-ready prompts</span>
         <span>&#9998; Manual + Auto</span>
       </div>
+      <div class="tc-buttons">
+        <button class="btn btn-ghost btn-sm" onclick="viewTemplate('${t.id}')">&#128065; View</button>
+        <button class="btn btn-ghost btn-sm" onclick="editTemplate('${t.id}')">&#9998; Edit</button>
+        <button class="btn btn-primary btn-sm" onclick="openTemplateWorkspace('${t.id}')">&#128640; Use Template</button>
+      </div>
     </div>
-  `).join('');
+  `}).join('');
   // show gallery, hide workspace
   document.getElementById('tpl-gallery').style.display = '';
   document.getElementById('tpl-workspace').style.display = 'none';
 }
 
+// ===== GET TEMPLATE (with custom overrides) =====
+function getTemplateDef(templateId) {
+  const base = TEMPLATE_DEFS[templateId];
+  if (!base) return null;
+  const customTpls = JSON.parse(localStorage.getItem('fundHQ_customTemplates') || '{}');
+  if (customTpls[templateId]) {
+    return { ...base, sections: customTpls[templateId].sections || base.sections };
+  }
+  return base;
+}
+
+// ===== VIEW TEMPLATE (read-only) =====
+function viewTemplate(templateId) {
+  const tpl = getTemplateDef(templateId);
+  if (!tpl) return;
+  const ws = document.getElementById('tpl-workspace');
+  const gallery = document.getElementById('tpl-gallery');
+  gallery.style.display = 'none';
+  ws.style.display = '';
+  // Track which sections are expanded in view mode
+  if (!window._tvOpen) window._tvOpen = {};
+
+  ws.innerHTML = `
+    <div class="rw-back" onclick="renderTemplates()">&#8592; Back to Templates</div>
+    <div class="rw-header">
+      <div class="rw-header-left">
+        <span class="template-type ${tpl.badgeClass}">${tpl.badge}</span>
+        <h1 style="margin-top:6px;">${tpl.label}</h1>
+        <p>${tpl.desc}</p>
+        <p style="margin-top:4px;font-size:12px;color:var(--text3);">${tpl.sections.length} sections · Read-only preview</p>
+      </div>
+      <div class="rw-actions">
+        <button class="btn btn-ghost btn-sm" onclick="tvToggleAll('${templateId}', true)">&#9660; Expand All</button>
+        <button class="btn btn-ghost btn-sm" onclick="tvToggleAll('${templateId}', false)">&#9650; Collapse All</button>
+        <button class="btn btn-ghost btn-sm" onclick="editTemplate('${templateId}')">&#9998; Edit</button>
+        <button class="btn btn-primary btn-sm" onclick="openTemplateWorkspace('${templateId}')">&#128640; Use Template</button>
+      </div>
+    </div>
+    <div id="tv-sections">${renderViewSections(tpl, templateId)}</div>
+  `;
+}
+
+function renderViewSections(tpl, templateId) {
+  return tpl.sections.map((s, i) => {
+    const isOpen = window._tvOpen && window._tvOpen[templateId + '_' + i];
+    return `
+    <div class="tv-section">
+      <div class="tv-section-head" onclick="tvToggle('${templateId}', ${i})">
+        <span class="rw-num">${i + 1}</span>
+        <span class="tv-title">${esc(s.title)}</span>
+        <span style="font-size:11px;color:var(--text3);">${s.bullets.length} bullet${s.bullets.length !== 1 ? 's' : ''}</span>
+        <span class="rw-toggle ${isOpen ? 'open' : ''}">&#9654;</span>
+      </div>
+      <div class="tv-section-body ${isOpen ? 'open' : ''}">
+        <div class="rw-prompt">&#128161; <strong>Prompt:</strong> ${esc(s.prompt)}</div>
+        <ul class="rw-bullets">
+          ${s.bullets.map(b => `<li>${esc(b)}</li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tvToggle(templateId, idx) {
+  if (!window._tvOpen) window._tvOpen = {};
+  const key = templateId + '_' + idx;
+  window._tvOpen[key] = !window._tvOpen[key];
+  const tpl = getTemplateDef(templateId);
+  document.getElementById('tv-sections').innerHTML = renderViewSections(tpl, templateId);
+}
+
+function tvToggleAll(templateId, open) {
+  if (!window._tvOpen) window._tvOpen = {};
+  const tpl = getTemplateDef(templateId);
+  tpl.sections.forEach((s, i) => { window._tvOpen[templateId + '_' + i] = open; });
+  document.getElementById('tv-sections').innerHTML = renderViewSections(tpl, templateId);
+}
+
+// ===== EDIT TEMPLATE =====
+function editTemplate(templateId) {
+  const tpl = getTemplateDef(templateId);
+  if (!tpl) return;
+  // Deep clone sections for editing
+  window._teState = {
+    templateId,
+    sections: JSON.parse(JSON.stringify(tpl.sections)),
+    open: {}
+  };
+  renderEditView();
+}
+
+function renderEditView() {
+  const st = window._teState;
+  if (!st) return;
+  const tpl = TEMPLATE_DEFS[st.templateId];
+  const ws = document.getElementById('tpl-workspace');
+  const gallery = document.getElementById('tpl-gallery');
+  gallery.style.display = 'none';
+  ws.style.display = '';
+
+  ws.innerHTML = `
+    <div class="rw-back" onclick="teConfirmExit()">&#8592; Back to Templates</div>
+    <div class="rw-header">
+      <div class="rw-header-left">
+        <span class="template-type ${tpl.badgeClass}">${tpl.badge}</span>
+        <h1 style="margin-top:6px;">${tpl.label} <span style="font-size:14px;color:var(--yellow);">&#9998; Editing</span></h1>
+        <p>Modify sections, prompts, and bullet points. Changes are saved to your browser.</p>
+        <p style="margin-top:4px;font-size:12px;color:var(--text3);">${st.sections.length} sections</p>
+      </div>
+      <div class="rw-actions">
+        <button class="btn btn-ghost btn-sm" onclick="teToggleAll(true)">&#9660; Expand All</button>
+        <button class="btn btn-ghost btn-sm" onclick="teToggleAll(false)">&#9650; Collapse All</button>
+        <button class="btn btn-ghost btn-sm" onclick="teResetTemplate()">&#8634; Reset to Default</button>
+        <button class="btn btn-primary btn-sm" onclick="teSaveTemplate()">&#128190; Save Changes</button>
+      </div>
+    </div>
+    <div id="te-sections">${renderEditSections()}</div>
+    <div style="margin-top:12px;">
+      <button class="btn btn-ghost btn-sm" onclick="teAddSection()">+ Add Section</button>
+    </div>
+  `;
+}
+
+function renderEditSections() {
+  const st = window._teState;
+  return st.sections.map((s, i) => {
+    const isOpen = st.open[i];
+    return `
+    <div class="tv-section" id="te-sec-${i}">
+      <div class="tv-section-head" onclick="teToggle(${i})">
+        <span class="rw-num">${i + 1}</span>
+        <span class="tv-title">${esc(s.title)}</span>
+        <div class="te-section-actions" onclick="event.stopPropagation();">
+          ${i > 0 ? `<button onclick="teMoveSection(${i}, -1)" title="Move up">&#9650;</button>` : ''}
+          ${i < st.sections.length - 1 ? `<button onclick="teMoveSection(${i}, 1)" title="Move down">&#9660;</button>` : ''}
+          <button class="te-del" onclick="teDeleteSection(${i})" title="Remove section">&#10005;</button>
+        </div>
+        <span class="rw-toggle ${isOpen ? 'open' : ''}">&#9654;</span>
+      </div>
+      <div class="tv-section-body ${isOpen ? 'open' : ''}">
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;">Section Title</label>
+          <input class="te-input" value="${esc(s.title)}" onchange="teUpdateField(${i}, 'title', this.value)">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;">AI Prompt</label>
+          <textarea class="te-input" style="min-height:60px;resize:vertical;" onchange="teUpdateField(${i}, 'prompt', this.value)">${esc(s.prompt)}</textarea>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:6px;">Bullet Points</label>
+          ${s.bullets.map((b, bi) => `
+            <div class="te-bullet-row">
+              <span style="color:var(--accent2);font-weight:700;">&#8226;</span>
+              <input class="te-input" value="${esc(b)}" onchange="teUpdateBullet(${i}, ${bi}, this.value)">
+              <button onclick="teRemoveBullet(${i}, ${bi})" title="Remove">&#10005;</button>
+            </div>
+          `).join('')}
+          <span class="te-add-btn" onclick="teAddBullet(${i})">+ Add bullet</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function teToggle(idx) {
+  const st = window._teState;
+  st.open[idx] = !st.open[idx];
+  document.getElementById('te-sections').innerHTML = renderEditSections();
+}
+
+function teToggleAll(open) {
+  const st = window._teState;
+  st.sections.forEach((s, i) => { st.open[i] = open; });
+  document.getElementById('te-sections').innerHTML = renderEditSections();
+}
+
+function teUpdateField(idx, field, value) {
+  window._teState.sections[idx][field] = value;
+}
+
+function teUpdateBullet(secIdx, bulIdx, value) {
+  window._teState.sections[secIdx].bullets[bulIdx] = value;
+}
+
+function teRemoveBullet(secIdx, bulIdx) {
+  window._teState.sections[secIdx].bullets.splice(bulIdx, 1);
+  document.getElementById('te-sections').innerHTML = renderEditSections();
+}
+
+function teAddBullet(secIdx) {
+  window._teState.sections[secIdx].bullets.push('New bullet point');
+  window._teState.open[secIdx] = true;
+  document.getElementById('te-sections').innerHTML = renderEditSections();
+}
+
+function teDeleteSection(idx) {
+  if (!confirm('Remove "' + window._teState.sections[idx].title + '"?')) return;
+  window._teState.sections.splice(idx, 1);
+  // Re-index open state
+  const newOpen = {};
+  window._teState.sections.forEach((s, i) => { newOpen[i] = false; });
+  window._teState.open = newOpen;
+  document.getElementById('te-sections').innerHTML = renderEditSections();
+}
+
+function teAddSection() {
+  const st = window._teState;
+  st.sections.push({
+    id: 'custom_' + Date.now(),
+    title: 'New Section',
+    prompt: 'Describe what this section should cover.',
+    bullets: ['Key point to address']
+  });
+  st.open[st.sections.length - 1] = true;
+  renderEditView();
+  // Scroll to bottom
+  const el = document.getElementById('te-sec-' + (st.sections.length - 1));
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function teMoveSection(idx, direction) {
+  const st = window._teState;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= st.sections.length) return;
+  const temp = st.sections[idx];
+  st.sections[idx] = st.sections[newIdx];
+  st.sections[newIdx] = temp;
+  // Swap open states
+  const tempOpen = st.open[idx];
+  st.open[idx] = st.open[newIdx];
+  st.open[newIdx] = tempOpen;
+  document.getElementById('te-sections').innerHTML = renderEditSections();
+}
+
+function teSaveTemplate() {
+  const st = window._teState;
+  const customTpls = JSON.parse(localStorage.getItem('fundHQ_customTemplates') || '{}');
+  customTpls[st.templateId] = { sections: st.sections, savedAt: Date.now() };
+  localStorage.setItem('fundHQ_customTemplates', JSON.stringify(customTpls));
+  // Update live TEMPLATE_DEFS so workspace uses the custom version
+  TEMPLATE_DEFS[st.templateId].sections = JSON.parse(JSON.stringify(st.sections));
+  alert('Template saved! Your changes will be used when you start a new research.');
+  renderTemplates();
+}
+
+function teResetTemplate() {
+  if (!confirm('Reset this template to the default? Your customizations will be lost.')) return;
+  const st = window._teState;
+  const customTpls = JSON.parse(localStorage.getItem('fundHQ_customTemplates') || '{}');
+  delete customTpls[st.templateId];
+  localStorage.setItem('fundHQ_customTemplates', JSON.stringify(customTpls));
+  // Reload original template from page source — need to reload to get defaults back
+  location.reload();
+}
+
+function teConfirmExit() {
+  renderTemplates();
+}
+
 // ===== OPEN TEMPLATE WORKSPACE =====
 function openTemplateWorkspace(templateId, projectName) {
-  const tpl = TEMPLATE_DEFS[templateId];
+  const tpl = getTemplateDef(templateId);
   if (!tpl) return;
   if (!projectName) {
     const placeholder = templateId === 'stock' ? 'e.g. Tesla (TSLA)' : templateId === 'crypto' ? 'e.g. Ethereum (ETH)' : 'e.g. Bitcoin (BTC)';
@@ -4422,6 +4714,12 @@ function renderAll() {
   const anthropicInput = document.getElementById('settings-anthropic-key');
   if (anthropicInput && !anthropicInput.value) anthropicInput.value = getAnthropicKey();
 }
+
+// ===== LOAD CUSTOM TEMPLATES =====
+try {
+  const _ct = JSON.parse(localStorage.getItem('fundHQ_customTemplates') || '{}');
+  Object.keys(_ct).forEach(k => { if (TEMPLATE_DEFS[k] && _ct[k].sections) TEMPLATE_DEFS[k].sections = _ct[k].sections; });
+} catch(e) {}
 
 // ===== INIT =====
 document.getElementById('conn-user').textContent = MY_NAME;
