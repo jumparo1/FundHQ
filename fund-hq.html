@@ -1512,7 +1512,6 @@ function buildCryptoResearchPrompt(projectName, marketData) {
       (marketData.categories?.length ? 'Categories: ' + marketData.categories.filter(Boolean).join(', ') + '\n' : '') +
       (marketData.genesisDate ? 'Genesis Date: ' + marketData.genesisDate + '\n' : '') +
       (marketData.links?.homepage ? 'Website: ' + marketData.links.homepage + '\n' : '') +
-      (marketData.links?.github ? 'GitHub: ' + marketData.links.github + '\n' : '') +
       (marketData.links?.twitter ? 'Twitter/X: ' + marketData.links.twitter + '\n' : '') +
       (marketData.description ? 'Description: ' + marketData.description + '\n' : '');
   }
@@ -1528,6 +1527,7 @@ Return ONLY the filled template below. Keep the exact section headers and field 
 ## TEMPLATE
 
 PROJECT: ${projectName} | TICKER: $[fill ticker] | CHAIN: [fill chain] | DATE: ${today()} | ANALYST: ${MY_NAME}
+TYPE: [DEX / L1-L2 / Lending / LST / NFT / AI-DePIN / Oracle-Infra / Gaming-Social]
 
 ═══════════════════════════════════════════════════════
 0. INTRO
@@ -1537,14 +1537,10 @@ PROJECT: ${projectName} | TICKER: $[fill ticker] | CHAIN: [fill chain] | DATE: $
 ═══════════════════════════════════════════════════════
 1. OVERVIEW
 ═══════════════════════════════════════════════════════
-FDV:           [use live data]
-Market Cap:    [use live data]
-FDV/MC Ratio:  [use live data]
-Volume 24h:    [use live data]
-Volume 7d chg: [use live data or Unknown]
-X handle:      [fill or Unknown]
-Website:       [use live data]
-GitHub:        [use live data or Unknown]
+What it does: [1-2 sentences]
+FDV: [use live data] | Market Cap: [use live data] | FDV/MC Ratio: [use live data]
+Volume 24h: [use live data] | Volume 7d chg: [use live data or Unknown]
+X: [fill or Unknown] | Website: [use live data]
 
 ═══════════════════════════════════════════════════════
 2. TL;DR
@@ -1571,39 +1567,90 @@ Fork resistance:  [assess]
 [Key founders/leaders, backgrounds, track record, team size if known, any red flags.]
 
 ═══════════════════════════════════════════════════════
-6. CODE & GITHUB
+6. GOVERNANCE
 ═══════════════════════════════════════════════════════
-[Assess development activity, open source status, commit frequency, audit history, known vulnerabilities.]
+* Governance model: [on-chain / off-chain / multisig / DAO / foundation-led]
+* Token voting: [1 token = 1 vote? veToken? delegated?]
+* Key decisions made: [recent governance proposals, fee changes, upgrades]
+* Decentralization level: [who really controls the protocol?]
+* Treasury governance: [how are funds allocated? community vote or team discretion?]
 
 ═══════════════════════════════════════════════════════
 7. TOKENOMICS
 ═══════════════════════════════════════════════════════
-Launch Date:       [fill]
-Price:             [use live data]
-Circulating:       [use live data]
-Total Supply:      [use live data]
-Max Supply:        [use live data]
-Distribution:      [fill: team %, investors %, community %, treasury %]
-Next Unlock:       [fill or Unknown]
-Emissions:         [fill: inflationary/deflationary, rate]
-Staking:           [fill: APY, % staked]
-Real Yield:        [fill or Unknown]
-Protocol Revenue:  [fill or Unknown]
+SUPPLY:
+Launch Date: [fill] | Launch Price: [$] | Current Price: [use live data]
+Circulating Supply: [use live data] ([%]) | Max Supply: [use live data] | FDV: [use live data] | Market Cap: [use live data]
+FDV / MCap ratio: [use live data — >3x = heavy future dilution]
+Supply type: [Capped / Inflationary / Deflationary / Dynamic]
+Distribution: Team [%] | Investors [%] | Community [%] | Treasury [%] | Ecosystem [%]
+Centralization risk: [>30% insider/VC? flag it]
+Foundation overlap: [does core team = foundation board?]
+
+VESTING & UNLOCKS:
+Vesting type: [time-based / trigger-based (TGE, mainnet, listing)]
+Next Unlock: [fill or Unknown] | Amount: [# tokens, $value] | % of Circ: [%]
+Cliff unlocks next 6mo: [fill or Unknown]
+
+EMISSIONS & MONETARY POLICY:
+Emissions: [fill: daily/yearly rate, inflation %]
+Burn mechanism: [auto-burn / fee burn / buyback-burn / none]
+Net emission: [inflationary or deflationary after burns?]
+Airdrop history: [past drops, % allocated, sybil filtering used?]
+
+DEMAND & VALUE ACCRUAL:
+* Buy-and-burn: [does protocol buy back + burn with revenue?]
+* Fee distribution: [are fees shared with stakers/holders?]
+* Revenue share model: [% to LPs / % to holders / % to DAO]
+* Staking: [fill: APY, % staked] | Real Yield: [% from protocol revenue, not emissions]
+* veToken / lock mechanics: [lock for boosted rewards or voting power?]
+* Protocol participation: [is token required to use the protocol?]
+* Token utility: [governance / toll-fee / currency / access / earnings]
+* Two-token model? [if yes: what does each token do?]
+* Key question: Does holding give a claim on cash flows, or just governance + speculation?
 
 ═══════════════════════════════════════════════════════
 8. BACKERS & FUNDING
 ═══════════════════════════════════════════════════════
-[Key investors, funding rounds, amounts raised, notable VCs or angels.]
+* Lead investors: [Names]
+* Round details: [Stage, size, valuation]
+* Other notable backers: [Angels, DAOs, funds]
+* Treasury size: [$] | Burn rate: [$X/mo] | Runway: [X months]
+* Status: [Early/Stealth/Well-funded/No data]
 
 ═══════════════════════════════════════════════════════
-9. COMPETITIVE LANDSCAPE
+9. COMPETITIVE LANDSCAPE & VALUATION
 ═══════════════════════════════════════════════════════
-[Main competitors, market positioning, what sets this project apart, market share if known.]
+NARRATIVE FIT:
+Macro theme: [DePIN / DeAI / DeFi / Gaming / Infra / etc.]
+Why relevant now: [narrative timing, market demand]
+
+PEER COMPARISON:
+| Project | FDV | Ann. Revenue | P/S | P/E | MCap/TVL | Edge |
+| [This]  | [$] | [$]         | [x] | [x] | [x]     | —    |
+| [Peer1] | [$] | [$]         | [x] | [x] | [x]     | [?]  |
+| [Peer2] | [$] | [$]         | [x] | [x] | [x]     | [?]  |
+
+VALUATION VERDICT:
+* P/S vs peers: [cheap / fair / expensive]
+* P/E vs peers: [cheap / fair / expensive / N/A if unprofitable]
+* Premium/discount justified? [why or why not]
 
 ═══════════════════════════════════════════════════════
 10. USERS, GROWTH & REVENUE
 ═══════════════════════════════════════════════════════
-[DAU/MAU, growth trends, TVL if applicable, revenue metrics, fee generation.]
+USAGE: DAU/MAU: [fill] | TVL: [$] | Growth trend: [fill]
+
+CRYPTO INCOME STATEMENT:
+Total Fees: [$] — all economic value captured
+Less Supply-Side Fees: [$] — paid to LPs/stakers/validators
+= Protocol Revenue: [$] — what the protocol keeps
+Less Token Incentives: [$] — emissions cost
+= Earnings: [$] — bottom-line profitability
+
+KEY RATIOS:
+Protocol Margin: [%] | Net Income Margin: [%] | Revenue Multiple: [x]
+Source: Token Terminal, DefiLlama
 
 ═══════════════════════════════════════════════════════
 11. SOCIAL SENTIMENT
@@ -1613,7 +1660,16 @@ Protocol Revenue:  [fill or Unknown]
 ═══════════════════════════════════════════════════════
 12. TOP HOLDERS & WHALE ACTIVITY
 ═══════════════════════════════════════════════════════
-[Top holder concentration, whale movements if known, exchange inflows/outflows.]
+ON-CHAIN:
+* Top holder concentration: [top 10 holders %]
+* Whale movements: [recent large txs, exchange inflows/outflows]
+* Smart money: [any known funds accumulating/dumping?]
+
+PERP POSITIONING (if futures exist):
+* OI: [$] | Funding Rate: [%] | Long/Short Ratio: [x]
+* Whale vs retail: [are whales positioned opposite to retail?]
+* Liquidation clusters: [key levels above/below price]
+Source: Hyperdash, Arkham
 
 ═══════════════════════════════════════════════════════
 13. CHART & TECHNICAL ANALYSIS
@@ -1652,7 +1708,7 @@ One-liner:   [single sentence summary]
 ═══════════════════════════════════════════════════════
 17. SOURCES
 ═══════════════════════════════════════════════════════
-[List relevant data sources: CoinGecko, DefiLlama, project docs, etc.]
+[List relevant data sources: CoinGecko, DefiLlama, Token Terminal, Token Unlocks, Hyperdash, project docs, etc.]
 
 ═══════════════════════════════════════════════════════
 18. X / SUBSTACK PREVIEW
