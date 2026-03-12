@@ -303,6 +303,28 @@ tbody tr:hover { background: var(--bg3); }
 .pg-textarea::placeholder { color: var(--text3); }
 .pg-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
 
+/* ===== ALERTS ===== */
+.alert-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; border-left: 4px solid var(--blue, #3b82f6); }
+.alert-card.alert-severity-warning { border-left-color: var(--orange); }
+.alert-card.alert-severity-opportunity { border-left-color: var(--green); }
+.alert-card.dismissed { opacity: 0.45; }
+.alert-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 14px 16px; cursor: pointer; gap: 12px; }
+.alert-header:hover { background: var(--bg); }
+.alert-body { display: none; padding: 0 16px 16px; }
+.alert-body.open { display: block; }
+.alert-content { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.alert-content ul { margin: 6px 0; padding-left: 18px; }
+.alert-content li { margin-bottom: 4px; }
+.alert-time { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.alert-source { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+.alert-source-scan { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.alert-source-watchlist { background: rgba(168,85,247,0.15); color: #c084fc; }
+.alert-source-deepdive { background: rgba(34,197,94,0.15); color: #4ade80; }
+.alert-source-pamela { background: var(--accent-bg); color: var(--accent); }
+.alert-dismiss-btn { background: none; border: 1px solid var(--border); color: var(--text3); border-radius: var(--radius-sm); padding: 3px 10px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+.alert-dismiss-btn:hover { color: var(--text); border-color: var(--text3); }
+.alert-filters { display: flex; gap: 6px; margin-bottom: 16px; }
+
 /* ===== REPORT CARDS ===== */
 .report-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.15s; }
 .report-card:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -619,6 +641,7 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-section">Pipeline</div>
     <div class="nav-item" data-page="projects"><span class="icon">&#9733;</span> Project Dump <span class="badge" id="badge-projects">0</span></div>
     <div class="nav-item" data-page="watchlist"><span class="icon">&#128065;</span> Watchlist <span class="badge" id="badge-watchlist">0</span></div>
+    <div class="nav-item" data-page="alerts"><span class="icon">&#128276;</span> Alerts <span class="badge" id="badge-alerts">0</span></div>
 
     <div class="nav-section">Research</div>
     <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
@@ -761,6 +784,24 @@ tbody tr:hover { background: var(--bg3); }
       </div>
       <div class="watchlist-grid" id="watchlist-grid"></div>
       <div id="wl-detail" style="margin-top:20px;"></div>
+    </div>
+
+    <!-- ===== ALERTS ===== -->
+    <div id="page-alerts" class="page hidden">
+      <div class="page-header">
+        <h1>Alerts</h1>
+        <p>Signals from market scans, watchlist checks, and deep dives</p>
+        <div class="header-actions">
+          <button class="btn btn-ghost btn-sm" onclick="requestAlertPermission()" id="btn-notify" style="font-size:11px;">Enable Notifications</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearDismissedAlerts()">Clear Read</button>
+        </div>
+      </div>
+      <div class="alert-filters" id="alert-filters">
+        <button class="task-filter active" data-filter="all" onclick="setAlertFilter('all')">All</button>
+        <button class="task-filter" data-filter="unread" onclick="setAlertFilter('unread')">Unread</button>
+        <button class="task-filter" data-filter="opportunity" onclick="setAlertFilter('opportunity')">Opportunities</button>
+      </div>
+      <div id="alerts-list"></div>
     </div>
 
     <!-- ===== RESEARCH ===== -->
@@ -1142,7 +1183,7 @@ const STAGE_COLORS = { 'Sourcing': '#3b82f6', 'Due Diligence': '#f59e0b', 'Term 
 const SECTORS = ['Stocks', 'Crypto', 'AI', 'DeFi', 'AI Crypto', 'Privacy', 'Other'];
 const SECTOR_TAG = { 'Stocks': 'stocks', 'AI': 'ai', 'DeFi': 'defi', 'AI Crypto': 'aicrypto', 'Privacy': 'privacy', 'Other': 'other' };
 
-let DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [], progress: [] };
+let DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [], progress: [], alerts: [] };
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function fmtDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
@@ -1409,7 +1450,8 @@ const PAMELA_TOOLS = [
   { name: 'get_fund_stats', description: 'Get summary statistics: deal counts (active/closed), task counts (open/high-priority), project count, report count, watchlist size.', input_schema: { type: 'object', properties: {} } },
   { name: 'save_research', description: 'Save a research report to the database. Use this after analyzing an asset to persist your findings. Include a clear verdict (BUY/SPECULATE/HOLD/AVOID) and conviction level.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Asset name or research title' }, type: { type: 'string', enum: ['crypto', 'stock'], description: 'Asset type' }, content: { type: 'string', description: 'Full research content with analysis, data, and verdict' }, rating: { type: 'string', enum: ['Strong Buy', 'Buy', 'Speculate', 'Hold', 'Sell', 'Avoid'], description: 'Rating verdict' }, conviction: { type: 'string', enum: ['High', 'Medium', 'Low'], description: 'Conviction level' } }, required: ['title', 'content'] } },
   { name: 'get_reports', description: 'Get recent research reports from the database. Use this to check past research, avoid duplicate work, and build on previous analysis. Returns title, type, rating, conviction, and date for each report.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Optional search query to filter reports by title' }, limit: { type: 'number', description: 'Max reports to return (default 10)' } } } },
-  { name: 'get_report_content', description: 'Get the full content of a specific research report by title. Use this to read past analysis in detail before updating or building on it.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Report title to search for (fuzzy match)' } }, required: ['title'] } }
+  { name: 'get_report_content', description: 'Get the full content of a specific research report by title. Use this to read past analysis in detail before updating or building on it.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Report title to search for (fuzzy match)' } }, required: ['title'] } },
+  { name: 'create_alert', description: 'Create an alert in Fund HQ to flag opportunities, risks, or noteworthy findings. Use severity "opportunity" for actionable setups scoring 18+/25 on the 5-lens filter.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Alert title (e.g. "SOL breaking out of accumulation")' }, content: { type: 'string', description: 'Alert body — details, bullet points, data. Use markdown formatting.' }, severity: { type: 'string', enum: ['info', 'warning', 'opportunity'], description: 'info=neutral update, warning=risk/caution, opportunity=actionable asymmetric setup' } }, required: ['title', 'content', 'severity'] } }
 ];
 
 function buildPamelaSystemPrompt() {
@@ -1515,8 +1557,10 @@ When doing deep research, build a crypto income statement:
 - Watchlist: ${wl || '(empty)'}
 - Recent reports: ${recentReports || '(none)'}
 - Open tasks: ${openTasks || '(none)'}
+- Unread alerts: ${(DB.alerts || []).filter(a => !a.dismissed).length}
 - Always use exact numbers from fetched data — never approximate
-- If a tool returns an error, explain and suggest alternatives`;
+- If a tool returns an error, explain and suggest alternatives
+- Use create_alert to flag important findings. Use severity "opportunity" for setups scoring 18+/25 on the 5-lens filter, "warning" for risks, "info" for general updates.`;
 }
 
 async function pamelaAgent(userMessage) {
@@ -1633,7 +1677,8 @@ async function executeToolCall(name, input) {
       return {
         deals: { total: DB.deals.length, active: DB.deals.filter(d => d.stage !== 'Passed').length, closed: DB.deals.filter(d => d.stage === 'Closed').length },
         tasks: { total: DB.tasks.length, open: DB.tasks.filter(t => t.status !== 'Done').length, high_priority: DB.tasks.filter(t => t.priority === 'High' && t.status !== 'Done').length },
-        projects: DB.projects.length, reports: DB.reports.length, watchlist: DB.watchlist.length
+        projects: DB.projects.length, reports: DB.reports.length, watchlist: DB.watchlist.length,
+        alerts: { total: DB.alerts.length, unread: DB.alerts.filter(a => !a.dismissed).length }
       };
     case 'save_research': {
       const id = genId();
@@ -1657,6 +1702,14 @@ async function executeToolCall(name, input) {
       const report = DB.reports.find(r => r.title && r.title.toLowerCase() === q) || DB.reports.find(r => r.title && r.title.toLowerCase().includes(q));
       if (!report) return { error: 'Report not found: ' + input.title };
       return { title: report.title, type: report.type, rating: report.rating, conviction: report.conviction, created: report.created, content: report.content?.substring(0, 4000) || '(empty)' };
+    }
+    case 'create_alert': {
+      const id = genId();
+      const data = { id, type: 'pamela', title: input.title, content: input.content, severity: input.severity || 'info', dismissed: false, created: new Date().toISOString(), source: 'pamela' };
+      if (firebaseReady && dbRef) { dbRef.child('alerts').child(id).set(data); }
+      else { DB.alerts.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+      renderAlerts(); updateBadges();
+      return { created: true, id, title: input.title, severity: input.severity };
     }
     default: return { error: 'Unknown tool: ' + name };
   }
@@ -2539,9 +2592,9 @@ async function autoFillResearch() {
 }
 
 // ===== FIREBASE REAL-TIME LISTENERS =====
-let initialLoad = { deals: false, projects: false, research: false, reports: false, tasks: false, watchlist: false, progress: false };
+let initialLoad = { deals: false, projects: false, research: false, reports: false, tasks: false, watchlist: false, progress: false, alerts: false };
 
-function allLoaded() { return initialLoad.deals && initialLoad.projects && initialLoad.research && initialLoad.reports && initialLoad.tasks && initialLoad.watchlist && initialLoad.progress; }
+function allLoaded() { return initialLoad.deals && initialLoad.projects && initialLoad.research && initialLoad.reports && initialLoad.tasks && initialLoad.watchlist && initialLoad.progress && initialLoad.alerts; }
 
 if (firebaseReady) {
   // Connection status
@@ -2618,7 +2671,23 @@ if (firebaseReady) {
     initialLoad.progress = true;
     if (allLoaded()) debouncedRender();
   });
+  dbRef.child('alerts').on('value', (snap) => {
+    const data = snap.val();
+    const prevCount = DB.alerts.filter(a => !a.dismissed).length;
+    DB.alerts = data ? Object.values(data) : [];
+    initialLoad.alerts = true;
+    if (allLoaded()) debouncedRender();
+    // Browser notification for new opportunity alerts
+    const newCount = DB.alerts.filter(a => !a.dismissed).length;
+    if (prevCount > 0 && newCount > prevCount) {
+      const newest = DB.alerts.filter(a => !a.dismissed).sort((a, b) => (b.created || '').localeCompare(a.created || ''))[0];
+      if (newest && newest.severity === 'opportunity') notifyAlert(newest);
+    }
+  });
 }
+
+// If no Firebase, mark alerts as loaded
+if (!firebaseReady) { initialLoad.alerts = true; }
 
 // Debounce rapid updates
 let renderTimeout;
@@ -2721,6 +2790,10 @@ function renderDashboard() {
       <div class="stat-label">Projects</div>
       <div class="stat-value green">${totalProjects}</div>
     </div>
+    <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-page=alerts]').click()">
+      <div class="stat-label">Alerts</div>
+      <div class="stat-value" style="color:var(--orange);">${DB.alerts.filter(a=>!a.dismissed).length}</div>
+    </div>
   `;
 
   // Watchlist — top scored or most recent, up to 5
@@ -2803,6 +2876,7 @@ function updateBadges() {
   set('badge-reports', DB.reports.length);
   set('badge-tasks', DB.tasks.filter(t=>t.status!=='Done').length);
   set('badge-watchlist', DB.watchlist.length);
+  set('badge-alerts', DB.alerts.filter(a => !a.dismissed).length);
 }
 
 // ===== RENDER PIPELINE =====
@@ -4992,13 +5066,14 @@ const PAGE_ALIASES = {
   'market data': 'marketdata', market: 'marketdata', markets: 'marketdata', marketdata: 'marketdata',
   'live data': 'marketdata', prices: 'marketdata', fundamentals: 'marketdata',
   watchlist: 'watchlist', 'watch list': 'watchlist', watching: 'watchlist', tracked: 'watchlist',
-  progress: 'progress', log: 'progress', 'daily log': 'progress', changelog: 'progress', 'work log': 'progress'
+  progress: 'progress', log: 'progress', 'daily log': 'progress', changelog: 'progress', 'work log': 'progress',
+  alerts: 'alerts', alert: 'alerts', notifications: 'alerts', signals: 'alerts'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', settings: 'Settings', marketdata: 'Market Data'
+  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', settings: 'Settings', marketdata: 'Market Data'
 };
 
 function toggleChat() {
@@ -5281,6 +5356,127 @@ function fuzzyPageMatch(input) {
 }
 
 
+// ===== ALERTS =====
+let currentAlertFilter = 'all';
+
+function setAlertFilter(filter) {
+  currentAlertFilter = filter;
+  document.querySelectorAll('#alert-filters .task-filter').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+  renderAlerts();
+}
+
+function renderAlerts() {
+  const list = document.getElementById('alerts-list');
+  if (!list) return;
+
+  let alerts = [...DB.alerts].sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+  if (currentAlertFilter === 'unread') alerts = alerts.filter(a => !a.dismissed);
+  else if (currentAlertFilter === 'opportunity') alerts = alerts.filter(a => a.severity === 'opportunity');
+
+  if (!alerts.length) {
+    const msg = currentAlertFilter === 'all' ? 'No alerts yet. Scheduled scans and Pamela will post signals here.' : 'No ' + currentAlertFilter + ' alerts.';
+    list.innerHTML = '<div class="empty-state"><div class="icon">&#128276;</div><p>' + msg + '</p></div>';
+    return;
+  }
+
+  list.innerHTML = alerts.map(a => {
+    const sevClass = 'alert-severity-' + (a.severity || 'info');
+    const dimClass = a.dismissed ? 'dismissed' : '';
+    const srcLabel = { scan: 'Daily Scan', watchlist: 'Watchlist', deepdive: 'Deep Dive', pamela: 'Pamela' }[a.type] || a.type || 'Alert';
+    const srcClass = 'alert-source-' + (a.type || 'scan');
+    return '<div class="alert-card ' + sevClass + ' ' + dimClass + '" id="alert-' + a.id + '">' +
+      '<div class="alert-header" onclick="toggleAlertExpand(\'' + a.id + '\')">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+            '<span class="alert-source ' + srcClass + '">' + srcLabel + '</span>' +
+            '<span style="font-size:14px;font-weight:600;">' + esc(a.title) + '</span>' +
+          '</div>' +
+          '<div class="alert-time">' + formatTimeAgo(a.created) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;">' +
+          (!a.dismissed ? '<button class="alert-dismiss-btn" onclick="event.stopPropagation();dismissAlert(\'' + a.id + '\')">Dismiss</button>' : '<span style="font-size:11px;color:var(--text3);">Read</span>') +
+          '<span style="font-size:14px;color:var(--text3);transition:transform 0.2s;" id="alert-toggle-' + a.id + '">&#9654;</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="alert-body" id="alert-body-' + a.id + '">' +
+        '<div class="alert-content">' + renderAlertContent(a.content) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function toggleAlertExpand(id) {
+  const body = document.getElementById('alert-body-' + id);
+  const toggle = document.getElementById('alert-toggle-' + id);
+  if (body) {
+    body.classList.toggle('open');
+    if (toggle) toggle.style.transform = body.classList.contains('open') ? 'rotate(90deg)' : '';
+  }
+}
+
+function dismissAlert(id) {
+  if (firebaseReady && dbRef) {
+    dbRef.child('alerts').child(id).update({ dismissed: true });
+  } else {
+    const a = DB.alerts.find(x => x.id === id);
+    if (a) { a.dismissed = true; localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+  }
+  renderAlerts();
+  updateBadges();
+}
+
+function clearDismissedAlerts() {
+  const dismissed = DB.alerts.filter(a => a.dismissed);
+  if (!dismissed.length) return;
+  dismissed.forEach(a => {
+    if (firebaseReady && dbRef) dbRef.child('alerts').child(a.id).remove();
+  });
+  if (!firebaseReady) {
+    DB.alerts = DB.alerts.filter(a => !a.dismissed);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderAlerts();
+  }
+}
+
+function renderAlertContent(content) {
+  if (!content) return '';
+  let html = esc(content);
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  html = html.replace(/^[-*] (.+)$/gm, '&bull; $1');
+  html = html.replace(/\n\n/g, '<br><br>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+function formatTimeAgo(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(iso).toISOString().split('T')[0];
+}
+
+function notifyAlert(alert) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    new Notification('Fund HQ: ' + alert.title, { body: (alert.content || '').substring(0, 120) });
+  }
+}
+
+function requestAlertPermission() {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(p => {
+    const btn = document.getElementById('btn-notify');
+    if (btn) btn.textContent = p === 'granted' ? 'Notifications On' : 'Notifications Off';
+  });
+}
+
 // ===== PROGRESS LOG =====
 function renderProgress() {
   const timeline = document.getElementById('progress-timeline');
@@ -5417,6 +5613,7 @@ function renderAll() {
   renderTasks();
   renderRoadmap();
   renderProgress();
+  renderAlerts();
   renderMarketData();
   // Load API keys into settings fields if present
   const fmpInput = document.getElementById('settings-fmp-key');
