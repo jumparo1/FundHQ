@@ -1350,9 +1350,13 @@ async function testAnthropicKey() {
   } catch(e) { el.textContent = 'Connection failed'; el.style.color = 'var(--red)'; }
 }
 
-async function callClaude(prompt, model) {
+async function callClaude(prompt, model, opts) {
   const key = getAnthropicKey();
   if (!key) throw new Error('No Anthropic API key configured. Add it in Settings.');
+  const body = { model: model || 'claude-haiku-4-5-20251001', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] };
+  if (opts?.webSearch) {
+    body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
+  }
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -1361,14 +1365,255 @@ async function callClaude(prompt, model) {
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true'
     },
-    body: JSON.stringify({ model: model || 'claude-haiku-4-5-20251001', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] })
+    body: JSON.stringify(body)
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error?.message || 'Claude API error (' + resp.status + ')');
   }
   const data = await resp.json();
-  return data.content[0].text;
+  // Extract text from all text blocks (web search returns multiple content blocks)
+  const textParts = data.content.filter(b => b.type === 'text').map(b => b.text);
+  const text = textParts.join('');
+  if (!opts?.webSearch) return text;
+  // Collect cited sources from citations arrays
+  const sources = [];
+  const seen = new Set();
+  for (const block of data.content) {
+    if (block.citations) {
+      for (const c of block.citations) {
+        if (c.url && !seen.has(c.url)) {
+          seen.add(c.url);
+          sources.push({ url: c.url, title: c.title || c.url });
+        }
+      }
+    }
+  }
+  return { text, sources };
+}
+
+// ===== PAMELA AI AGENT =====
+const PAMELA_TOOLS = [
+  { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker on CoinGecko. Returns top matches with id, symbol, name, and rank.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Crypto name or ticker to search for' } }, required: ['query'] } },
+  { name: 'get_crypto_data', description: 'Get detailed crypto data: price, market cap, FDV, volume, 24h/7d/30d changes, ATH/ATL, supply, categories, links, description. Use search_crypto first to get the coingecko_id.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string', description: 'CoinGecko ID (e.g. "bitcoin", "ethereum", "solana")' } }, required: ['coingecko_id'] } },
+  { name: 'search_stocks', description: 'Search for a stock by name or ticker on Financial Modeling Prep. Returns matches with symbol, name, exchange.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Stock name or ticker to search for' } }, required: ['query'] } },
+  { name: 'get_stock_data', description: 'Get detailed stock data: price, market cap, P/E, ROE, debt/equity, dividend yield, beta, sector, description. Use search_stocks first to get the symbol.', input_schema: { type: 'object', properties: { symbol: { type: 'string', description: 'Stock ticker symbol (e.g. "AAPL", "TSLA")' } }, required: ['symbol'] } },
+  { name: 'create_item', description: 'Create a new task, deal, or project in the database.', input_schema: { type: 'object', properties: { type: { type: 'string', enum: ['task', 'deal', 'project'], description: 'Type of item to create' }, name: { type: 'string', description: 'Name/title of the item' }, priority: { type: 'string', enum: ['High', 'Medium', 'Low'], description: 'Priority level (tasks only)' }, assignee: { type: 'string', description: 'Assigned to (tasks only): Jumparo, Tihomir, or Both' }, status: { type: 'string', description: 'Status (tasks: To Do/In Progress/Review/Done)' }, dueDate: { type: 'string', description: 'Due date YYYY-MM-DD (tasks only)' }, sector: { type: 'string', description: 'Sector (deals/projects)' }, stage: { type: 'string', description: 'Deal stage: Sourcing/Due Diligence/Term Sheet/Closed/Passed' }, notes: { type: 'string', description: 'Notes or description' } }, required: ['type', 'name'] } },
+  { name: 'update_item', description: 'Update an existing item in the database by fuzzy name match.', input_schema: { type: 'object', properties: { collection: { type: 'string', enum: ['tasks', 'deals', 'projects', 'research', 'reports'], description: 'Which collection' }, query: { type: 'string', description: 'Name/title to search for' }, updates: { type: 'object', description: 'Fields to update (e.g. {status: "Done", priority: "High"})' } }, required: ['collection', 'query', 'updates'] } },
+  { name: 'delete_item', description: 'Delete an item from the database. Returns a confirmation prompt — the user must confirm before it is actually deleted.', input_schema: { type: 'object', properties: { collection: { type: 'string', enum: ['tasks', 'deals', 'projects', 'research', 'reports'], description: 'Which collection' }, query: { type: 'string', description: 'Name/title to search for' } }, required: ['collection', 'query'] } },
+  { name: 'find_items', description: 'Search for items in a specific database collection by name. Returns matching items.', input_schema: { type: 'object', properties: { collection: { type: 'string', enum: ['tasks', 'deals', 'projects', 'research', 'reports'], description: 'Which collection to search' }, query: { type: 'string', description: 'Search query' } }, required: ['collection', 'query'] } },
+  { name: 'search_all', description: 'Full-text search across ALL database collections (deals, projects, research, reports, tasks). Returns matches with type and page.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Search query' } }, required: ['query'] } },
+  { name: 'add_to_watchlist', description: 'Add a crypto or stock asset to the watchlist. Searches and adds the top match.', input_schema: { type: 'object', properties: { asset_type: { type: 'string', enum: ['crypto', 'stock'], description: 'Type of asset' }, query: { type: 'string', description: 'Asset name or ticker to search and add' } }, required: ['asset_type', 'query'] } },
+  { name: 'get_watchlist', description: 'Get all tracked assets in the watchlist with their cached price data (symbol, name, type, price, 24h change, market cap).', input_schema: { type: 'object', properties: {} } },
+  { name: 'navigate_to_page', description: 'Navigate the user to a specific page in Fund HQ. Pages: dashboard, dealflow, tasks, roadmap, templates, reports, market, watchlist, settings, help, progress.', input_schema: { type: 'object', properties: { page: { type: 'string', description: 'Page name to navigate to' } }, required: ['page'] } },
+  { name: 'get_fund_stats', description: 'Get summary statistics: deal counts (active/closed), task counts (open/high-priority), project count, report count, watchlist size.', input_schema: { type: 'object', properties: {} } }
+];
+
+function buildPamelaSystemPrompt() {
+  return `You are Pamela, the AI research assistant for Fund HQ — a crypto and stock research platform run by ${MY_NAME}.
+
+## Your Role
+You are an asymmetric opportunity hunter. Your job is to help find investments where the upside massively outweighs the downside. Think: 10x potential with 20-30% downside risk.
+
+## How You Think About Investments
+When analyzing any asset, evaluate through these lenses:
+1. CATALYSTS — What upcoming events could move the price? (launches, partnerships, regulatory, unlocks)
+2. VALUATION — Is it cheap relative to peers? FDV/MC ratio >3x = heavy dilution ahead. Compare market caps.
+3. MOMENTUM — Is the trend shifting? Volume spikes, breaking key levels, sector rotation.
+4. RISK/REWARD — What's the realistic downside vs upside? Express as ratio (e.g. "3:1 R/R — risk 20% to make 60%").
+5. NARRATIVE — Does this fit a growing market theme? (AI, RWA, modular blockchains, DePIN, etc.)
+
+## Communication Style
+- Be direct and opinionated. Say "I like this setup" or "I'd pass" — not "it depends."
+- Use numbers. Don't say "high market cap" — say "$2.3B MC, rank #45."
+- Flag red flags: insider unlocks, low volume, FDV/MC >3x, declining TVL.
+- For comparisons, use tables.
+- Keep responses concise — 3-8 sentences for simple queries, longer for research.
+- Use markdown formatting: **bold** for emphasis, bullet points for lists.
+
+## Database Schema
+- deals: {name, sector, stage (Sourcing/Due Diligence/Term Sheet/Closed/Passed), lead, desc}
+- projects: {name, sector, status, url, notes}
+- reports: {title, type (crypto/stock), content, rating, conviction}
+- tasks: {title, assignee (Jumparo/Tihomir/Both), priority (High/Medium/Low), status (To Do/In Progress/Review/Done), dueDate}
+- watchlist: {symbol, name, type (crypto/stock), lastData: {price, change24h, marketCap}}
+
+## Tool Usage
+- For price/data: search first (search_crypto/search_stocks), then get full data.
+- For comparisons: fetch data for ALL assets, then analyze together.
+- For watchlist scanning: use get_watchlist, then fetch fresh data for interesting ones.
+- For "what's happening with X": combine market data + web search.
+- For deletes: use delete_item — it returns a confirmation prompt, tell the user to confirm.
+- When creating items: confirm what you created with key details.
+
+## Important
+- Today: ${new Date().toISOString().split('T')[0]}
+- Team: ${MY_NAME} (crypto) + Tihomir (equities)
+- Always use exact numbers from fetched data — never approximate.
+- If a tool returns an error, tell the user what went wrong and suggest alternatives.`;
+}
+
+async function pamelaAgent(userMessage) {
+  const key = getAnthropicKey();
+  if (!key) throw new Error('No API key');
+  const messages = [{ role: 'user', content: userMessage }];
+  const maxTurns = 8;
+
+  for (let turn = 0; turn < maxTurns; turn++) {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        system: buildPamelaSystemPrompt(),
+        tools: [...PAMELA_TOOLS, { type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+        messages
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'Claude API error (' + resp.status + ')');
+    }
+    const data = await resp.json();
+
+    // Check for tool_use blocks (exclude server-handled web_search)
+    const toolUseBlocks = data.content.filter(b => b.type === 'tool_use');
+
+    if (toolUseBlocks.length === 0 || data.stop_reason === 'end_turn') {
+      return extractPamelaResponse(data);
+    }
+
+    // Append assistant response to messages
+    messages.push({ role: 'assistant', content: data.content });
+
+    // Execute each tool call
+    const toolResults = [];
+    for (const tc of toolUseBlocks) {
+      let result;
+      try { result = await executeToolCall(tc.name, tc.input); }
+      catch (e) { result = { error: e.message }; }
+      toolResults.push({ type: 'tool_result', tool_use_id: tc.id, content: JSON.stringify(result) });
+    }
+    messages.push({ role: 'user', content: toolResults });
+  }
+  return { text: 'Hit complexity limit. Try a simpler request.', actions: [] };
+}
+
+async function executeToolCall(name, input) {
+  switch (name) {
+    case 'search_crypto': return await searchCrypto(input.query);
+    case 'get_crypto_data': {
+      const d = await fetchCryptoData(input.coingecko_id);
+      if (d) { try { d.score = computeCryptoScore(d); } catch {} }
+      return d;
+    }
+    case 'search_stocks': return await searchStocks(input.query);
+    case 'get_stock_data': {
+      const d = await fetchStockData(input.symbol);
+      if (d) { try { d.score = computeStockScore(d); } catch {} }
+      return d;
+    }
+    case 'create_item': {
+      const opts = { ...input };
+      delete opts.type; delete opts.name;
+      if (input.type === 'task') { const item = chatCreateTask(input.name, opts); chatWriteItem('tasks', item.id, item); renderAll(); return { created: 'task', title: item.title, id: item.id }; }
+      if (input.type === 'deal') { const item = chatCreateDeal(input.name, opts); chatWriteItem('deals', item.id, item); renderAll(); return { created: 'deal', name: item.name, id: item.id }; }
+      if (input.type === 'project') { const item = chatCreateProject(input.name, opts); chatWriteItem('projects', item.id, item); renderAll(); return { created: 'project', name: item.name, id: item.id }; }
+      return { error: 'Unknown type: ' + input.type };
+    }
+    case 'update_item': {
+      const found = chatFindItem(input.collection, input.query);
+      if (!found.items.length) return { error: 'Not found: ' + input.query };
+      if (!found.exact && found.items.length > 1) return { error: 'Ambiguous — multiple matches', matches: found.items.map(i => getItemName(i, input.collection)) };
+      const item = found.items[0];
+      chatUpdateItem(input.collection, item.id, input.updates);
+      renderAll();
+      return { updated: getItemName(item, input.collection), fields: Object.keys(input.updates) };
+    }
+    case 'delete_item': {
+      const found = chatFindItem(input.collection, input.query);
+      if (!found.items.length) return { error: 'Not found: ' + input.query };
+      if (!found.exact && found.items.length > 1) return { error: 'Ambiguous — multiple matches', matches: found.items.map(i => getItemName(i, input.collection)) };
+      const item = found.items[0];
+      const itemName = getItemName(item, input.collection);
+      chatPendingAction = { action: 'delete', collection: input.collection, id: item.id, name: itemName };
+      return { confirmation_required: true, name: itemName, collection: input.collection, message: 'Ask the user to confirm deletion.' };
+    }
+    case 'find_items': return chatFindItem(input.collection, input.query);
+    case 'search_all': return searchAll(input.query);
+    case 'add_to_watchlist': {
+      const results = input.asset_type === 'crypto' ? await searchCrypto(input.query) : await searchStocks(input.query);
+      if (!results || !results.length) return { error: 'Not found: ' + input.query };
+      const r = results[0];
+      await addToWatchlist(input.asset_type, input.asset_type === 'crypto' ? r.id : r.symbol, r.symbol || r.name, r.name, r.thumb || '');
+      renderAll();
+      return { added: r.name, symbol: r.symbol || r.name, type: input.asset_type };
+    }
+    case 'get_watchlist':
+      return (DB.watchlist || []).map(w => ({ symbol: w.symbol, name: w.name, type: w.type, price: w.lastData?.price, change24h: w.lastData?.change24h, marketCap: w.lastData?.marketCap }));
+    case 'navigate_to_page': {
+      const alias = (input.page || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const page = PAGE_ALIASES[alias] || fuzzyPageMatch(alias);
+      if (page) { navigateTo(page); return { navigated_to: PAGE_LABELS[page] || page }; }
+      return { error: 'Unknown page', available: Object.values(PAGE_LABELS) };
+    }
+    case 'get_fund_stats':
+      return {
+        deals: { total: DB.deals.length, active: DB.deals.filter(d => d.stage !== 'Passed').length, closed: DB.deals.filter(d => d.stage === 'Closed').length },
+        tasks: { total: DB.tasks.length, open: DB.tasks.filter(t => t.status !== 'Done').length, high_priority: DB.tasks.filter(t => t.priority === 'High' && t.status !== 'Done').length },
+        projects: DB.projects.length, reports: DB.reports.length, watchlist: DB.watchlist.length
+      };
+    default: return { error: 'Unknown tool: ' + name };
+  }
+}
+
+function extractPamelaResponse(apiResponse) {
+  const textParts = apiResponse.content.filter(b => b.type === 'text').map(b => b.text);
+  let text = textParts.join('');
+  // Collect web search citations
+  const sources = [];
+  const seen = new Set();
+  for (const block of apiResponse.content) {
+    if (block.citations) {
+      for (const c of block.citations) {
+        if (c.url && !seen.has(c.url)) { seen.add(c.url); sources.push({ url: c.url, title: c.title || c.url }); }
+      }
+    }
+  }
+  // Convert markdown to HTML
+  text = text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^[-*]\s+/gm, '&bull; ')
+    .replace(/^\d+\.\s+/gm, function(m) { return m; })
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+  // Add source links
+  if (sources.length) {
+    text += '<br><br><span style="color:var(--text3);font-size:11px;">Sources: ' +
+      sources.slice(0, 5).map(s => '<a href="' + esc(s.url) + '" target="_blank" style="color:var(--accent);">' + esc(s.title.substring(0, 40)) + '</a>').join(' | ') + '</span>';
+  }
+  return { text, actions: [] };
+}
+
+function pamelaShowThinking() {
+  const el = document.createElement('div');
+  el.className = 'chat-msg chat-msg-bot';
+  el.id = 'pamela-thinking';
+  el.innerHTML = '<div class="chat-msg-text" style="color:var(--text3);font-style:italic;"><span class="spinner" style="display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:middle;"></span>Thinking...</div>';
+  const msgs = document.getElementById('chat-messages');
+  if (msgs) { msgs.appendChild(el); msgs.scrollTop = msgs.scrollHeight; }
+}
+function pamelaHideThinking() {
+  const el = document.getElementById('pamela-thinking');
+  if (el) el.remove();
 }
 
 // ===== FUNDAMENTAL SCORING ENGINE =====
@@ -1519,7 +1764,9 @@ function buildCryptoResearchPrompt(projectName, marketData) {
   return `You are a professional crypto research analyst writing a comprehensive report on ${projectName}.
 ${dataContext}
 ## TASK
-Fill out the following 18-section crypto research template with real, substantive analysis. Use the live market data provided above for exact numbers. For information you genuinely don't have, write [Unknown] rather than guessing.
+You have web search available. Search for the latest news, partnerships, protocol updates, TVL data, governance proposals, and developer activity for ${projectName}. Use recent data (last 30 days) wherever possible. Cite your sources.
+
+Fill out the following 16-section crypto research template with real, substantive analysis. Use the live market data provided above for exact numbers. For information you genuinely don't have, write [Unknown] rather than guessing.
 
 ## OUTPUT FORMAT
 Return ONLY the filled template below. Keep the exact section headers and field labels. Each section should be 3-8 lines of concise, actionable analysis. Do not add extra sections or commentary outside the template.
@@ -1567,16 +1814,7 @@ Fork resistance:  [assess]
 [Key founders/leaders, backgrounds, track record, team size if known, any red flags.]
 
 ═══════════════════════════════════════════════════════
-6. GOVERNANCE
-═══════════════════════════════════════════════════════
-* Governance model: [on-chain / off-chain / multisig / DAO / foundation-led]
-* Token voting: [1 token = 1 vote? veToken? delegated?]
-* Key decisions made: [recent governance proposals, fee changes, upgrades]
-* Decentralization level: [who really controls the protocol?]
-* Treasury governance: [how are funds allocated? community vote or team discretion?]
-
-═══════════════════════════════════════════════════════
-7. TOKENOMICS
+6. TOKENOMICS
 ═══════════════════════════════════════════════════════
 SUPPLY:
 Launch Date: [fill] | Launch Price: [$] | Current Price: [use live data]
@@ -1609,8 +1847,14 @@ DEMAND & VALUE ACCRUAL:
 * Two-token model? [if yes: what does each token do?]
 * Key question: Does holding give a claim on cash flows, or just governance + speculation?
 
+GOVERNANCE:
+* Governance model: [on-chain / off-chain / multisig / DAO / foundation-led]
+* Token voting: [1 token = 1 vote? veToken? delegated?]
+* Decentralization level: [who really controls the protocol?]
+* Treasury governance: [how are funds allocated?]
+
 ═══════════════════════════════════════════════════════
-8. BACKERS & FUNDING
+7. BACKERS & FUNDING
 ═══════════════════════════════════════════════════════
 * Lead investors: [Names]
 * Round details: [Stage, size, valuation]
@@ -1619,7 +1863,7 @@ DEMAND & VALUE ACCRUAL:
 * Status: [Early/Stealth/Well-funded/No data]
 
 ═══════════════════════════════════════════════════════
-9. COMPETITIVE LANDSCAPE & VALUATION
+8. VALUATION, COMPETITION & REVENUE
 ═══════════════════════════════════════════════════════
 NARRATIVE FIT:
 Macro theme: [DePIN / DeAI / DeFi / Gaming / Infra / etc.]
@@ -1636,29 +1880,24 @@ VALUATION VERDICT:
 * P/E vs peers: [cheap / fair / expensive / N/A if unprofitable]
 * Premium/discount justified? [why or why not]
 
-═══════════════════════════════════════════════════════
-10. USERS, GROWTH & REVENUE
-═══════════════════════════════════════════════════════
-USAGE: DAU/MAU: [fill] | TVL: [$] | Growth trend: [fill]
+COMPETITIVE EDGE:
+* [What makes this different from peers]
+* [Hard-to-replicate design features]
+
+USAGE & REVENUE:
+DAU/MAU: [fill] | TVL: [$] | Growth trend: [fill]
 
 CRYPTO INCOME STATEMENT:
-Total Fees: [$] — all economic value captured
-Less Supply-Side Fees: [$] — paid to LPs/stakers/validators
-= Protocol Revenue: [$] — what the protocol keeps
-Less Token Incentives: [$] — emissions cost
-= Earnings: [$] — bottom-line profitability
-
-KEY RATIOS:
-Protocol Margin: [%] | Net Income Margin: [%] | Revenue Multiple: [x]
-Source: Token Terminal, DefiLlama
+Total Fees: [$] | Protocol Revenue: [$] | Token Incentives: [$] | Earnings: [$]
+Protocol Margin: [%] | Revenue Multiple: [x]
 
 ═══════════════════════════════════════════════════════
-11. SOCIAL SENTIMENT
+9. SOCIAL SENTIMENT
 ═══════════════════════════════════════════════════════
 [Twitter/X following, community activity, Discord/Telegram size, sentiment analysis, influencer coverage.]
 
 ═══════════════════════════════════════════════════════
-12. TOP HOLDERS & WHALE ACTIVITY
+10. TOP HOLDERS & WHALE ACTIVITY
 ═══════════════════════════════════════════════════════
 ON-CHAIN:
 * Top holder concentration: [top 10 holders %]
@@ -1672,7 +1911,7 @@ PERP POSITIONING (if futures exist):
 Source: Hyperdash, Arkham
 
 ═══════════════════════════════════════════════════════
-13. CHART & TECHNICAL ANALYSIS
+11. CHART & TECHNICAL ANALYSIS
 ═══════════════════════════════════════════════════════
 Price:          [use live data]
 ATH:            [use live data]
@@ -1685,20 +1924,20 @@ Key levels:     [fill support/resistance if known]
 Trend:          [assess current trend]
 
 ═══════════════════════════════════════════════════════
-14. CATALYSTS & FUD
+12. CATALYSTS & FUD
 ═══════════════════════════════════════════════════════
 Bullish catalysts: [list 3-5]
 Bearish risks/FUD: [list 3-5]
 
 ═══════════════════════════════════════════════════════
-15. FINAL THESIS
+13. FINAL THESIS
 ═══════════════════════════════════════════════════════
 Bull case: [2-3 sentences]
 Bear case: [2-3 sentences]
 Base case: [2-3 sentences]
 
 ═══════════════════════════════════════════════════════
-16. SIGNAL
+14. SIGNAL
 ═══════════════════════════════════════════════════════
 VERDICT:     [BUY / SPECULATE / HOLD-WAIT / AVOID]
 Conviction:  [High / Medium / Low]
@@ -1706,21 +1945,9 @@ Timeframe:   [Short / Medium / Long-term]
 One-liner:   [single sentence summary]
 
 ═══════════════════════════════════════════════════════
-17. SOURCES
+15. SOURCES
 ═══════════════════════════════════════════════════════
 [List relevant data sources: CoinGecko, DefiLlama, Token Terminal, Token Unlocks, Hyperdash, project docs, etc.]
-
-═══════════════════════════════════════════════════════
-18. SUBSTACK ONE-PAGER
-═══════════════════════════════════════════════════════
-[Convert sections 0-17 above into a Substack-ready article. Same structure, same content — just reformatted:]
-- Section dividers → --- + ## Heading markdown headers
-- Inline data → markdown tables
-- Bullets → - **Bold label:** text
-- Income statement → markdown table
-- Key insights → > blockquote
-- Add # Title + subtitle at top, disclaimer at bottom
-- Keep ALL sections, same order, same words — reformat only
 
 ═══════════════════════════════════════════════════════
 AI SCORE ADJUSTMENT (REQUIRED)
@@ -1763,9 +1990,14 @@ async function aiResearchCrypto() {
       if (statusEl) statusEl.textContent = 'CoinGecko failed, calling Claude without market data...';
     }
 
-    // 2. Build prompt and call Claude
+    // 2. Build prompt and call Claude (with web search)
     const prompt = buildCryptoResearchPrompt(projectName, marketData);
-    const result = await callClaude(prompt, model);
+    const rawResult = await callClaude(prompt, model, { webSearch: true });
+    let result = typeof rawResult === 'string' ? rawResult : rawResult.text;
+    const webSources = (typeof rawResult === 'object' && rawResult.sources) || [];
+    if (webSources.length) {
+      result += '\n\n' + '='.repeat(50) + '\nSOURCES\n' + '='.repeat(50) + '\n' + webSources.map(s => '- ' + s.title + '\n  ' + s.url).join('\n');
+    }
 
     // 3. Parse AI score adjustment if present
     let aiAdjust = null, aiReason = '';
@@ -3037,16 +3269,7 @@ X: [@handle] | Website: [url]
 * Credibility: [why this team? track record?]
 
 ═══════════════════════════════════════════════════
-6. GOVERNANCE
-═══════════════════════════════════════════════════
-* Governance model: [on-chain / off-chain / multisig / DAO / foundation-led]
-* Token voting: [1 token = 1 vote? veToken? delegated?]
-* Key decisions made: [recent governance proposals, fee changes, upgrades]
-* Decentralization level: [who really controls the protocol?]
-* Treasury governance: [how are funds allocated? community vote or team discretion?]
-
-═══════════════════════════════════════════════════
-7. TOKENOMICS
+6. TOKENOMICS
 ═══════════════════════════════════════════════════
 SUPPLY:
 Launch Date: [Date] | Launch Price: [$] | Current Price: [$]
@@ -3080,8 +3303,15 @@ DEMAND & VALUE ACCRUAL:
 * Two-token model? [if yes: what does each token do?]
 * Key question: Does holding give a claim on cash flows, or just governance + speculation?
 
+GOVERNANCE:
+* Governance model: [on-chain / off-chain / multisig / DAO / foundation-led]
+* Token voting: [1 token = 1 vote? veToken? delegated?]
+* Key decisions made: [recent governance proposals, fee changes, upgrades]
+* Decentralization level: [who really controls the protocol?]
+* Treasury governance: [how are funds allocated? community vote or team discretion?]
+
 ═══════════════════════════════════════════════════
-8. BACKERS & FUNDING
+7. BACKERS & FUNDING
 ═══════════════════════════════════════════════════
 * Lead investors: [Names]
 * Round details: [Stage, size, valuation]
@@ -3090,7 +3320,7 @@ DEMAND & VALUE ACCRUAL:
 * Status: [Early/Stealth/Well-funded/No data]
 
 ═══════════════════════════════════════════════════
-9. COMPETITIVE LANDSCAPE & VALUATION
+8. VALUATION, COMPETITION & REVENUE
 ═══════════════════════════════════════════════════
 NARRATIVE FIT:
 Macro theme: [DePIN / DeAI / DeFi / Gaming / Infra / etc.]
@@ -3114,12 +3344,9 @@ COMPETITIVE EDGE:
 * [Hard-to-replicate design features]
 * [Where asymmetric upside may lie]
 
-═══════════════════════════════════════════════════
-10. USERS, GROWTH & REVENUE
-═══════════════════════════════════════════════════
-USAGE METRICS:
+USAGE & REVENUE:
 Active miners/nodes: [#] | Validators: [#] | DAU: [#] | TVL: [$]
-30d trend: [rising/flat/falling] | Early traction signals: [X followers, demo, validator competition]
+30d trend: [rising/flat/falling]
 
 CRYPTO INCOME STATEMENT:
 Total Fees (annualized): [$] | Fees Growth YoY: [%]
@@ -3129,18 +3356,10 @@ Less: Token Incentives: [$] (emission cost to bootstrap growth)
 = Earnings: [$] | Profitable: [Yes/No]
 
 KEY RATIOS:
-Protocol Margin: [%] (protocol revenue / total fees — how much does protocol keep?)
-Net Income Margin: [%] (earnings / total fees)
-Revenue Multiple: [x] (FDV / annualized fees — years of fees to justify valuation)
-
-REVENUE MODEL:
-* Fee structure: [what users pay, how it splits between protocol + supply-side]
-* Demand side: [who consumes output? real buyers or speculative?]
-* On-chain revenue: [visible fees/volume? or purely emission-driven?]
-* Self-sustaining? [can it survive without token emissions?]
+Protocol Margin: [%] | Net Income Margin: [%] | Revenue Multiple: [x]
 
 ═══════════════════════════════════════════════════
-11. SOCIAL SENTIMENT
+9. SOCIAL SENTIMENT
 ═══════════════════════════════════════════════════
 * Community vibe: [positive / hyped / skeptical / quiet]
 * Influencer engagement: [who is talking? bullish or bearish?]
@@ -3149,7 +3368,7 @@ REVENUE MODEL:
 Signal Rating: [Strong / Moderate / Weak]
 
 ═══════════════════════════════════════════════════
-12. TOP HOLDERS & WHALE ACTIVITY
+10. TOP HOLDERS & WHALE ACTIVITY
 ═══════════════════════════════════════════════════
 Top 10 concentration: [%] | Top 30 concentration: [%]
 * Whale wallets: [# flagged as whale, team, or CEX]
@@ -3167,7 +3386,7 @@ TOP TRADER PnL:
 Entry clusters: [$X-$Y range] | Avg PnL: [+/-X%] | Whales holding or selling: [status]
 
 ═══════════════════════════════════════════════════
-13. CHART & TECHNICAL ANALYSIS
+11. CHART & TECHNICAL ANALYSIS
 ═══════════════════════════════════════════════════
 * Trend: [direction + strength]
 * Support: [$, $] | Resistance: [$, $]
@@ -3178,7 +3397,7 @@ Entry clusters: [$X-$Y range] | Avg PnL: [+/-X%] | Whales holding or selling: [s
 BTC Pair: [Outperforming / Underperforming] | Market Structure: [Accumulation / Markup / Distribution / Markdown]
 
 ═══════════════════════════════════════════════════
-14. CATALYSTS & FUD
+12. CATALYSTS & FUD
 ═══════════════════════════════════════════════════
 POSITIVE CATALYSTS:
 * [Catalyst 1 - product launch, listing, partnership, upgrade]
@@ -3191,7 +3410,7 @@ RISKS / FUD:
 * [Risk 3 - upcoming token unlock, high emissions dilution]
 
 ═══════════════════════════════════════════════════
-15. FINAL THESIS
+13. FINAL THESIS
 ═══════════════════════════════════════════════════
 BULLISH:
 * [Strength 1]
@@ -3204,44 +3423,27 @@ BEARISH:
 * [Risk 3]
 
 ═══════════════════════════════════════════════════
-16. SIGNAL
+14. SIGNAL
 ═══════════════════════════════════════════════════
 VERDICT: [BUY / SPECULATE / HOLD-WAIT / AVOID]
 Conviction: [High / Medium / Low] | Timeframe: [Short / Medium / Long]
 One-liner: [core reason for the call]
 
 ═══════════════════════════════════════════════════
-17. SOURCES
+15. SOURCES
 ═══════════════════════════════════════════════════
 CoinGecko | DefiLlama | Artemis | TokenTerminal | Token Unlocks | Dexscreener | DropsTab | SpotOnChain | Etherscan | Holderscan | Crunchbase | CoinCarp | CryptoRank | Hyperdash | Cookie.fun | GoatIndex | Coindar | Coinmarketcal | Tokenomist.ai | Official Docs | X (Twitter)
-
-═══════════════════════════════════════════════════
-18. SUBSTACK ONE-PAGER
-═══════════════════════════════════════════════════
-[Convert the full report above into a Substack-ready article. Same structure, same content — reformatted for newsletter readability:]
-
-FORMAT RULES:
-- Section dividers (═══) become --- horizontal rules + ## Heading markdown headers
-- Inline key-value data → markdown tables (Overview, Supply, TA, Perp, Signal)
-- Bullet points → - **Bold label:** text
-- Income statement → proper markdown table
-- Key questions/takeaways → > blockquote callouts
-- Add # Title + subtitle line at top
-- Add disclaimer footer at bottom
-- Keep ALL 18 sections, same order, same words — just reformat
-
-PROMPT: "Take sections 0-17 of this report and convert them into a clean Substack article. Use markdown: ## headings, | tables |, **bold** labels, > blockquotes for key insights, --- dividers. Do not add, remove, or rewrite any content. Just reformat for newsletter readability. Add a title header and disclaimer footer."
 
 DISCLAIMER: This report was AI-generated with human edits. For informational purposes only - not financial advice. Always DYOR. The analyst may or may not hold tokens discussed.`;
 
 const STOCK_SECTIONS = ['Executive Summary', 'Investment Thesis', 'Financial Analysis', 'Valuation', 'Catalysts & Growth Drivers', 'Risk Assessment', 'Competitive Landscape', 'Technical Analysis', 'Management & Governance', 'Recommendation & Action Plan'];
-const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Governance', 'Tokenomics', 'Backers & Funding', 'Competitive Landscape & Valuation', 'Users, Growth & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources', 'Substack One-Pager'];
+const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Tokenomics', 'Backers & Funding', 'Valuation, Competition & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources'];
 
 // ===== STRUCTURED TEMPLATE DEFINITIONS =====
 const TEMPLATE_DEFS = {
   crypto: {
     id: 'crypto', label: 'Crypto Research', badge: 'CRYPTO / ALTCOINS', badgeClass: 'template-type-crypto',
-    desc: 'Deep-dive crypto analysis with 18 sections. On-chain metrics, tokenomics, whale tracking, social sentiment, and AI prompts.',
+    desc: 'Deep-dive crypto analysis with 16 sections. Tokenomics, valuation, whale tracking, social sentiment, and AI prompts.',
     sections: [
       { id: 'intro', title: 'Intro', prompt: 'Write a short, professional intro for this project. Mention its relevance to the narrative (DePIN/DeAI/DeFi/etc). 3 sentences max. Substack-friendly tone.', bullets: ['Warm intro — why this project matters', '2-3 sentences max, no fluff'] },
       { id: 'overview', title: 'Overview', prompt: 'Provide a concise overview: what it does, key metrics (FDV, MCap, volume), and links (X, website, GitHub).', bullets: ['What it does (1-2 sentences)', 'FDV / Market Cap / FDV-MC Ratio', 'Volume 24h & 7d with % change', 'Links: X handle, website, GitHub'] },
@@ -3249,11 +3451,9 @@ const TEMPLATE_DEFS = {
       { id: 'product', title: 'Product & Features', prompt: 'Describe the core product, how miners/nodes contribute, validator mechanics, tech stack, and key real-world utility features.', bullets: ['Core product / what it builds', 'How miners/nodes contribute & rewards', 'How validators secure it', 'Tech stack (infra, SDKs, tools)', 'Key features & real-world utility'] },
       { id: 'moats', title: 'Moats', prompt: 'Analyze competitive moats: data advantage, tech differentiation, trust barriers, incentive lock-in, and fork resistance.', bullets: ['Data Advantage (proprietary? feedback loops?)', 'Model/Tech Differentiation (unique architecture?)', 'Trust Barrier (transparent scoring?)', 'Incentive Lock-in (long-term alignment?)', 'Fork Resistance (easily cloned?)'] },
       { id: 'team', title: 'Team', prompt: 'Research the team: founders, key experience, links, and credibility assessment.', bullets: ['Founders (names, roles, background)', 'Key experience (crypto, AI, Web2)', 'Links (X, LinkedIn, GitHub)', 'Credibility (track record, why this team?)'] },
-      { id: 'code', title: 'Code & GitHub', prompt: 'Audit the GitHub presence: repo count, activity, code structure, and red flags.', bullets: ['Repos (count, main org/repo link)', 'Activity (last commit, active devs)', 'Structure (modular? clean? docs? tests?)', 'Red flags (abandoned? copy-paste? no tests?)'] },
-      { id: 'tokenomics', title: 'Tokenomics', prompt: 'Break down token economics: supply, distribution, vesting/unlocks, emissions, staking yield, and protocol revenue.', bullets: ['Launch date & price vs current', 'Circulating / Max supply & FDV', 'Distribution (Team/Investors/Community/Treasury %)', 'Next unlock (date, amount, % of circ)', 'Emissions (daily/weekly/yearly, inflation rate)', 'Staking (% staked, real yield, 30d revenue)'] },
+      { id: 'tokenomics', title: 'Tokenomics', prompt: 'Break down token economics: supply, distribution, vesting/unlocks, emissions, staking yield, governance model, and protocol revenue.', bullets: ['Launch date & price vs current', 'Circulating / Max supply & FDV', 'Distribution (Team/Investors/Community/Treasury %)', 'Vesting & unlocks (next unlock, cliff schedule)', 'Emissions & monetary policy (inflation, burns)', 'Demand & value accrual (staking, fees, utility)', 'Governance (model, voting, decentralization)'] },
       { id: 'backers', title: 'Backers & Funding', prompt: 'List lead investors, round details, notable backers, and funding status.', bullets: ['Lead investors', 'Round details (stage, size, valuation)', 'Notable backers (angels, DAOs, funds)', 'Status (early/stealth/well-funded/no data)'] },
-      { id: 'competitive', title: 'Competitive Landscape', prompt: 'Map the competitive landscape: narrative fit, 3 peer comparisons (name, sector, FDV, edge), and competitive advantages.', bullets: ['Narrative fit (macro theme, why relevant now)', 'Peer 1-3 (name, sector, FDV, edge, narrative)', 'Competitive edge (hard-to-replicate features)', 'Asymmetric upside potential'] },
-      { id: 'growth', title: 'Users, Growth & Revenue', prompt: 'Analyze usage metrics (miners, validators, DAU, TVL), revenue model, and demand side economics.', bullets: ['Active miners/nodes, validators, DAU, TVL', '30d trend (rising/flat/falling)', 'Revenue model (rewards, fees, demand-side)', 'On-chain revenue (real or emission-driven?)'] },
+      { id: 'valuation', title: 'Valuation, Competition & Revenue', prompt: 'Map competitive landscape with peer comparison table (FDV, revenue, P/S), valuation verdict, competitive edge, usage metrics, and crypto income statement.', bullets: ['Narrative fit (macro theme, why relevant now)', 'Peer comparison table (3 peers, FDV, P/S, edge)', 'Valuation verdict (cheap/fair/expensive vs peers)', 'Usage & growth (DAU, TVL, miners, 30d trend)', 'Income statement (fees, protocol revenue, earnings)', 'Key ratios (protocol margin, revenue multiple)'] },
       { id: 'sentiment', title: 'Social Sentiment', prompt: 'Gauge community sentiment, influencer engagement, public alpha, and FUD signals.', bullets: ['Community vibe (positive/hyped/skeptical/quiet)', 'Influencer engagement (who, bullish/bearish?)', 'Public alpha (leaks, insider threads)', 'FUD/warnings (recurring CT concerns)', 'Signal Rating (Strong/Moderate/Weak)'] },
       { id: 'whales', title: 'Top Holders & Whale Activity', prompt: 'Analyze top holder concentration, whale wallet behavior, and top trader PnL.', bullets: ['Top 10/30 concentration %', 'Whale wallets (flagged as whale/team/CEX)', 'Behavior (accumulating/distributing/idle)', 'Red flags (centralization, sell-offs, unknown multisigs)', 'Top trader entry clusters & PnL'] },
       { id: 'technical', title: 'Chart & Technical Analysis', prompt: 'Provide technical analysis: trend, support/resistance, entry zones, stop loss, volume/momentum, targets, BTC pair strength, and market structure.', bullets: ['Trend (direction + strength)', 'Support / Resistance levels', 'Entry zone (breakout/retest/DCA)', 'Stop loss & targets (TP1, TP2)', 'BTC Pair (outperforming/underperforming)', 'Market Structure (Accumulation/Markup/Distribution/Markdown)'] },
@@ -3602,7 +3802,7 @@ function openTemplateWorkspace(templateId, projectName) {
   _rwState = {
     templateId, projectName,
     sections: tpl.sections.map(s => ({ ...s, content: '', status: 'empty', enabled: true })),
-    marketData: null, aiModel: 'claude-haiku-4-5-20251001'
+    marketData: null, aiModel: 'claude-haiku-4-5-20251001', webSearch: false
   };
   // Try to fetch market data in background
   rwFetchMarketData(projectName, templateId);
@@ -3687,6 +3887,10 @@ function renderWorkspaceHeader() {
           <select id="rw-model-select" style="padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
             ${AI_MODELS.map(m => `<option value="${m.id}" ${m.id === _rwState.aiModel ? 'selected' : ''}>${m.label}</option>`).join('')}
           </select>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text3);cursor:pointer;margin:0 4px;" title="Search the web for recent news, data & sources while generating each section">
+            <input type="checkbox" id="rw-web-search" onchange="_rwState.webSearch=this.checked" ${_rwState.webSearch ? 'checked' : ''}>
+            &#127760; Web Search
+          </label>
           <button class="btn btn-primary btn-sm" onclick="rwRunAllAI()" id="rw-run-all-btn">&#129302; Run All with AI</button>
           <button class="btn btn-ghost btn-sm" onclick="rwRunEmptyAI()">&#9889; Fill Empty Only</button>
         ` : `<span style="font-size:12px;color:var(--text3);">Add Anthropic API key in <a href="#" onclick="event.preventDefault();document.querySelector('[data-page=settings]').click();" style="color:var(--accent);">Settings</a> for AI</span>`}
@@ -3827,14 +4031,23 @@ async function rwRunSectionAI(idx) {
   if (!s._open) { rwToggleSection(idx); }
 
   try {
-    const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData);
-    const result = await callClaude(prompt, model);
-    _rwState.sections[idx].content = result;
+    const useSearch = _rwState.webSearch || false;
+    const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData, useSearch);
+    const result = await callClaude(prompt, model, { webSearch: useSearch });
+    const content = useSearch ? result.text : result;
+    const sources = useSearch && result.sources?.length ? result.sources : [];
+    _rwState.sections[idx].content = content;
+    _rwState.sections[idx].sources = sources;
     _rwState.sections[idx].status = 'ai';
     const ta = document.getElementById('rw-ta-' + idx);
-    if (ta) { ta.value = result; ta.classList.add('filled'); }
+    if (ta) {
+      let display = content;
+      if (sources.length) display += '\n\n--- SOURCES ---\n' + sources.map(s => '- ' + s.title + ': ' + s.url).join('\n');
+      ta.value = display;
+      ta.classList.add('filled');
+    }
     badge.className = 'rw-status ai';
-    badge.innerHTML = '&#129302; AI';
+    badge.innerHTML = useSearch ? '&#127760; AI+Web' : '&#129302; AI';
   } catch (e) {
     badge.className = 'rw-status empty';
     badge.innerHTML = '&#10060; Error';
@@ -3860,18 +4073,26 @@ async function rwRunAllAI() {
     const { s, i } = enabled[k];
     statusArea.innerHTML = `<div class="rw-ai-status"><div class="spinner"></div> Researching section ${k+1}/${enabled.length}: <strong>${esc(s.title)}</strong>...</div>`;
     try {
-      const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData);
-      const result = await callClaude(prompt, model);
-      _rwState.sections[i].content = result;
+      const useSearch = _rwState.webSearch || false;
+      const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData, useSearch);
+      const result = await callClaude(prompt, model, { webSearch: useSearch });
+      const content = useSearch ? result.text : result;
+      const sources = useSearch && result.sources?.length ? result.sources : [];
+      _rwState.sections[i].content = content;
+      _rwState.sections[i].sources = sources;
       _rwState.sections[i].status = 'ai';
-      // Update UI
       const ta = document.getElementById('rw-ta-' + i);
-      if (ta) { ta.value = result; ta.classList.add('filled'); }
+      if (ta) {
+        let display = content;
+        if (sources.length) display += '\n\n--- SOURCES ---\n' + sources.map(s => '- ' + s.title + ': ' + s.url).join('\n');
+        ta.value = display;
+        ta.classList.add('filled');
+      }
       const sec = document.getElementById('rw-sec-' + i);
       if (sec) {
         const badge = sec.querySelector('.rw-status');
         badge.className = 'rw-status ai';
-        badge.innerHTML = '&#129302; AI';
+        badge.innerHTML = useSearch ? '&#127760; AI+Web' : '&#129302; AI';
       }
       updateRwProgress();
     } catch (e) {
@@ -3905,17 +4126,26 @@ async function rwRunEmptyAI() {
     const { s, i } = empty[k];
     statusArea.innerHTML = `<div class="rw-ai-status"><div class="spinner"></div> Filling section ${k+1}/${empty.length}: <strong>${esc(s.title)}</strong>...</div>`;
     try {
-      const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData);
-      const result = await callClaude(prompt, model);
-      _rwState.sections[i].content = result;
+      const useSearch = _rwState.webSearch || false;
+      const prompt = buildSectionPrompt(s, _rwState.projectName, _rwState.templateId, _rwState.marketData, useSearch);
+      const result = await callClaude(prompt, model, { webSearch: useSearch });
+      const content = useSearch ? result.text : result;
+      const sources = useSearch && result.sources?.length ? result.sources : [];
+      _rwState.sections[i].content = content;
+      _rwState.sections[i].sources = sources;
       _rwState.sections[i].status = 'ai';
       const ta = document.getElementById('rw-ta-' + i);
-      if (ta) { ta.value = result; ta.classList.add('filled'); }
+      if (ta) {
+        let display = content;
+        if (sources.length) display += '\n\n--- SOURCES ---\n' + sources.map(s => '- ' + s.title + ': ' + s.url).join('\n');
+        ta.value = display;
+        ta.classList.add('filled');
+      }
       const sec = document.getElementById('rw-sec-' + i);
       if (sec) {
         const badge = sec.querySelector('.rw-status');
         badge.className = 'rw-status ai';
-        badge.innerHTML = '&#129302; AI';
+        badge.innerHTML = useSearch ? '&#127760; AI+Web' : '&#129302; AI';
       }
       updateRwProgress();
     } catch (e) {
@@ -3926,8 +4156,11 @@ async function rwRunEmptyAI() {
   setTimeout(() => { statusArea.innerHTML = ''; }, 5000);
 }
 
-function buildSectionPrompt(section, projectName, templateType, marketData) {
+function buildSectionPrompt(section, projectName, templateType, marketData, useSearch) {
   let ctx = `You are a professional investment analyst. Write the "${section.title}" section for a research report on ${projectName}.\n\n`;
+  if (useSearch) {
+    ctx += `IMPORTANT: You have web search available. Search for the latest news, developments, partnerships, and data about ${projectName} relevant to this section. Use recent information (last 30 days preferred). Cite your sources.\n\n`;
+  }
   ctx += `TASK: ${section.prompt}\n\n`;
   ctx += `BULLET POINTS TO COVER:\n`;
   section.bullets.forEach(b => { ctx += `- ${b}\n`; });
@@ -4725,7 +4958,39 @@ function chatSend() {
   if (!raw) return;
   input.value = '';
   chatAddMsg('user', esc(raw));
-  setTimeout(() => chatProcess(raw), 150);
+
+  // Handle pending delete confirmations locally
+  if (chatPendingAction) {
+    const pending = chatPendingAction;
+    if (/^(?:yes|confirm|do it|delete|remove|ok|sure|y)$/i.test(raw)) {
+      chatPendingAction = null;
+      chatRemoveItem(pending.collection, pending.id);
+      renderAll();
+      chatAddMsg('bot', 'Deleted <strong>' + esc(pending.name) + '</strong>.');
+      return;
+    } else if (/^(?:no|cancel|nah|nope|n|nevermind)$/i.test(raw)) {
+      chatPendingAction = null;
+      chatAddMsg('bot', 'Cancelled.');
+      return;
+    }
+    chatPendingAction = null; // clear stale pending on new topic
+  }
+
+  // Route through AI agent
+  if (!getAnthropicKey()) {
+    chatAddMsg('bot', 'Add your Anthropic API key in <strong>Settings</strong> first.',
+      [{ label: 'Settings', action: 'go to settings' }]);
+    return;
+  }
+
+  pamelaShowThinking();
+  pamelaAgent(raw).then(result => {
+    pamelaHideThinking();
+    chatAddMsg('bot', result.text, result.actions);
+  }).catch(e => {
+    pamelaHideThinking();
+    chatAddMsg('bot', 'Error: ' + esc(e.message));
+  });
 }
 
 function getCurrentPage() {
@@ -4880,484 +5145,8 @@ function chatParseAttrs(text) {
   return { name, attrs };
 }
 
-function chatProcess(input) {
-  const q = input.toLowerCase().trim();
-
-  // --- PENDING CONFIRMATION (for deletes) ---
-  if (chatPendingAction) {
-    const pending = chatPendingAction;
-    if (/^(?:yes|confirm|do it|delete|remove|ok|sure|y)$/i.test(q)) {
-      chatPendingAction = null;
-      chatRemoveItem(pending.collection, pending.id);
-      chatAddMsg('bot', 'Deleted <strong>' + esc(pending.name) + '</strong> from ' + pending.collection + '. &#128465;');
-      return;
-    } else if (/^(?:no|cancel|nah|nope|n|nevermind)$/i.test(q)) {
-      chatPendingAction = null;
-      chatAddMsg('bot', 'Cancelled. Nothing was deleted.');
-      return;
-    }
-    // If they type something else, clear pending and continue processing
-    chatPendingAction = null;
-  }
-
-  // --- NAVIGATION ---
-  const navMatch = q.match(/^(?:go\s*(?:to)?|open|show|navigate\s*(?:to)?|switch\s*(?:to)?|take me to)\s+(.+)$/);
-  if (navMatch) {
-    const target = navMatch[1].trim();
-    const page = PAGE_ALIASES[target];
-    if (page) {
-      navigateTo(page);
-      chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[page] + '</strong>.', buildPageSuggestions(page));
-      return;
-    }
-    // Fuzzy match
-    const fuzzy = fuzzyPageMatch(target);
-    if (fuzzy) {
-      navigateTo(fuzzy);
-      chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[fuzzy] + '</strong>.', buildPageSuggestions(fuzzy));
-      return;
-    }
-    chatAddMsg('bot', "I don't recognize that page. Here are the available pages:", buildAllPageActions());
-    return;
-  }
-
-  // Direct page name typed alone
-  if (PAGE_ALIASES[q]) {
-    navigateTo(PAGE_ALIASES[q]);
-    chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[PAGE_ALIASES[q]] + '</strong>.', buildPageSuggestions(PAGE_ALIASES[q]));
-    return;
-  }
-
-  // --- INLINE CREATE (task, deal, project) ---
-  const addTaskMatch = q.match(/^(?:add|create|new)\s+task\s+(.+)/i);
-  if (addTaskMatch) {
-    const { name, attrs } = chatParseAttrs(addTaskMatch[1]);
-    if (!name) { chatAddMsg('bot', 'Please provide a task name. Example: <strong>add task Fix login bug priority high assigned to Jumparo</strong>'); return; }
-    const t = chatCreateTask(name, attrs);
-    let details = [];
-    if (t.priority !== 'Medium') details.push(t.priority + ' priority');
-    if (t.assignee) details.push('assigned to ' + t.assignee);
-    if (t.milestone) details.push('milestone: ' + t.milestone);
-    if (t.dueDate) details.push('due ' + fmtDate(t.dueDate));
-    chatAddMsg('bot', 'Created task <strong>' + esc(name) + '</strong>' + (details.length ? ' (' + details.join(', ') + ')' : '') + ' &#9989;', [
-      { label: 'Go to Tasks', action: 'go to tasks' },
-      { label: 'Add another', action: 'add task ' }
-    ]);
-    return;
-  }
-  // Just "add task" / "new task" with no name → open modal
-  if (/^(?:new|add|create)\s+task\s*$/i.test(q)) {
-    navigateTo('tasks'); setTimeout(() => openModal('task'), 200);
-    chatAddMsg('bot', 'Opening new task form. Or type <strong>add task My task name priority high</strong> to create inline.');
-    return;
-  }
-
-  const addDealMatch = q.match(/^(?:add|create|new)\s+deal\s+(.+)/i);
-  if (addDealMatch) {
-    const { name, attrs } = chatParseAttrs(addDealMatch[1]);
-    if (!name) { chatAddMsg('bot', 'Please provide a deal name. Example: <strong>add deal Acme Protocol sector DeFi</strong>'); return; }
-    const d = chatCreateDeal(name, attrs);
-    let details = [];
-    if (d.sector !== 'Other') details.push(d.sector);
-    if (d.stage !== 'Sourcing') details.push(d.stage);
-    chatAddMsg('bot', 'Created deal <strong>' + esc(name) + '</strong> in ' + d.stage + (details.length ? ' (' + details.join(', ') + ')' : '') + ' &#9989;', [
-      { label: 'Go to Deal Flow', action: 'go to deals' },
-      { label: 'Add another', action: 'add deal ' }
-    ]);
-    return;
-  }
-  if (/^(?:new|add|create)\s+deal\s*$/i.test(q)) {
-    navigateTo('dealflow'); setTimeout(() => openModal('deal'), 200);
-    chatAddMsg('bot', 'Opening new deal form. Or type <strong>add deal Acme Protocol sector DeFi</strong> to create inline.');
-    return;
-  }
-
-  const addProjMatch = q.match(/^(?:add|create|new)\s+project\s+(.+)/i);
-  if (addProjMatch) {
-    const { name, attrs } = chatParseAttrs(addProjMatch[1]);
-    if (!name) { chatAddMsg('bot', 'Please provide a project name. Example: <strong>add project LayerZero sector Infrastructure</strong>'); return; }
-    const p = chatCreateProject(name, attrs);
-    chatAddMsg('bot', 'Added project <strong>' + esc(name) + '</strong>' + (p.sector !== 'Other' ? ' (' + p.sector + ')' : '') + ' &#9989;', [
-      { label: 'Go to Projects', action: 'go to projects' },
-      { label: 'Add another', action: 'add project ' }
-    ]);
-    return;
-  }
-  if (/^(?:new|add|create)\s+project\s*$/i.test(q)) {
-    navigateTo('projects'); setTimeout(() => openModal('project'), 200);
-    chatAddMsg('bot', 'Opening new project form. Or type <strong>add project LayerZero sector DeFi</strong> to create inline.');
-    return;
-  }
-
-  if (/^(?:new|add|create)\s+(?:research|report)\s*$/i.test(q)) {
-    navigateTo(q.includes('report') ? 'templates' : 'research');
-    if (q.includes('report')) {
-      chatAddMsg('bot', 'Switched to <strong>Templates</strong> — pick Stock or Crypto template to create a new report.', [{ label: 'Go to Reports', action: 'go to reports' }]);
-    } else {
-      setTimeout(() => openModal('research'), 200);
-      chatAddMsg('bot', 'Opening new research note form.');
-    }
-    return;
-  }
-
-  // --- COMPLETE / MARK DONE ---
-  const completeMatch = q.match(/^(?:complete|finish|done|close|mark)\s+(?:task\s+)?(.+?)(?:\s+(?:as\s+)?done)?$/i);
-  if (completeMatch && !/^(?:go|open|show|nav|search|find|add|create|new|delete|remove|move|assign|set|export|backup|help|stats|status|my|high|where|recent)/i.test(q)) {
-    const query = completeMatch[1].replace(/\s+as\s*$/, '').trim();
-    const result = chatFindItem('tasks', query);
-    if (result.items.length === 0) {
-      chatAddMsg('bot', 'No task found matching "<strong>' + esc(query) + '</strong>". Try a more specific name.');
-      return;
-    }
-    if (result.exact) {
-      const t = result.items[0];
-      chatUpdateItem('tasks', t.id, { status: 'Done' });
-      chatAddMsg('bot', 'Marked <strong>' + esc(t.title) + '</strong> as Done &#9989;', [{ label: 'Go to Tasks', action: 'go to tasks' }, { label: 'My Tasks', action: 'my tasks' }]);
-    } else {
-      let html = 'Multiple tasks match. Which one?<br>';
-      const actions = result.items.map(t => ({ label: t.title.substring(0, 35), action: 'complete task ' + t.title }));
-      chatAddMsg('bot', html, actions);
-    }
-    return;
-  }
-
-  // --- MOVE (deal stage or task status) ---
-  const moveMatch = q.match(/^move\s+(?:(deal|task)\s+)?(.+?)\s+to\s+(.+)$/i);
-  if (moveMatch) {
-    const typeHint = (moveMatch[1] || '').toLowerCase();
-    const name = moveMatch[2].trim();
-    const target = moveMatch[3].trim();
-    // Try deal first
-    const stageTarget = STAGES.find(s => s.toLowerCase() === target.toLowerCase() || s.toLowerCase().startsWith(target.toLowerCase()));
-    const statusTarget = TASK_STATUSES.find(s => s.toLowerCase() === target.toLowerCase() || s.toLowerCase().replace(/\s+/g,'').startsWith(target.toLowerCase().replace(/\s+/g,'')));
-    if (typeHint !== 'task' && stageTarget) {
-      const result = chatFindItem('deals', name);
-      if (result.exact) {
-        chatUpdateItem('deals', result.items[0].id, { stage: stageTarget });
-        chatAddMsg('bot', 'Moved <strong>' + esc(result.items[0].name) + '</strong> to <strong>' + stageTarget + '</strong> &#9989;', [{ label: 'Deal Flow', action: 'go to deals' }]);
-        return;
-      }
-    }
-    if (typeHint !== 'deal' && statusTarget) {
-      const result = chatFindItem('tasks', name);
-      if (result.exact) {
-        chatUpdateItem('tasks', result.items[0].id, { status: statusTarget });
-        chatAddMsg('bot', 'Moved <strong>' + esc(result.items[0].title) + '</strong> to <strong>' + statusTarget + '</strong> &#9989;', [{ label: 'Tasks', action: 'go to tasks' }]);
-        return;
-      }
-    }
-    // Fallback — try both collections
-    const dealResult = chatFindItem('deals', name);
-    const taskResult = chatFindItem('tasks', name);
-    if (dealResult.items.length === 0 && taskResult.items.length === 0) {
-      chatAddMsg('bot', 'No deal or task found matching "<strong>' + esc(name) + '</strong>".');
-    } else {
-      let html = 'I found these — which one did you mean?<br>';
-      const actions = [];
-      dealResult.items.slice(0,3).forEach(d => actions.push({ label: '(Deal) ' + d.name.substring(0,25), action: 'move deal ' + d.name + ' to ' + target }));
-      taskResult.items.slice(0,3).forEach(t => actions.push({ label: '(Task) ' + t.title.substring(0,25), action: 'move task ' + t.title + ' to ' + target }));
-      chatAddMsg('bot', html, actions);
-    }
-    return;
-  }
-
-  // --- ASSIGN ---
-  const assignMatch = q.match(/^assign\s+(?:task\s+)?(.+?)\s+to\s+(jumparo|tihomir|both)\s*$/i);
-  if (assignMatch) {
-    const name = assignMatch[1].trim();
-    const assignee = assignMatch[2].charAt(0).toUpperCase() + assignMatch[2].slice(1).toLowerCase();
-    const result = chatFindItem('tasks', name);
-    if (result.exact) {
-      chatUpdateItem('tasks', result.items[0].id, { assignee });
-      chatAddMsg('bot', 'Assigned <strong>' + esc(result.items[0].title) + '</strong> to <strong>' + assignee + '</strong> &#9989;', [{ label: 'Tasks', action: 'go to tasks' }]);
-    } else if (result.items.length > 1) {
-      const actions = result.items.map(t => ({ label: t.title.substring(0,35), action: 'assign task ' + t.title + ' to ' + assignee }));
-      chatAddMsg('bot', 'Multiple tasks match. Which one?', actions);
-    } else {
-      chatAddMsg('bot', 'No task found matching "<strong>' + esc(name) + '</strong>".');
-    }
-    return;
-  }
-
-  // --- SET PRIORITY ---
-  const priMatch = q.match(/^(?:set\s+priority\s+(?:of\s+)?|prioritize\s+)(.+?)\s+(?:to\s+)?(high|medium|low)\s*$/i);
-  if (priMatch) {
-    const name = priMatch[1].trim();
-    const priority = priMatch[2].charAt(0).toUpperCase() + priMatch[2].slice(1).toLowerCase();
-    const result = chatFindItem('tasks', name);
-    if (result.exact) {
-      chatUpdateItem('tasks', result.items[0].id, { priority });
-      chatAddMsg('bot', 'Set priority of <strong>' + esc(result.items[0].title) + '</strong> to <strong>' + priority + '</strong> &#9989;');
-    } else if (result.items.length > 1) {
-      const actions = result.items.map(t => ({ label: t.title.substring(0,35), action: 'set priority of ' + t.title + ' to ' + priority }));
-      chatAddMsg('bot', 'Multiple tasks match. Which one?', actions);
-    } else {
-      chatAddMsg('bot', 'No task found matching "<strong>' + esc(name) + '</strong>".');
-    }
-    return;
-  }
-
-  // --- DELETE / REMOVE ---
-  const deleteMatch = q.match(/^(?:delete|remove)\s+(task|deal|project|research|report)\s+(.+)$/i);
-  if (deleteMatch) {
-    const type = deleteMatch[1].toLowerCase();
-    const name = deleteMatch[2].trim();
-    const collectionMap = { task: 'tasks', deal: 'deals', project: 'projects', research: 'research', report: 'reports' };
-    const collection = collectionMap[type];
-    const result = chatFindItem(collection, name);
-    if (result.exact) {
-      const item = result.items[0];
-      const itemName = getItemName(item, collection);
-      chatPendingAction = { action: 'delete', collection, id: item.id, name: itemName };
-      chatAddMsg('bot', 'Delete <strong>' + esc(itemName) + '</strong> from ' + type + 's? This can\'t be undone.', [
-        { label: 'Yes, delete', action: 'yes' },
-        { label: 'Cancel', action: 'cancel' }
-      ]);
-    } else if (result.items.length > 1) {
-      const actions = result.items.map(item => ({ label: getItemName(item, collection).substring(0,35), action: 'delete ' + type + ' ' + getItemName(item, collection) }));
-      chatAddMsg('bot', 'Multiple ' + type + 's match. Which one?', actions);
-    } else {
-      chatAddMsg('bot', 'No ' + type + ' found matching "<strong>' + esc(name) + '</strong>".');
-    }
-    return;
-  }
-
-  if (/^(?:export|backup|download)/i.test(q)) {
-    exportBackup();
-    chatAddMsg('bot', 'Backup downloaded! Check your downloads folder.');
-    return;
-  }
-
-  // --- AI RESEARCH ---
-  const researchMatch = q.match(/^(?:research|analyze|report on)\s+(.+)$/i);
-  if (researchMatch) {
-    const query = researchMatch[1].trim();
-    if (!getAnthropicKey()) {
-      chatAddMsg('bot', 'Add your Anthropic API key in <strong>Settings</strong> first to use AI research.',
-        [{ label: 'Go to Settings', action: 'go to settings' }]);
-      return;
-    }
-    chatAddMsg('bot', 'Creating AI research report for <strong>' + esc(query) + '</strong>... This may take 30-60 seconds.');
-    (async () => {
-      try {
-        let marketData = null;
-        try {
-          const results = await searchCrypto(query);
-          if (results.length > 0) marketData = await fetchCryptoData(results[0].id);
-        } catch {}
-        const prompt = buildCryptoResearchPrompt(query, marketData);
-        const content = await callClaude(prompt, 'claude-haiku-4-5-20251001');
-        const id = genId();
-        const data = { id, title: query, type: 'crypto', content, rating: '', conviction: '', created: today(), updated: today(), editedBy: MY_NAME };
-        if (dbRef) { dbRef.child('reports').child(id).set(data); }
-        else { DB.reports.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
-        chatAddMsg('bot', 'Research report for <strong>' + esc(query) + '</strong> is ready! &#129302;',
-          [{ label: 'Open report', action: 'go to reports' }]);
-      } catch(e) {
-        chatAddMsg('bot', 'Research failed: ' + esc(e.message));
-      }
-    })();
-    return;
-  }
-
-  // --- PRICE LOOKUP ---
-  const priceMatch = q.match(/^(?:price|quote|lookup|check)\s+(.+)$/i);
-  if (priceMatch) {
-    const query = priceMatch[1].trim();
-    chatAddMsg('bot', 'Looking up <strong>' + esc(query) + '</strong>...');
-    searchCrypto(query).then(async (results) => {
-      if (results.length > 0) {
-        try {
-          const data = await fetchCryptoData(results[0].id);
-          if (data) {
-            const changeColor = data.change24h >= 0 ? 'var(--green)' : 'var(--red)';
-            chatAddMsg('bot',
-              '<strong>' + esc(data.name) + ' (' + data.symbol + ')</strong><br>' +
-              'Price: <strong>$' + fmtNum(data.price) + '</strong> ' +
-              '<span style="color:' + changeColor + ';">' + fmtPct(data.change24h) + '</span><br>' +
-              'MCap: $' + fmtBigNum(data.marketCap) + (data.marketCapRank ? ' (#' + data.marketCapRank + ')' : '') + '<br>' +
-              'Vol: $' + fmtBigNum(data.volume24h),
-              [{ label: 'Add to watchlist', action: 'watch ' + data.name },
-               { label: 'Full detail', action: 'go to market data' }]
-            );
-            return;
-          }
-        } catch {}
-      }
-      chatAddMsg('bot', 'Could not find "<strong>' + esc(query) + '</strong>". Try the full name.');
-    }).catch(() => {
-      chatAddMsg('bot', 'API error. Try again in a moment.');
-    });
-    return;
-  }
-
-  // --- WATCH (add to watchlist) ---
-  const watchMatch = q.match(/^(?:watch|track|add\s*(?:to)?\s*watchlist)\s+(.+)$/i);
-  if (watchMatch) {
-    const query = watchMatch[1].trim();
-    chatAddMsg('bot', 'Searching for <strong>' + esc(query) + '</strong>...');
-    searchCrypto(query).then(async (results) => {
-      if (results.length > 0) {
-        const r = results[0];
-        await addToWatchlist('crypto', r.id, r.symbol, r.name, r.thumb || '');
-        chatAddMsg('bot', 'Added <strong>' + esc(r.name) + ' (' + r.symbol + ')</strong> to your watchlist. &#128200;',
-          [{ label: 'View watchlist', action: 'go to watchlist' }]);
-      } else {
-        chatAddMsg('bot', 'Could not find "<strong>' + esc(query) + '</strong>". Try the full name.');
-      }
-    }).catch(() => {
-      chatAddMsg('bot', 'API error. Try again in a moment.');
-    });
-    return;
-  }
-
-  // --- SEARCH ---
-  const searchMatch = q.match(/^(?:search|find|look\s*(?:for|up)?)\s+(.+)$/);
-  if (searchMatch) {
-    const term = searchMatch[1].trim();
-    chatDoSearch(term);
-    return;
-  }
-
-  // --- STATS ---
-  if (/^(?:stats|summary|counts?|numbers|overview|how many)/i.test(q)) {
-    const active = DB.deals.filter(d => d.stage !== 'Passed').length;
-    const closed = DB.deals.filter(d => d.stage === 'Closed').length;
-    const openTasks = DB.tasks.filter(t => t.status !== 'Done').length;
-    const doneTasks = DB.tasks.filter(t => t.status === 'Done').length;
-    chatAddMsg('bot',
-      '<strong>Fund Stats:</strong><br>' +
-      '&#9654; Active Deals: <strong>' + active + '</strong> (' + closed + ' closed)<br>' +
-      '&#9733; Projects: <strong>' + DB.projects.length + '</strong><br>' +
-      '&#9998; Research Notes: <strong>' + DB.research.length + '</strong><br>' +
-      '&#128203; Reports: <strong>' + DB.reports.length + '</strong><br>' +
-      '&#9745; Tasks: <strong>' + openTasks + '</strong> open, <strong>' + doneTasks + '</strong> done',
-      [{ label: 'Dashboard', action: 'dashboard' }]
-    );
-    return;
-  }
-
-  // --- STATUS ---
-  if (/^(?:status|connection|connected|firebase)/i.test(q)) {
-    chatAddMsg('bot',
-      '<strong>Connection Status:</strong><br>' +
-      'Firebase: <strong style="color:' + (fbConnected ? 'var(--green)' : 'var(--red)') + ';">' + (fbConnected ? 'Connected' : 'Offline') + '</strong><br>' +
-      'User: <strong>' + esc(MY_NAME) + '</strong><br>' +
-      'Team: Jumparo (crypto) + Tihomir (equities)',
-      [{ label: 'Settings', action: 'go to settings' }]
-    );
-    return;
-  }
-
-  // --- MY TASKS ---
-  if (/^(?:my\s*tasks|what.*(?:assigned|todo|to do|to-do)|what.*(?:should|need).*do)/i.test(q)) {
-    const mine = DB.tasks.filter(t => (t.assignee === MY_NAME || t.assignee === 'Both') && t.status !== 'Done');
-    if (mine.length === 0) {
-      chatAddMsg('bot', 'You have no open tasks assigned. Nice work! &#127881;', [{ label: 'New Task', action: 'new task' }]);
-    } else {
-      const high = mine.filter(t => t.priority === 'High');
-      let html = '<strong>Your open tasks (' + mine.length + '):</strong><br>';
-      if (high.length) html += '<span style="color:var(--red);">' + high.length + ' high priority</span><br>';
-      mine.slice(0, 8).forEach(t => {
-        const pri = t.priority === 'High' ? ' &#128308;' : t.priority === 'Low' ? ' &#128994;' : ' &#128992;';
-        html += '&middot; ' + esc(t.title) + pri + '<br>';
-      });
-      if (mine.length > 8) html += '...and ' + (mine.length - 8) + ' more';
-      chatAddMsg('bot', html, [{ label: 'Go to Tasks', action: 'go to tasks' }]);
-    }
-    return;
-  }
-
-  // --- HIGH PRIORITY ---
-  if (/^(?:high\s*priority|urgent|critical|important\s*tasks?)/i.test(q)) {
-    const high = DB.tasks.filter(t => t.priority === 'High' && t.status !== 'Done');
-    if (high.length === 0) {
-      chatAddMsg('bot', 'No high-priority tasks open. All clear! &#9989;');
-    } else {
-      let html = '<strong>High-priority tasks (' + high.length + '):</strong><br>';
-      high.slice(0, 8).forEach(t => {
-        html += '&#128308; ' + esc(t.title) + (t.assignee ? ' <span style="color:var(--text3);">(' + esc(t.assignee) + ')</span>' : '') + '<br>';
-      });
-      if (high.length > 8) html += '...and ' + (high.length - 8) + ' more';
-      chatAddMsg('bot', html, [{ label: 'Go to Tasks', action: 'go to tasks' }]);
-    }
-    return;
-  }
-
-  // --- WHERE AM I ---
-  if (/^(?:where\s*am\s*i|current\s*page|which\s*page)/i.test(q)) {
-    const cur = getCurrentPage();
-    chatAddMsg('bot', 'You\'re on <strong>' + PAGE_LABELS[cur] + '</strong>.', buildPageSuggestions(cur));
-    return;
-  }
-
-  // --- HELP ---
-  if (/^(?:help|\?|commands|what\s*can|how\s*(?:to|do)|guide|pamela)/i.test(q)) {
-    chatAddMsg('bot',
-      '<strong>I\'m Pamela — here\'s what I can do:</strong><br><br>' +
-      '<strong>Navigate:</strong> "go to tasks", "open roadmap", "dashboard"<br>' +
-      '<strong>Search:</strong> "search ethereum", "find DeFi"<br><br>' +
-      '<strong>Create inline:</strong><br>' +
-      '&middot; "add task Fix bug priority high assigned to Jumparo"<br>' +
-      '&middot; "add deal Acme Protocol sector DeFi"<br>' +
-      '&middot; "add project LayerZero sector Infrastructure"<br><br>' +
-      '<strong>Update:</strong><br>' +
-      '&middot; "complete task Fix bug" — mark as done<br>' +
-      '&middot; "move deal Acme to Due Diligence"<br>' +
-      '&middot; "assign task X to Tihomir"<br>' +
-      '&middot; "set priority of X to high"<br><br>' +
-      '<strong>Delete:</strong> "delete task X", "remove deal Acme"<br>' +
-      '<strong>Stats:</strong> "stats", "my tasks", "high priority"<br>' +
-      '<strong>Info:</strong> "status", "where am I"<br>' +
-      '<strong>Tools:</strong> "export" / "backup"',
-      [
-        { label: 'Stats', action: 'stats' },
-        { label: 'Add task', action: 'add task ' },
-        { label: 'My Tasks', action: 'my tasks' }
-      ]
-    );
-    return;
-  }
-
-  // --- RECENT ---
-  if (/^(?:recent|latest|new|what's new)/i.test(q)) {
-    let html = '<strong>Recent activity:</strong><br>';
-    const recentDeals = [...DB.deals].sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||'')).slice(0,3);
-    const recentTasks = [...DB.tasks].filter(t=>t.status!=='Done').sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||'')).slice(0,3);
-    if (recentDeals.length) {
-      html += '<br><strong>Deals:</strong><br>';
-      recentDeals.forEach(d => { html += '&middot; ' + esc(d.name) + ' <span style="color:var(--text3);">(' + d.stage + ')</span><br>'; });
-    }
-    if (recentTasks.length) {
-      html += '<br><strong>Tasks:</strong><br>';
-      recentTasks.forEach(t => { html += '&middot; ' + esc(t.title) + ' <span style="color:var(--text3);">(' + t.status + ')</span><br>'; });
-    }
-    if (!recentDeals.length && !recentTasks.length) html += 'No activity yet. Start by adding deals or tasks!';
-    chatAddMsg('bot', html, [{ label: 'Dashboard', action: 'dashboard' }]);
-    return;
-  }
-
-  // --- FALLBACK: Try fuzzy page match ---
-  const fuzzy = fuzzyPageMatch(q);
-  if (fuzzy) {
-    navigateTo(fuzzy);
-    chatAddMsg('bot', 'Navigated to <strong>' + PAGE_LABELS[fuzzy] + '</strong>.', buildPageSuggestions(fuzzy));
-    return;
-  }
-
-  // --- FALLBACK: Try search ---
-  const searchResults = searchAll(q);
-  if (searchResults.length > 0) {
-    chatRenderSearchResults(q, searchResults);
-    return;
-  }
-
-  // --- FINAL FALLBACK ---
-  chatAddMsg('bot', "I'm not sure what you mean. Try <strong>help</strong> for available commands, or type a page name to navigate.", [
-    { label: 'Help', action: 'help' },
-    { label: 'Dashboard', action: 'dashboard' }
-  ]);
-}
+// chatProcess() removed — Pamela now uses pamelaAgent() with Claude tool_use
+// Keeping searchAll, chatFindItem, chatCreate*, chatWriteItem, etc. as tool execution layer
 
 // --- Search engine ---
 function searchAll(term) {
@@ -5385,30 +5174,6 @@ function matchScore(term, fields) {
   return fields.some(f => f && f.toLowerCase().includes(term));
 }
 
-function chatDoSearch(term) {
-  const results = searchAll(term);
-  if (results.length === 0) {
-    chatAddMsg('bot', 'No results found for "<strong>' + esc(term) + '</strong>". Try a different search term.', [{ label: 'Help', action: 'help' }]);
-    return;
-  }
-  chatRenderSearchResults(term, results);
-}
-
-function chatRenderSearchResults(term, results) {
-  const capped = results.slice(0, 10);
-  let html = '<strong>Found ' + results.length + ' result' + (results.length !== 1 ? 's' : '') + '</strong> for "' + esc(term) + '":<br><br>';
-  capped.forEach(r => {
-    html += '<span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">' + r.type + '</span><br>';
-    html += '<strong>' + esc(r.name) + '</strong><br>';
-    html += '<span style="color:var(--text3);font-size:11px;">' + esc(r.sub) + '</span><br><br>';
-  });
-  if (results.length > 10) html += '<span style="color:var(--text3);">...and ' + (results.length - 10) + ' more</span>';
-  // Group pages for action chips
-  const pages = [...new Set(capped.map(r => r.page))];
-  const actions = pages.map(p => ({ label: 'Go to ' + PAGE_LABELS[p], action: 'go to ' + PAGE_LABELS[p].toLowerCase() }));
-  chatAddMsg('bot', html, actions);
-}
-
 // --- Fuzzy page matching ---
 function fuzzyPageMatch(input) {
   const q = input.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
@@ -5426,28 +5191,6 @@ function fuzzyPageMatch(input) {
   return null;
 }
 
-// --- Contextual suggestions per page ---
-function buildPageSuggestions(page) {
-  const suggestions = {
-    dashboard: [{ label: 'Stats', action: 'stats' }, { label: 'Recent', action: 'recent' }],
-    dealflow: [{ label: 'New Deal', action: 'new deal' }, { label: 'Stats', action: 'stats' }],
-    projects: [{ label: 'New Project', action: 'new project' }, { label: 'Search', action: 'search ' }],
-    research: [{ label: 'New Research', action: 'new research' }, { label: 'Templates', action: 'go to templates' }],
-    templates: [{ label: 'Go to Reports', action: 'go to reports' }],
-    reports: [{ label: 'New Report', action: 'new report' }, { label: 'Templates', action: 'go to templates' }],
-    tasks: [{ label: 'New Task', action: 'new task' }, { label: 'My Tasks', action: 'my tasks' }, { label: 'High Priority', action: 'high priority' }],
-    roadmap: [{ label: 'Go to Tasks', action: 'go to tasks' }, { label: 'Stats', action: 'stats' }],
-    settings: [{ label: 'Export Backup', action: 'export' }, { label: 'Status', action: 'status' }],
-    watchlist: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Add to watchlist', action: 'watch ' }, { label: 'Refresh', action: 'go to watchlist' }],
-    progress: [{ label: 'Log Today', action: 'go to progress' }, { label: 'Go to Roadmap', action: 'go to roadmap' }],
-    marketdata: [{ label: 'Price check', action: 'price bitcoin' }, { label: 'Search Market', action: 'go to market data' }]
-  };
-  return suggestions[page] || [];
-}
-
-function buildAllPageActions() {
-  return Object.entries(PAGE_LABELS).map(([page, label]) => ({ label: label, action: 'go to ' + label.toLowerCase() }));
-}
 
 // ===== PROGRESS LOG =====
 function renderProgress() {

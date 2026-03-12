@@ -43,6 +43,8 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - [x] Dedicated Watchlist page (under Pipeline) — separated from Market Data
 - [x] Market Data = search/discovery, Watchlist = tracked assets with detail view
 - [x] Progress page (under Roadmap) — daily work log with timeline, stats, streak tracking
+- [x] Web search integration — AI research pulls live web data and cites sources
+- [x] Pamela upgraded to AI agent — Claude tool_use with 13 tools, multi-turn loop, natural language
 
 ## Deploy
 - **Live URL:** https://jumparo1.github.io/JumpTools/fund-hq.html
@@ -52,6 +54,15 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - API keys stored in browser localStorage (per-domain, need re-entry if domain changes)
 
 ## Recent Changes
+- 2026-03-12: Pamela upgraded from regex chat bot to AI agent — Claude tool_use with multi-turn loop (max 8 turns)
+- 2026-03-12: 13 Pamela tools: search_crypto, get_crypto_data, search_stocks, get_stock_data, create_item, update_item, delete_item, find_items, search_all, add_to_watchlist, get_watchlist, navigate_to_page, get_fund_stats
+- 2026-03-12: Pamela system prompt focused on asymmetric opportunity hunting (5-lens framework)
+- 2026-03-12: Pamela now handles natural language, comparisons ("compare ETH vs SOL"), chained actions, web search
+- 2026-03-12: Removed ~480 lines of regex router (chatProcess), kept helper functions as tool execution layer
+- 2026-03-12: Web search integration — AI research now searches the web for recent news/data and cites sources (Anthropic web_search tool)
+- 2026-03-12: Web Search toggle in research workspace (off by default, always on for Pamela "research X")
+- 2026-03-12: Sections show "AI+Web" badge when generated with web search
+- 2026-03-12: Pamela research reports auto-include SOURCES section with cited URLs
 - 2026-03-11: Progress page (Roadmap section) — daily work log, timeline grouped by date, stats (items/days/streak), Firebase sync
 - 2026-03-11: Dedicated Watchlist page (Pipeline section) — search, add, track assets with detail view, scores, refresh
 - 2026-03-11: Market Data simplified to search/discovery only, Watchlist is now its own page
