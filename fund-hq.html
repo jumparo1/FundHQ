@@ -2901,6 +2901,7 @@ Date | Action | Key Findings | Rating | Analyst
 DISCLAIMER: Internal use only. All data must be independently verified. Not investment advice.`;
 
 const CRYPTO_TEMPLATE = `PROJECT: [TOKEN NAME] | TICKER: $[TICKER] | CHAIN: [Chain] | DATE: ${today()} | ANALYST: ${MY_NAME}
+TYPE: [DEX / L1-L2 / Lending / LST / NFT / AI-DePIN / Oracle-Infra / Gaming-Social]
 
 ═══════════════════════════════════════════════════
 0. INTRO
@@ -2915,7 +2916,7 @@ PROMPT: "Write a short, professional intro for [TOKEN NAME]. Mention its relevan
 What it does: [1-2 sentences]
 FDV: [$] | Market Cap: [$] | FDV/MC Ratio: [x]
 Volume 24h: [$] ([+/-%]) | Volume 7d: [$] ([+/-%])
-X: [@handle] | Website: [url] | GitHub: [url]
+X: [@handle] | Website: [url]
 
 ═══════════════════════════════════════════════════
 2. TL;DR
@@ -2947,26 +2948,40 @@ X: [@handle] | Website: [url] | GitHub: [url]
 ═══════════════════════════════════════════════════
 * Founders: [Names, roles, background]
 * Key experience: [crypto, AI, Web2, notable companies]
-* Links: [X, LinkedIn, GitHub]
+* Links: [X, LinkedIn]
 * Credibility: [why this team? track record?]
 
 ═══════════════════════════════════════════════════
-6. CODE & GITHUB
+6. GOVERNANCE
 ═══════════════════════════════════════════════════
-* Repos: [# of repos, main org/repo link]
-* Activity: [last commit, active devs/contributors]
-* Structure: [modular? clean? messy? docs? tests?]
-* Red flags: [abandoned? copy-paste? no tests?]
+* Governance model: [on-chain / off-chain / multisig / DAO / foundation-led]
+* Token voting: [1 token = 1 vote? veToken? delegated?]
+* Key decisions made: [recent governance proposals, fee changes, upgrades]
+* Decentralization level: [who really controls the protocol?]
+* Treasury governance: [how are funds allocated? community vote or team discretion?]
 
 ═══════════════════════════════════════════════════
 7. TOKENOMICS
 ═══════════════════════════════════════════════════
+SUPPLY:
 Launch Date: [Date] | Launch Price: [$] | Current Price: [$]
 Circulating Supply: [#] ([%]) | Max Supply: [#] | FDV: [$] | Market Cap: [$]
 Distribution: Team [%] | Investors [%] | Community [%] | Treasury [%] | Ecosystem [%]
+Centralization risk: [>30% insider/VC? flag it]
+
+VESTING & UNLOCKS:
 Next Unlock: [Date] | Amount: [# tokens, $value] | % of Circ: [%]
-Emissions: Daily [#] | Weekly [#] | Yearly [#] | Inflation Rate: [%]
-Staking: [% staked] | Real Yield: [%] | Protocol Revenue (30d): [$]
+Cliff unlocks next 6mo: [dates + amounts]
+Emissions: Daily [#] | Yearly [#] | Inflation Rate: [%]
+Source: token.unlocks.app
+
+DEMAND & VALUE ACCRUAL:
+* Buy-and-burn: [does protocol buy back + burn with revenue?]
+* Fee distribution: [are fees shared with stakers/holders?]
+* Staking: [% staked] | Real Yield: [% from protocol revenue, not emissions]
+* veToken / lock mechanics: [lock for boosted rewards or voting power?]
+* Protocol participation: [is token required to use the protocol?]
+* Key question: Does holding give a claim on cash flows, or just governance + speculation?
 
 ═══════════════════════════════════════════════════
 8. BACKERS & FUNDING
@@ -2974,19 +2989,28 @@ Staking: [% staked] | Real Yield: [%] | Protocol Revenue (30d): [$]
 * Lead investors: [Names]
 * Round details: [Stage, size, valuation]
 * Other notable backers: [Angels, DAOs, funds]
+* Treasury size: [$] | Burn rate: [$X/mo] | Runway: [X months]
 * Status: [Early/Stealth/Well-funded/No data]
 
 ═══════════════════════════════════════════════════
-9. COMPETITIVE LANDSCAPE
+9. COMPETITIVE LANDSCAPE & VALUATION
 ═══════════════════════════════════════════════════
 NARRATIVE FIT:
 Macro theme: [DePIN / DeAI / DeFi / Gaming / Infra / etc.]
 Why relevant now: [narrative timing, market demand]
 
-PEER COMPARISON:
-Peer 1: [Name] | Sector: [X] | FDV: [$] | Edge: [strength] | Narrative: [fit]
-Peer 2: [Name] | Sector: [X] | FDV: [$] | Edge: [strength] | Narrative: [fit]
-Peer 3: [Name] | Sector: [X] | FDV: [$] | Edge: [strength] | Narrative: [fit]
+PEER COMPARISON TABLE:
+| Project | FDV | Ann. Revenue | P/S | P/E | MCap/TVL | Edge |
+|---------|-----|-------------|-----|-----|----------|------|
+| [This]  | [$] | [$]         | [x] | [x] | [x]     | —    |
+| [Peer1] | [$] | [$]         | [x] | [x] | [x]     | [?]  |
+| [Peer2] | [$] | [$]         | [x] | [x] | [x]     | [?]  |
+| [Peer3] | [$] | [$]         | [x] | [x] | [x]     | [?]  |
+
+VALUATION VERDICT:
+* P/S vs peers: [cheap / fair / expensive]
+* P/E vs peers: [cheap / fair / expensive / N/A if unprofitable]
+* Premium/discount justified? [why or why not]
 
 COMPETITIVE EDGE:
 * [What makes this different from peers]
@@ -3000,11 +3024,23 @@ USAGE METRICS:
 Active miners/nodes: [#] | Validators: [#] | DAU: [#] | TVL: [$]
 30d trend: [rising/flat/falling] | Early traction signals: [X followers, demo, validator competition]
 
+CRYPTO INCOME STATEMENT:
+Total Fees (annualized): [$] | Fees Growth YoY: [%]
+Less: Supply-Side Fees: [$] (paid to LPs/stakers/validators)
+= Protocol Revenue: [$] | Revenue Growth YoY: [%]
+Less: Token Incentives: [$] (emission cost to bootstrap growth)
+= Earnings: [$] | Profitable: [Yes/No]
+
+KEY RATIOS:
+Protocol Margin: [%] (protocol revenue / total fees — how much does protocol keep?)
+Net Income Margin: [%] (earnings / total fees)
+Revenue Multiple: [x] (FDV / annualized fees — years of fees to justify valuation)
+
 REVENUE MODEL:
-Miner rewards: [performance-based / participation / other]
-Validator economics: [scoring + earnings mechanism]
-Demand side: [who consumes output? real buyers or speculative?]
-On-chain revenue: [visible fees/volume? or purely emission-driven?]
+* Fee structure: [what users pay, how it splits between protocol + supply-side]
+* Demand side: [who consumes output? real buyers or speculative?]
+* On-chain revenue: [visible fees/volume? or purely emission-driven?]
+* Self-sustaining? [can it survive without token emissions?]
 
 ═══════════════════════════════════════════════════
 11. SOCIAL SENTIMENT
@@ -3022,6 +3058,13 @@ Top 10 concentration: [%] | Top 30 concentration: [%]
 * Whale wallets: [# flagged as whale, team, or CEX]
 * Behavior: [accumulating / distributing / idle]
 * Red flags: [high centralization? active sell-offs? unknown multisigs?]
+
+PERP POSITIONING (Hyperdash):
+* OI: [$] | Funding: [%] | Long/Short ratio: [x]
+* Whale cohort ($1M+): [% long / % short]
+* Retail cohort ($10K-$100K): [% long / % short]
+* Smart money divergence: [whales vs retail — same direction or opposite?]
+* Liquidation clusters: Longs [$X-$Y] | Shorts [$X-$Y]
 
 TOP TRADER PnL:
 Entry clusters: [$X-$Y range] | Avg PnL: [+/-X%] | Whales holding or selling: [status]
@@ -3048,6 +3091,7 @@ POSITIVE CATALYSTS:
 RISKS / FUD:
 * [Risk 1 - regulatory, tech failure, team drama]
 * [Risk 2 - whale dumping, low usage, competitor launch]
+* [Risk 3 - upcoming token unlock, high emissions dilution]
 
 ═══════════════════════════════════════════════════
 15. FINAL THESIS
@@ -3072,7 +3116,7 @@ One-liner: [core reason for the call]
 ═══════════════════════════════════════════════════
 17. SOURCES
 ═══════════════════════════════════════════════════
-CoinGecko | DefiLlama | Artemis | TokenTerminal | TaoStats | SubnetStats | Dexscreener | DropsTab | SpotOnChain | Etherscan | Holderscan | Crunchbase | CoinCarp | CryptoRank | Cookie.fun | GoatIndex | Coindar | Coinmarketcal | Tokenomist.ai | GitHub | Official Docs | X (Twitter)
+CoinGecko | DefiLlama | Artemis | TokenTerminal | Token Unlocks | Dexscreener | DropsTab | SpotOnChain | Etherscan | Holderscan | Crunchbase | CoinCarp | CryptoRank | Hyperdash | Cookie.fun | GoatIndex | Coindar | Coinmarketcal | Tokenomist.ai | Official Docs | X (Twitter)
 
 ═══════════════════════════════════════════════════
 18. X / SUBSTACK PREVIEW
@@ -3084,7 +3128,7 @@ PROMPT: "Distill the full research into a punchy ~300 word X/Substack preview. S
 DISCLAIMER: This report was AI-generated with human edits. For informational purposes only - not financial advice. Always DYOR. The analyst may or may not hold tokens discussed.`;
 
 const STOCK_SECTIONS = ['Executive Summary', 'Investment Thesis', 'Financial Analysis', 'Valuation', 'Catalysts & Growth Drivers', 'Risk Assessment', 'Competitive Landscape', 'Technical Analysis', 'Management & Governance', 'Recommendation & Action Plan'];
-const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Code & GitHub', 'Tokenomics', 'Backers & Funding', 'Competitive Landscape', 'Users, Growth & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources'];
+const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Governance', 'Tokenomics', 'Backers & Funding', 'Competitive Landscape & Valuation', 'Users, Growth & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources'];
 
 // ===== STRUCTURED TEMPLATE DEFINITIONS =====
 const TEMPLATE_DEFS = {
