@@ -313,6 +313,36 @@ tbody tr:hover { background: var(--bg3); }
 .modal.modal-wide { width: 900px; max-width: 95vw; max-height: 90vh; }
 .modal.modal-wide textarea { min-height: 500px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
 
+/* ===== REPORT VIEW MODE ===== */
+.rv-toggle { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; width: fit-content; }
+.rv-toggle button { padding: 6px 18px; font-size: 12px; font-weight: 600; background: transparent; border: none; color: var(--text3); cursor: pointer; transition: all 0.15s; }
+.rv-toggle button.active { background: var(--accent); color: #fff; }
+.rv-meta { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.rv-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.rv-badge-rating { background: var(--accent-bg); color: var(--accent2); }
+.rv-badge-conviction { background: var(--bg3); color: var(--text2); }
+.rv-badge-date { font-size: 11px; color: var(--text3); }
+.rv-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; padding: 14px 16px; background: var(--bg3); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 20px; }
+.rv-header-item { font-size: 12px; }
+.rv-header-item span:first-child { color: var(--text3); text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
+.rv-header-item span:last-child { color: var(--text); font-weight: 600; }
+.rv-section { margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.rv-section-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg3); cursor: pointer; user-select: none; }
+.rv-section-head:hover { background: var(--bg4); }
+.rv-section-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-bg); color: var(--accent2); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rv-section-title { font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; flex: 1; }
+.rv-section-arrow { color: var(--text3); font-size: 10px; transition: transform 0.2s; }
+.rv-section.open .rv-section-arrow { transform: rotate(90deg); }
+.rv-section-body { padding: 14px 16px; font-size: 13px; line-height: 1.7; color: var(--text2); display: none; border-top: 1px solid var(--border); }
+.rv-section.open .rv-section-body { display: block; }
+.rv-section-body ul { margin: 0; padding-left: 6px; list-style: none; }
+.rv-section-body ul li { padding: 3px 0; position: relative; padding-left: 14px; }
+.rv-section-body ul li::before { content: ''; position: absolute; left: 0; top: 11px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.rv-section-body p { margin: 0 0 8px 0; }
+.rv-section-body p:last-child { margin-bottom: 0; }
+.rv-section-body strong { color: var(--text); }
+.rv-plain { font-size: 13px; line-height: 1.7; color: var(--text2); white-space: pre-wrap; }
+
 /* ===== TASK CARDS (Kanban) ===== */
 .task-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; cursor: pointer; transition: all 0.15s; }
 .task-card:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -2406,25 +2436,47 @@ function openModal(type, id) {
     const r = id ? DB.reports.find(x=>x.id===id) : null;
     const modal = document.getElementById('modal-content');
     modal.classList.add('modal-wide');
+    const hasContent = r && r.content && r.content.trim();
+    const startInView = hasContent;
     html = `
-      <h2>${r ? 'Edit' : 'New'} Report</h2>
-      <div class="form-group"><label>Title *</label><input id="m-title" value="${esc(r?.title||'')}" placeholder="e.g. Tesla (TSLA) or Ethereum (ETH)"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Rating</label><select id="m-rating"><option value="">—</option><option${(r?.rating||'')==='Strong Buy'?' selected':''}>Strong Buy</option><option${(r?.rating||'')==='Buy'?' selected':''}>Buy</option><option${(r?.rating||'')==='Hold'?' selected':''}>Hold</option><option${(r?.rating||'')==='Sell'?' selected':''}>Sell</option><option${(r?.rating||'')==='Speculate'?' selected':''}>Speculate</option><option${(r?.rating||'')==='Avoid'?' selected':''}>Avoid</option><option${(r?.rating||'')==='Watch'?' selected':''}>Watch</option></select></div>
-        <div class="form-group"><label>Conviction</label><select id="m-conviction"><option value="">—</option><option${(r?.conviction||'')==='High'?' selected':''}>High</option><option${(r?.conviction||'')==='Medium'?' selected':''}>Medium</option><option${(r?.conviction||'')==='Low'?' selected':''}>Low</option></select></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="margin:0;">${r ? esc(r.title) : 'New Report'}</h2>
+        ${hasContent ? `<div class="rv-toggle">
+          <button class="${startInView ? 'active' : ''}" onclick="toggleReportView('view')">View</button>
+          <button class="${startInView ? '' : 'active'}" onclick="toggleReportView('edit')">Edit</button>
+        </div>` : ''}
       </div>
-      ${getAnthropicKey() ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
-        <select id="ai-model-select" style="padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
-          ${AI_MODELS.map(m => '<option value="' + m.id + '">' + m.label + '</option>').join('')}
-        </select>
-        <button class="btn btn-primary btn-sm" id="btn-ai-research" onclick="aiResearchCrypto()" style="font-size:12px;">&#129302; Research with AI</button>
-        <span id="ai-research-status" style="font-size:11px;color:var(--text3);flex:1;"></span>
-      </div>` : '<div style="margin-bottom:12px;font-size:12px;color:var(--text3);">Add your Anthropic API key in <a href="#" onclick="event.preventDefault();document.querySelector(\'[data-page=settings]\').click();" style="color:var(--accent);">Settings</a> to enable AI research.</div>'}
-      <div class="form-group"><label>Content</label><textarea id="m-content" style="min-height:500px;">${esc(r?.content||'')}</textarea></div>
-      <div class="modal-actions">
-        ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveReport('${r?.id||''}')">${r ? 'Update' : 'Save'} Report</button>
+      ${r ? `<div class="rv-meta">
+        ${r.rating ? '<span class="rv-badge rv-badge-rating">' + esc(r.rating) + '</span>' : ''}
+        ${r.conviction ? '<span class="rv-badge rv-badge-conviction">' + esc(r.conviction) + ' conviction</span>' : ''}
+        <span class="rv-badge-date">${fmtDate(r.updated||r.created)}${r.editedBy ? ' &middot; ' + esc(r.editedBy) : ''}</span>
+      </div>` : ''}
+      <div id="rv-view-container" data-report-id="${r?.id||''}" style="display:${startInView ? 'block' : 'none'};">
+        ${hasContent ? renderReportContent(r.content) : ''}
+        <div class="modal-actions" style="margin-top:16px;">
+          ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
+          <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+        </div>
+      </div>
+      <div id="rv-edit-container" style="display:${startInView ? 'none' : 'block'};">
+        <div class="form-group"><label>Title *</label><input id="m-title" value="${esc(r?.title||'')}" placeholder="e.g. Tesla (TSLA) or Ethereum (ETH)"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Rating</label><select id="m-rating"><option value="">—</option><option${(r?.rating||'')==='Strong Buy'?' selected':''}>Strong Buy</option><option${(r?.rating||'')==='Buy'?' selected':''}>Buy</option><option${(r?.rating||'')==='Hold'?' selected':''}>Hold</option><option${(r?.rating||'')==='Sell'?' selected':''}>Sell</option><option${(r?.rating||'')==='Speculate'?' selected':''}>Speculate</option><option${(r?.rating||'')==='Avoid'?' selected':''}>Avoid</option><option${(r?.rating||'')==='Watch'?' selected':''}>Watch</option></select></div>
+          <div class="form-group"><label>Conviction</label><select id="m-conviction"><option value="">—</option><option${(r?.conviction||'')==='High'?' selected':''}>High</option><option${(r?.conviction||'')==='Medium'?' selected':''}>Medium</option><option${(r?.conviction||'')==='Low'?' selected':''}>Low</option></select></div>
+        </div>
+        ${getAnthropicKey() ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+          <select id="ai-model-select" style="padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            ${AI_MODELS.map(m => '<option value="' + m.id + '">' + m.label + '</option>').join('')}
+          </select>
+          <button class="btn btn-primary btn-sm" id="btn-ai-research" onclick="aiResearchCrypto()" style="font-size:12px;">&#129302; Research with AI</button>
+          <span id="ai-research-status" style="font-size:11px;color:var(--text3);flex:1;"></span>
+        </div>` : '<div style="margin-bottom:12px;font-size:12px;color:var(--text3);">Add your Anthropic API key in <a href="#" onclick="event.preventDefault();document.querySelector(\'[data-page=settings]\').click();" style="color:var(--accent);">Settings</a> to enable AI research.</div>'}
+        <div class="form-group"><label>Content</label><textarea id="m-content" style="min-height:500px;">${esc(r?.content||'')}</textarea></div>
+        <div class="modal-actions">
+          ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveReport('${r?.id||''}')">${r ? 'Update' : 'Save'} Report</button>
+        </div>
       </div>
     `;
   } else if (type === 'research') {
@@ -3762,6 +3814,117 @@ function createReportFromTemplate(type, title, marketData) {
     localStorage.setItem('fundHQ', JSON.stringify(DB));
     renderAll();
     openModal('report', id);
+  }
+}
+
+// ===== RENDER REPORT CONTENT (VIEW MODE) =====
+function renderReportContent(content) {
+  if (!content) return '<div class="rv-plain" style="color:var(--text3);text-align:center;padding:40px;">No content yet.</div>';
+  const raw = content.trim();
+  // Check if content uses section dividers
+  const hasSections = raw.includes('\u2550\u2550\u2550');
+  if (!hasSections) return '<div class="rv-plain">' + esc(raw) + '</div>';
+
+  let out = '';
+  // Extract header line (first line before any divider)
+  const lines = raw.split('\n');
+  const headerLine = lines[0];
+  if (headerLine && /PROJECT:|TICKER:|RATING:/i.test(headerLine)) {
+    const parts = headerLine.split('|').map(p => p.trim());
+    out += '<div class="rv-header">';
+    parts.forEach(p => {
+      const [k, ...vParts] = p.split(':');
+      const v = vParts.join(':').trim();
+      if (k && v) out += '<div class="rv-header-item"><span>' + esc(k.trim()) + '</span><span>' + esc(v) + '</span></div>';
+    });
+    out += '</div>';
+  }
+
+  // Split into sections by the ═══ divider pattern
+  const sectionRegex = /\u2550{3,}\n(.+?)\n\u2550{3,}/g;
+  const sections = [];
+  let match;
+  const allMatches = [];
+  while ((match = sectionRegex.exec(raw)) !== null) {
+    allMatches.push({ title: match[1].trim(), start: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < allMatches.length; i++) {
+    const bodyStart = allMatches[i].end;
+    const bodyEnd = i + 1 < allMatches.length ? allMatches[i + 1].start : raw.length;
+    const body = raw.substring(bodyStart, bodyEnd).trim();
+    sections.push({ title: allMatches[i].title, body });
+  }
+
+  sections.forEach((sec, i) => {
+    // Extract section number from title like "0. INTRO" or "14. CATALYSTS & FUD"
+    const numMatch = sec.title.match(/^(\d+)\.\s*(.+)$/);
+    const num = numMatch ? numMatch[1] : i;
+    const title = numMatch ? numMatch[2] : sec.title;
+    const isOpen = i < 3 ? ' open' : ''; // First 3 sections open by default
+
+    out += '<div class="rv-section' + isOpen + '" onclick="this.classList.toggle(\'open\')">';
+    out += '<div class="rv-section-head">';
+    out += '<div class="rv-section-num">' + esc(String(num)) + '</div>';
+    out += '<div class="rv-section-title">' + esc(title) + '</div>';
+    out += '<div class="rv-section-arrow">\u25B6</div>';
+    out += '</div>';
+    out += '<div class="rv-section-body" onclick="event.stopPropagation()">';
+    out += formatSectionBody(sec.body);
+    out += '</div></div>';
+  });
+
+  return out;
+}
+
+function formatSectionBody(text) {
+  if (!text) return '<p style="color:var(--text3);font-style:italic;">Empty</p>';
+  const lines = text.split('\n');
+  let html = '';
+  let inList = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (inList) { html += '</ul>'; inList = false; }
+      continue;
+    }
+    // Bullet lines starting with - or *
+    if (/^[-*]\s/.test(trimmed)) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      let content = esc(trimmed.replace(/^[-*]\s+/, ''));
+      // Bold key:value patterns like "Key: value"
+      content = content.replace(/^([A-Za-z][A-Za-z &\/,]+?):\s/, '<strong>$1:</strong> ');
+      html += '<li>' + content + '</li>';
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      let content = esc(trimmed);
+      // Bold key:value patterns
+      content = content.replace(/^([A-Za-z][A-Za-z &\/,]+?):\s/, '<strong>$1:</strong> ');
+      // Bold ALL-CAPS labels like "BULL:" or "CATALYSTS (Bull):"
+      content = content.replace(/^([A-Z][A-Z &()]+?):\s*/, '<strong>$1:</strong> ');
+      html += '<p>' + content + '</p>';
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function toggleReportView(mode) {
+  const viewEl = document.getElementById('rv-view-container');
+  const editEl = document.getElementById('rv-edit-container');
+  const btns = document.querySelectorAll('.rv-toggle button');
+  btns.forEach(b => b.classList.remove('active'));
+  if (mode === 'view') {
+    viewEl.style.display = 'block';
+    editEl.style.display = 'none';
+    btns[0].classList.add('active');
+    // Re-render in case content was edited
+    const r = DB.reports.find(x => x.id === viewEl.dataset.reportId);
+    if (r) viewEl.innerHTML = renderReportContent(r.content);
+  } else {
+    viewEl.style.display = 'none';
+    editEl.style.display = 'block';
+    btns[1].classList.add('active');
   }
 }
 
