@@ -482,6 +482,90 @@ tbody tr:hover { background: var(--bg3); }
 
 /* ===== HIDDEN ===== */
 .hidden { display: none !important; }
+
+/* ===== MOBILE HAMBURGER (hidden on desktop) ===== */
+.menu-toggle { display: none; position: fixed; top: 12px; left: 12px; z-index: 1002; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: 20px; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+.sidebar-overlay.open { opacity: 1; }
+
+/* ===== RESPONSIVE: TABLET & PHONE ===== */
+@media (max-width: 768px) {
+  /* Hamburger visible */
+  .menu-toggle { display: flex; }
+  .sidebar-overlay { display: block; pointer-events: none; }
+  .sidebar-overlay.open { pointer-events: all; }
+
+  /* Sidebar: off-screen drawer */
+  .sidebar { position: fixed; left: -260px; top: 0; z-index: 1001; height: 100vh; height: 100dvh; width: 240px; transition: left 0.3s ease; box-shadow: none; }
+  .sidebar.open { left: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.4); }
+
+  /* Main content: full width */
+  .main { padding: 60px 16px 16px 16px; max-height: none; height: auto; min-height: 100vh; }
+
+  /* Page titles: leave room for hamburger */
+  .main h1:first-child, .main > .page > h1:first-child { margin-top: 0; }
+
+  /* Form rows: stack vertically */
+  .form-row { grid-template-columns: 1fr !important; }
+
+  /* Template grid: single column */
+  .template-grid { grid-template-columns: 1fr !important; }
+
+  /* Chat panel: wider on tablet */
+  .chat-panel { width: calc(100vw - 32px); right: 16px; max-height: 70vh; }
+
+  /* Roadmap rows: scroll horizontally */
+  .roadmap-row { overflow-x: auto; min-width: 0; }
+
+  /* Search bars: full width */
+  .search-bar input, .market-search input { max-width: 100% !important; }
+
+  /* Pipeline: horizontal scroll */
+  .pipeline { overflow-x: auto; padding-bottom: 8px; }
+
+  /* Stats row: 2x2 on tablets */
+  .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Inline 2-col grids in help page etc */
+  [style*="grid-template-columns: 1fr 1fr"], [style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Quick actions: wrap */
+  [style*="Quick Actions"] + div, .main div[style*="flex-wrap"] { flex-wrap: wrap; }
+
+  /* Dashboard quick actions bar */
+  .quick-actions { flex-wrap: wrap; gap: 8px; }
+}
+
+/* ===== RESPONSIVE: PHONE PORTRAIT ===== */
+@media (max-width: 480px) {
+  .main { padding: 56px 12px 12px 12px; }
+  .main h1 { font-size: 22px; }
+  .main h2 { font-size: 17px; }
+
+  /* Chat: nearly full screen */
+  .chat-panel { width: calc(100vw - 16px); right: 8px; bottom: 80px; max-height: 75vh; }
+  .chat-fab { bottom: 16px; right: 16px; width: 48px; height: 48px; }
+
+  /* Modals: tighter padding */
+  .modal { padding: 20px 16px; }
+
+  /* Report view sections */
+  .rv-section-head { padding: 8px 10px; }
+  .rv-section-body { padding: 10px 12px; }
+  .rv-header { grid-template-columns: repeat(2, 1fr); }
+
+  /* Cards: tighter */
+  .report-card, .task-card { padding: 14px; }
+
+  /* Stat cards: smaller text */
+  .stat-card .stat-value { font-size: 22px; }
+
+  /* Watchlist grid: single column */
+  .watchlist-grid { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -506,8 +590,11 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 
 <div class="app">
+  <!-- MOBILE HAMBURGER -->
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">&#9776;</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo" onclick="location.reload()" style="cursor:pointer;" title="Click to refresh"><div class="logo-icon">F</div> Fund HQ</div>
     <div class="logo-sub">Private Investment Fund</div>
 
@@ -2170,7 +2257,20 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el => {
     el.classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
     document.getElementById('page-' + el.dataset.page).classList.remove('hidden');
+    // Close sidebar on mobile after nav
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
   });
+});
+
+// ===== MOBILE HAMBURGER =====
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+});
+document.getElementById('sidebar-overlay').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
 });
 
 // ===== RENDER DASHBOARD =====
