@@ -7,6 +7,7 @@
 <!-- Firebase SDK (compat mode — no build tools needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <style>
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -335,6 +336,20 @@ tbody tr:hover { background: var(--bg3); }
 .rv-section.open .rv-section-arrow { transform: rotate(90deg); }
 .rv-section-body { padding: 14px 16px; font-size: 13px; line-height: 1.7; color: var(--text2); display: none; border-top: 1px solid var(--border); }
 .rv-section.open .rv-section-body { display: block; }
+.rv-img-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+.rv-img-wrap { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: pointer; }
+.rv-img-wrap img { display: block; max-width: 100%; max-height: 300px; object-fit: contain; background: var(--bg1); }
+.rv-img-caption { font-size: 11px; color: var(--text3); padding: 4px 8px; background: var(--bg3); }
+.img-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000; display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+.img-lightbox img { max-width: 95vw; max-height: 92vh; object-fit: contain; border-radius: 4px; }
+.rv-attach-area { margin-top: 12px; padding: 12px; border: 2px dashed var(--border); border-radius: 8px; }
+.rv-attach-area .attach-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 12px; cursor: pointer; }
+.rv-attach-area .attach-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+.rv-attach-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.rv-attach-item { position: relative; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px; width: 180px; }
+.rv-attach-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; }
+.rv-attach-item .remove-btn { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: #ef4444; color: #fff; border: none; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.rv-attach-item input, .rv-attach-item select { width: 100%; margin-top: 4px; padding: 3px 6px; font-size: 11px; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
 .rv-section-body ul { margin: 0; padding-left: 6px; list-style: none; }
 .rv-section-body ul li { padding: 3px 0; position: relative; padding-left: 14px; }
 .rv-section-body ul li::before { content: ''; position: absolute; left: 0; top: 11px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
@@ -1113,6 +1128,7 @@ try {
   } else {
     firebase.initializeApp(firebaseConfig);
     dbRef = firebase.database().ref('fundHQ');
+    window.storageRef = firebase.storage().ref();
     firebaseReady = true;
   }
 } catch (e) {
@@ -2552,7 +2568,7 @@ function openModal(type, id) {
         <span class="rv-badge-date">${fmtDate(r.updated||r.created)}${r.editedBy ? ' &middot; ' + esc(r.editedBy) : ''}</span>
       </div>` : ''}
       <div id="rv-view-container" data-report-id="${r?.id||''}" style="display:${startInView ? 'block' : 'none'};">
-        ${hasContent ? renderReportContent(r.content) : ''}
+        ${hasContent ? renderReportContent(r.content, r.images) : ''}
         <div class="modal-actions" style="margin-top:16px;">
           ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
           <button class="btn btn-ghost" onclick="closeModal()">Close</button>
@@ -2572,6 +2588,24 @@ function openModal(type, id) {
           <span id="ai-research-status" style="font-size:11px;color:var(--text3);flex:1;"></span>
         </div>` : '<div style="margin-bottom:12px;font-size:12px;color:var(--text3);">Add your Anthropic API key in <a href="#" onclick="event.preventDefault();document.querySelector(\'[data-page=settings]\').click();" style="color:var(--accent);">Settings</a> to enable AI research.</div>'}
         <div class="form-group"><label>Content</label><textarea id="m-content" style="min-height:500px;">${esc(r?.content||'')}</textarea></div>
+        <div class="rv-attach-area">
+          <input type="file" id="img-upload-input" accept="image/*" multiple style="display:none;" onchange="handleImageUpload(this.files, '${r?.id||''}')">
+          <button class="attach-btn" onclick="document.getElementById('img-upload-input').click()">&#128247; Attach Images</button>
+          <span style="font-size:11px;color:var(--text3);margin-left:8px;">or paste from clipboard (Ctrl+V)</span>
+          <div id="rv-attach-preview" class="rv-attach-preview">
+            ${(r?.images||[]).map((img, idx) => `
+              <div class="rv-attach-item" data-idx="${idx}">
+                <button class="remove-btn" onclick="removeReportImage(${idx})">&times;</button>
+                <img src="${esc(img.url)}">
+                <input placeholder="Caption" value="${esc(img.caption||'')}" onchange="updateImageMeta(${idx},'caption',this.value)">
+                <select onchange="updateImageMeta(${idx},'section',this.value)">
+                  <option value="">All sections</option>
+                  ${Array.from({length:18},(_, n)=>'<option value="'+n+'"'+(String(img.section)===String(n)?' selected':'')+'>Section '+n+'</option>').join('')}
+                </select>
+              </div>
+            `).join('')}
+          </div>
+        </div>
         <div class="modal-actions">
           ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
           <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -2612,6 +2646,11 @@ function openModal(type, id) {
   }
   document.getElementById('modal-content').innerHTML = html;
   document.getElementById('modal-overlay').classList.add('open');
+  // Init report images for edit session
+  if (type === 'report') {
+    const r = id ? DB.reports.find(x=>x.id===id) : null;
+    initReportImages(r?.images);
+  }
 }
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
@@ -3918,7 +3957,7 @@ function createReportFromTemplate(type, title, marketData) {
 }
 
 // ===== RENDER REPORT CONTENT (VIEW MODE) =====
-function renderReportContent(content) {
+function renderReportContent(content, images) {
   if (!content) return '<div class="rv-plain" style="color:var(--text3);text-align:center;padding:40px;">No content yet.</div>';
   const raw = content.trim();
   // Check if content uses section dividers
@@ -3970,8 +4009,33 @@ function renderReportContent(content) {
     out += '</div>';
     out += '<div class="rv-section-body" onclick="event.stopPropagation()">';
     out += formatSectionBody(sec.body);
+    // Render images attached to this section
+    const sectionImages = (images || []).filter(img => String(img.section) === String(num));
+    if (sectionImages.length > 0) {
+      out += '<div class="rv-img-grid">';
+      sectionImages.forEach(img => {
+        out += '<div class="rv-img-wrap" onclick="openImageLightbox(\'' + esc(img.url) + '\')">';
+        out += '<img src="' + esc(img.url) + '">';
+        if (img.caption) out += '<div class="rv-img-caption">' + esc(img.caption) + '</div>';
+        out += '</div>';
+      });
+      out += '</div>';
+    }
     out += '</div></div>';
   });
+
+  // Render images without a section assignment at the bottom
+  const unsectioned = (images || []).filter(img => !img.section && img.section !== 0);
+  if (unsectioned.length > 0) {
+    out += '<div class="rv-img-grid" style="margin-top:16px;">';
+    unsectioned.forEach(img => {
+      out += '<div class="rv-img-wrap" onclick="openImageLightbox(\'' + esc(img.url) + '\')">';
+      out += '<img src="' + esc(img.url) + '">';
+      if (img.caption) out += '<div class="rv-img-caption">' + esc(img.caption) + '</div>';
+      out += '</div>';
+    });
+    out += '</div>';
+  }
 
   return out;
 }
@@ -4020,12 +4084,86 @@ function toggleReportView(mode) {
     btns[0].classList.add('active');
     // Re-render in case content was edited
     const r = DB.reports.find(x => x.id === viewEl.dataset.reportId);
-    if (r) viewEl.innerHTML = renderReportContent(r.content);
+    if (r) viewEl.innerHTML = renderReportContent(r.content, r.images);
   } else {
     viewEl.style.display = 'none';
     editEl.style.display = 'block';
     btns[1].classList.add('active');
   }
+}
+
+// ===== REPORT IMAGE MANAGEMENT =====
+window._reportImages = []; // temp array for current edit session
+
+function initReportImages(images) {
+  window._reportImages = (images || []).map(img => ({...img}));
+}
+
+async function handleImageUpload(files, reportId) {
+  const id = reportId || 'temp_' + Date.now();
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) continue;
+    const name = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+    try {
+      const ref = window.storageRef.child('reports/' + id + '/' + name);
+      const snap = await ref.put(file);
+      const url = await snap.ref.getDownloadURL();
+      window._reportImages.push({ url, caption: '', section: '' });
+      renderAttachPreviews();
+    } catch (e) {
+      alert('Upload failed: ' + e.message);
+    }
+  }
+}
+
+function renderAttachPreviews() {
+  const container = document.getElementById('rv-attach-preview');
+  if (!container) return;
+  container.innerHTML = window._reportImages.map((img, idx) => `
+    <div class="rv-attach-item" data-idx="${idx}">
+      <button class="remove-btn" onclick="removeReportImage(${idx})">&times;</button>
+      <img src="${esc(img.url)}">
+      <input placeholder="Caption" value="${esc(img.caption||'')}" onchange="updateImageMeta(${idx},'caption',this.value)">
+      <select onchange="updateImageMeta(${idx},'section',this.value)">
+        <option value="">All sections</option>
+        ${Array.from({length:18},(_,n)=>'<option value="'+n+'"'+(String(img.section)===String(n)?' selected':'')+'>Section '+n+'</option>').join('')}
+      </select>
+    </div>
+  `).join('');
+}
+
+function removeReportImage(idx) {
+  window._reportImages.splice(idx, 1);
+  renderAttachPreviews();
+}
+
+function updateImageMeta(idx, key, value) {
+  if (window._reportImages[idx]) window._reportImages[idx][key] = value;
+}
+
+// Clipboard paste support
+document.addEventListener('paste', function(e) {
+  const textarea = document.getElementById('m-content');
+  if (!textarea || !document.activeElement || document.activeElement !== textarea) return;
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (file) handleImageUpload([file], document.getElementById('rv-view-container')?.dataset?.reportId || '');
+      break;
+    }
+  }
+});
+
+// Lightbox
+function openImageLightbox(url) {
+  const lb = document.createElement('div');
+  lb.className = 'img-lightbox';
+  lb.onclick = () => lb.remove();
+  lb.innerHTML = '<img src="' + url + '">';
+  document.body.appendChild(lb);
 }
 
 // ===== SAVE REPORT =====
@@ -4040,6 +4178,7 @@ function saveReport(existingId) {
     content: document.getElementById('m-content').value,
     rating: document.getElementById('m-rating').value,
     conviction: document.getElementById('m-conviction').value,
+    images: window._reportImages.length > 0 ? window._reportImages : (existing?.images || null),
     created: existing?.created || today(),
     updated: today(),
     editedBy: MY_NAME
