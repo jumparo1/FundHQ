@@ -44,7 +44,9 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - [x] Market Data = search/discovery, Watchlist = tracked assets with detail view
 - [x] Progress page (under Roadmap) — daily work log with timeline, stats, streak tracking
 - [x] Web search integration — AI research pulls live web data and cites sources
-- [x] Pamela upgraded to AI agent — Claude tool_use with 13 tools, multi-turn loop, natural language
+- [x] Pamela upgraded to AI agent — Claude tool_use with 16 tools, multi-turn loop, natural language
+- [x] Pamela knowledge base — 5-lens filter, setup archetypes, position sizing, live context injection
+- [x] Scheduled research — daily morning scan (8am), evening watchlist check (8pm), weekly deep dive (Sun 10am)
 
 ## Deploy
 - **Live URL:** https://jumparo1.github.io/JumpTools/fund-hq.html
@@ -54,8 +56,12 @@ Central dashboard for fund management — projects, reports, tasks, roadmap, liv
 - API keys stored in browser localStorage (per-domain, need re-entry if domain changes)
 
 ## Recent Changes
+- 2026-03-12: Pamela knowledge base — full 5-lens filter, 4 setup archetypes, anti-patterns, position sizing, live watchlist/reports/tasks context injected into every conversation
+- 2026-03-12: Added 3 new Pamela tools: save_research, get_reports, get_report_content (16 tools total)
+- 2026-03-12: Skill files: ASYMMETRIC-SETUPS.md (opportunity framework), TRADING-EDGE.md (Jumparo's playbook + strategies)
+- 2026-03-12: Scheduled tasks: daily-market-scan (8am weekdays), watchlist-refresh (8pm daily), weekly-deep-dive (Sun 10am)
 - 2026-03-12: Pamela upgraded from regex chat bot to AI agent — Claude tool_use with multi-turn loop (max 8 turns)
-- 2026-03-12: 13 Pamela tools: search_crypto, get_crypto_data, search_stocks, get_stock_data, create_item, update_item, delete_item, find_items, search_all, add_to_watchlist, get_watchlist, navigate_to_page, get_fund_stats
+- 2026-03-12: 16 Pamela tools: market data, CRUD, watchlist, navigation, stats, save/get research
 - 2026-03-12: Pamela system prompt focused on asymmetric opportunity hunting (5-lens framework)
 - 2026-03-12: Pamela now handles natural language, comparisons ("compare ETH vs SOL"), chained actions, web search
 - 2026-03-12: Removed ~480 lines of regex router (chatProcess), kept helper functions as tool execution layer

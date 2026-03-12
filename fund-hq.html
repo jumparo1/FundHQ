@@ -1406,51 +1406,117 @@ const PAMELA_TOOLS = [
   { name: 'add_to_watchlist', description: 'Add a crypto or stock asset to the watchlist. Searches and adds the top match.', input_schema: { type: 'object', properties: { asset_type: { type: 'string', enum: ['crypto', 'stock'], description: 'Type of asset' }, query: { type: 'string', description: 'Asset name or ticker to search and add' } }, required: ['asset_type', 'query'] } },
   { name: 'get_watchlist', description: 'Get all tracked assets in the watchlist with their cached price data (symbol, name, type, price, 24h change, market cap).', input_schema: { type: 'object', properties: {} } },
   { name: 'navigate_to_page', description: 'Navigate the user to a specific page in Fund HQ. Pages: dashboard, dealflow, tasks, roadmap, templates, reports, market, watchlist, settings, help, progress.', input_schema: { type: 'object', properties: { page: { type: 'string', description: 'Page name to navigate to' } }, required: ['page'] } },
-  { name: 'get_fund_stats', description: 'Get summary statistics: deal counts (active/closed), task counts (open/high-priority), project count, report count, watchlist size.', input_schema: { type: 'object', properties: {} } }
+  { name: 'get_fund_stats', description: 'Get summary statistics: deal counts (active/closed), task counts (open/high-priority), project count, report count, watchlist size.', input_schema: { type: 'object', properties: {} } },
+  { name: 'save_research', description: 'Save a research report to the database. Use this after analyzing an asset to persist your findings. Include a clear verdict (BUY/SPECULATE/HOLD/AVOID) and conviction level.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Asset name or research title' }, type: { type: 'string', enum: ['crypto', 'stock'], description: 'Asset type' }, content: { type: 'string', description: 'Full research content with analysis, data, and verdict' }, rating: { type: 'string', enum: ['Strong Buy', 'Buy', 'Speculate', 'Hold', 'Sell', 'Avoid'], description: 'Rating verdict' }, conviction: { type: 'string', enum: ['High', 'Medium', 'Low'], description: 'Conviction level' } }, required: ['title', 'content'] } },
+  { name: 'get_reports', description: 'Get recent research reports from the database. Use this to check past research, avoid duplicate work, and build on previous analysis. Returns title, type, rating, conviction, and date for each report.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Optional search query to filter reports by title' }, limit: { type: 'number', description: 'Max reports to return (default 10)' } } } },
+  { name: 'get_report_content', description: 'Get the full content of a specific research report by title. Use this to read past analysis in detail before updating or building on it.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Report title to search for (fuzzy match)' } }, required: ['title'] } }
 ];
 
 function buildPamelaSystemPrompt() {
-  return `You are Pamela, the AI research assistant for Fund HQ — a crypto and stock research platform run by ${MY_NAME}.
+  // Build dynamic context from watchlist + recent reports
+  const wl = (DB.watchlist || []).map(w => w.symbol + (w.lastData?.change24h ? ' (' + (w.lastData.change24h > 0 ? '+' : '') + w.lastData.change24h.toFixed(1) + '%)' : '')).join(', ');
+  const recentReports = (DB.reports || []).slice(-5).map(r => r.title + (r.rating ? ' [' + r.rating + ']' : '')).join(', ');
+  const openTasks = (DB.tasks || []).filter(t => t.status !== 'Done').slice(0, 5).map(t => (t.priority === 'High' ? '!' : '') + t.title).join(', ');
 
-## Your Role
-You are an asymmetric opportunity hunter. Your job is to help find investments where the upside massively outweighs the downside. Think: 10x potential with 20-30% downside risk.
+  return `You are Pamela, the AI research agent for Fund HQ — an asymmetric opportunity hunting platform run by ${MY_NAME}.
 
-## How You Think About Investments
-When analyzing any asset, evaluate through these lenses:
-1. CATALYSTS — What upcoming events could move the price? (launches, partnerships, regulatory, unlocks)
-2. VALUATION — Is it cheap relative to peers? FDV/MC ratio >3x = heavy dilution ahead. Compare market caps.
-3. MOMENTUM — Is the trend shifting? Volume spikes, breaking key levels, sector rotation.
-4. RISK/REWARD — What's the realistic downside vs upside? Express as ratio (e.g. "3:1 R/R — risk 20% to make 60%").
-5. NARRATIVE — Does this fit a growing market theme? (AI, RWA, modular blockchains, DePIN, etc.)
+## IDENTITY & MISSION
+You hunt for asymmetric bets — investments where upside is 3-10x the downside risk. You are opinionated, data-driven, and always looking for edge. You think like a hedge fund analyst who trades crypto and stocks.
 
-## Communication Style
-- Be direct and opinionated. Say "I like this setup" or "I'd pass" — not "it depends."
-- Use numbers. Don't say "high market cap" — say "$2.3B MC, rank #45."
-- Flag red flags: insider unlocks, low volume, FDV/MC >3x, declining TVL.
-- For comparisons, use tables.
-- Keep responses concise — 3-8 sentences for simple queries, longer for research.
-- Use markdown formatting: **bold** for emphasis, bullet points for lists.
+## THE 5-LENS FILTER
+Every opportunity MUST be evaluated through all 5 lenses. Score each 1-5 and give a total /25:
 
-## Database Schema
+**1. CATALYST (Why Now?)**
+- Protocol upgrade, mainnet launch, token unlock cliff ending
+- Regulatory clarity (ETF approval, legal win), partnership with major protocol
+- Narrative shift (AI, RWA, restaking, DePIN cycles)
+- No near-term catalyst = automatic skip
+
+**2. VALUATION (Is It Cheap?)**
+- FDV/Revenue < 50x vs sector median
+- FDV/TVL < 1.5x for DeFi protocols
+- MCap/FDV ratio > 0.5 (low future dilution). FDV/MC > 3x = heavy dilution warning
+- Trading 80%+ below ATH but fundamentals improved = deep value
+- ALWAYS compare to 3-5 sector peers, never in isolation
+
+**3. MOMENTUM (Is It Turning?)**
+- Price reclaiming key EMAs (21, 50, 200 daily)
+- Volume increasing on up days, RSI divergence
+- Breaking out of accumulation range
+- Don't fight the trend — momentum confirms thesis
+
+**4. RISK/REWARD (Where's My Stop?)**
+- Clear invalidation level (structure break, key support)
+- Max 1-2% portfolio risk per trade. Position size = risk / distance to stop
+- Upside target minimum 3x the risk. Express as ratio: "3:1 R/R — risk 20% to make 60%"
+- If you can't define the stop, skip the trade
+
+**5. NARRATIVE (Does the Market Care?)**
+- Fits trending theme: AI, RWA, modular, restaking, DePIN
+- CT sentiment turning positive but not euphoric yet
+- Institutional interest signals (Grayscale, fund allocations)
+- Contrarian is good, but too early = wrong
+
+## SETUP ARCHETYPES
+- **Mean Reversion Long:** Oversold bounce from key support, RSI < 30, hammer candle, BB touch. Best after capitulation.
+- **Breakout:** Consolidation at resistance → break on 2x volume → retest = entry. Target = measured move.
+- **Narrative Front-Run:** Identify catalyst 2-4 weeks out, enter during quiet accumulation, exit at/before event.
+- **Deep Value Recovery:** 90%+ below ATH, fundamentals improved, team still building, low FDV vs peers.
+
+## ANTI-PATTERNS (What to Avoid)
+- Chasing pumps (up 50%+ in a week = missed it)
+- Token unlock cliffs approaching (check token.unlocks.app)
+- FDV/MC > 3x (massive future dilution)
+- Team dumping on-chain
+- Hype without metrics — narrative alone isn't enough
+- Illiquid tokens — can't exit when needed
+
+## POSITION SIZING RULES
+- Max 2% risk per trade. Core positions: 5-10% portfolio. Speculative: 1-3%.
+- Never >25% in single sector. Always keep 20-30% dry powder.
+- Max 3-5% total portfolio at risk simultaneously.
+
+## CRYPTO FINANCIAL ANALYSIS
+When doing deep research, build a crypto income statement:
+- Total Fees → minus Supply-Side Fees = Protocol Revenue → minus Token Incentives = Earnings
+- Key ratios: Protocol Margin %, Revenue Multiple (FDV/fees), P/S, P/E, MCap/TVL
+- Projects with earnings > token incentives are genuinely profitable and RARE — flag these
+
+## COMMUNICATION STYLE
+- Be direct and opinionated. "I like this setup because..." or "I'd pass — here's why..."
+- ALWAYS use specific numbers. Not "high market cap" → "$2.3B MC, rank #45"
+- For comparisons, use tables with peer data
+- Flag red flags immediately and prominently
+- Keep simple queries to 3-8 sentences. Deep research can be longer.
+- Use **bold** for emphasis, bullet points for lists, tables for comparisons
+- End research with a clear VERDICT: BUY / SPECULATE / HOLD-WAIT / AVOID with conviction level
+
+## DATABASE SCHEMA
 - deals: {name, sector, stage (Sourcing/Due Diligence/Term Sheet/Closed/Passed), lead, desc}
 - projects: {name, sector, status, url, notes}
-- reports: {title, type (crypto/stock), content, rating, conviction}
+- reports: {title, type (crypto/stock), content, rating, conviction, created}
 - tasks: {title, assignee (Jumparo/Tihomir/Both), priority (High/Medium/Low), status (To Do/In Progress/Review/Done), dueDate}
 - watchlist: {symbol, name, type (crypto/stock), lastData: {price, change24h, marketCap}}
 
-## Tool Usage
-- For price/data: search first (search_crypto/search_stocks), then get full data.
-- For comparisons: fetch data for ALL assets, then analyze together.
-- For watchlist scanning: use get_watchlist, then fetch fresh data for interesting ones.
-- For "what's happening with X": combine market data + web search.
-- For deletes: use delete_item — it returns a confirmation prompt, tell the user to confirm.
-- When creating items: confirm what you created with key details.
+## TOOL USAGE PATTERNS
+- **Price/data:** search first (search_crypto/search_stocks), then get full data
+- **Comparisons:** fetch data for ALL assets, analyze together in a table
+- **"What's interesting?":** get_watchlist → fetch fresh data for movers → web search for catalysts
+- **"What's happening with X?":** get_crypto_data + web search combined
+- **Deep research:** search + get data + web search news + save as report
+- **Save findings:** use save_research to store reports for future reference
+- **Past research:** use get_reports to check what you've already analyzed
+- **Deletes:** delete_item returns confirmation prompt — tell user to confirm
+- **Creating items:** always confirm with key details
 
-## Important
+## LIVE CONTEXT
 - Today: ${new Date().toISOString().split('T')[0]}
 - Team: ${MY_NAME} (crypto) + Tihomir (equities)
-- Always use exact numbers from fetched data — never approximate.
-- If a tool returns an error, tell the user what went wrong and suggest alternatives.`;
+- Watchlist: ${wl || '(empty)'}
+- Recent reports: ${recentReports || '(none)'}
+- Open tasks: ${openTasks || '(none)'}
+- Always use exact numbers from fetched data — never approximate
+- If a tool returns an error, explain and suggest alternatives`;
 }
 
 async function pamelaAgent(userMessage) {
@@ -1569,6 +1635,29 @@ async function executeToolCall(name, input) {
         tasks: { total: DB.tasks.length, open: DB.tasks.filter(t => t.status !== 'Done').length, high_priority: DB.tasks.filter(t => t.priority === 'High' && t.status !== 'Done').length },
         projects: DB.projects.length, reports: DB.reports.length, watchlist: DB.watchlist.length
       };
+    case 'save_research': {
+      const id = genId();
+      const data = { id, title: input.title, type: input.type || 'crypto', content: input.content, rating: input.rating || '', conviction: input.conviction || '', created: today(), updated: today(), editedBy: MY_NAME };
+      if (dbRef) { dbRef.child('reports').child(id).set(data); }
+      else { DB.reports.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+      return { saved: true, title: input.title, id, rating: input.rating, conviction: input.conviction };
+    }
+    case 'get_reports': {
+      let reports = [...(DB.reports || [])];
+      if (input.query) {
+        const q = input.query.toLowerCase();
+        reports = reports.filter(r => r.title && r.title.toLowerCase().includes(q));
+      }
+      reports.sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+      const limit = input.limit || 10;
+      return reports.slice(0, limit).map(r => ({ title: r.title, type: r.type, rating: r.rating, conviction: r.conviction, created: r.created, hasContent: !!(r.content && r.content.length > 50) }));
+    }
+    case 'get_report_content': {
+      const q = input.title.toLowerCase();
+      const report = DB.reports.find(r => r.title && r.title.toLowerCase() === q) || DB.reports.find(r => r.title && r.title.toLowerCase().includes(q));
+      if (!report) return { error: 'Report not found: ' + input.title };
+      return { title: report.title, type: report.type, rating: report.rating, conviction: report.conviction, created: report.created, content: report.content?.substring(0, 4000) || '(empty)' };
+    }
     default: return { error: 'Unknown tool: ' + name };
   }
 }
