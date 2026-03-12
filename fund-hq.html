@@ -4103,11 +4103,14 @@ async function handleImageUpload(files, reportId) {
   const id = reportId || 'temp_' + Date.now();
   for (const file of files) {
     if (!file.type.startsWith('image/')) continue;
-    const name = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '');
     try {
-      const ref = window.storageRef.child('reports/' + id + '/' + name);
-      const snap = await ref.put(file);
-      const url = await snap.ref.getDownloadURL();
+      // Convert to data URL (stored directly in RTDB — simpler, no Storage rules needed)
+      const url = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
       window._reportImages.push({ url, caption: '', section: '' });
       renderAttachPreviews();
     } catch (e) {
