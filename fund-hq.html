@@ -654,6 +654,7 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
     <div class="nav-item" data-page="roadmap"><span class="icon">&#128506;</span> Roadmap</div>
     <div class="nav-item" data-page="progress"><span class="icon">&#128197;</span> Progress</div>
+    <div class="nav-item" data-page="about"><span class="icon">&#127919;</span> About</div>
 
     <div class="nav-section">Tools</div>
     <div class="nav-item" data-page="help"><span class="icon">&#10068;</span> Help</div>
@@ -729,40 +730,73 @@ tbody tr:hover { background: var(--bg3); }
         </div>
       </div>
 
-      <!-- About -->
-      <div class="card" style="border-left:4px solid var(--green);">
-        <div style="margin-bottom:14px;">
-          <h3 style="font-size:14px;color:var(--text2);margin:0 0 4px 0;">&#127919; About — Bitfunded</h3>
-          <p style="font-size:12px;color:var(--text3);margin:0;">Mission & operating principles</p>
-        </div>
-        <div style="font-size:13px;line-height:1.7;color:var(--text2);">
-          <p style="margin:0 0 12px 0;font-weight:600;">Build an AI-powered fundamental research engine that discovers asymmetric opportunities in crypto and equities before the market prices them in.</p>
-          <p style="margin:0 0 10px 0;font-size:12px;color:var(--text3);font-weight:600;">WHAT WE DO</p>
-          <ul style="margin:0 0 14px 0;padding-left:18px;font-size:12px;color:var(--text3);">
-            <li>Systematic fundamental analysis — quantitative scoring, on-chain financial statements, multi-factor models</li>
-            <li>24/7 autonomous scanning — the agent never sleeps, surfaces opportunities ranked by asymmetry (risk/reward × conviction)</li>
-            <li>Institutional-grade risk framework — portfolio-level VaR, correlation management, liquidity analysis</li>
+    </div>
+
+    <!-- ===== ABOUT ===== -->
+    <div id="page-about" class="page hidden">
+      <div class="page-header">
+        <h1>About — Bitfunded</h1>
+        <p>Mission, principles & scale trajectory</p>
+      </div>
+
+      <!-- Mission -->
+      <div class="card" style="border-left:4px solid var(--green);margin-bottom:20px;">
+        <h3 style="font-size:16px;color:var(--text1);margin:0 0 12px 0;">Mission</h3>
+        <p style="font-size:14px;line-height:1.7;color:var(--text2);margin:0;">Build an AI-powered fundamental research engine that discovers asymmetric opportunities in crypto and equities before the market prices them in.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <!-- What We Do -->
+        <div class="card">
+          <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">What We Do</h3>
+          <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text3);line-height:1.8;">
+            <li><strong>Systematic fundamental analysis</strong> — quantitative scoring, on-chain financial statements, multi-factor models</li>
+            <li><strong>24/7 autonomous scanning</strong> — the agent never sleeps, surfaces opportunities ranked by asymmetry (risk/reward × conviction)</li>
+            <li><strong>Institutional-grade risk framework</strong> — portfolio-level VaR, correlation management, liquidity analysis</li>
           </ul>
-          <p style="margin:0 0 10px 0;font-size:12px;color:var(--text3);font-weight:600;">WHY IT MATTERS</p>
-          <ul style="margin:0 0 14px 0;padding-left:18px;font-size:12px;color:var(--text3);">
+        </div>
+
+        <!-- Why It Matters -->
+        <div class="card">
+          <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Why It Matters</h3>
+          <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text3);line-height:1.8;">
             <li>Most funds rely on human analysts who miss opportunities, sleep, and have biases</li>
-            <li>We combine Jumparo's trading edge (mean reversion, narrative front-running, 5-lens filter) with AI that scales it to thousands of assets simultaneously</li>
+            <li>We combine <strong>Jumparo's trading edge</strong> (mean reversion, narrative front-running, 5-lens filter) with AI that scales it to thousands of assets simultaneously</li>
             <li>The research engine IS the edge — proprietary data, proprietary scoring, proprietary signals</li>
           </ul>
-          <p style="margin:0 0 10px 0;font-size:12px;color:var(--text3);font-weight:600;">OPERATING PRINCIPLES</p>
-          <ol style="margin:0 0 14px 0;padding-left:18px;font-size:12px;color:var(--text3);">
-            <li>Every signal must be backtested before it goes live — no gut feelings at scale</li>
-            <li>Risk management is non-negotiable — 1% risk per position, correlation limits, counterparty diversification</li>
-            <li>Quality over quantity — A+ setups only, scored 18+/25 minimum</li>
-            <li>The agent learns — every alert tracked to outcome, weights adjusted, dead signals killed</li>
-            <li>Data advantage compounds — proprietary datasets widen the moat over time</li>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <!-- Operating Principles -->
+        <div class="card">
+          <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Operating Principles</h3>
+          <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--text3);line-height:1.8;">
+            <li>Every signal must be <strong>backtested</strong> before it goes live — no gut feelings at scale</li>
+            <li>Risk management is <strong>non-negotiable</strong> — 1% risk per position, correlation limits, counterparty diversification</li>
+            <li>Quality over quantity — <strong>A+ setups only</strong>, scored 18+/25 minimum</li>
+            <li>The agent <strong>learns</strong> — every alert tracked to outcome, weights adjusted, dead signals killed</li>
+            <li>Data advantage <strong>compounds</strong> — proprietary datasets widen the moat over time</li>
           </ol>
-          <p style="margin:0 0 10px 0;font-size:12px;color:var(--text3);font-weight:600;">SCALE TRAJECTORY</p>
-          <ul style="margin:0;padding-left:18px;font-size:12px;color:var(--text3);">
-            <li><strong>Now:</strong> $10-25K personal capital, building the prototype</li>
-            <li><strong>Phase 1-2:</strong> Institutional-grade data + quant models, ready for external capital</li>
-            <li><strong>Phase 3-5:</strong> Managing billions with full autonomy, multi-user, API platform</li>
-          </ul>
+        </div>
+
+        <!-- Scale Trajectory -->
+        <div class="card">
+          <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Scale Trajectory</h3>
+          <div style="font-size:13px;color:var(--text3);line-height:2;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <span style="background:var(--green);color:#000;font-weight:700;padding:2px 10px;border-radius:4px;font-size:11px;">NOW</span>
+              <span>$10-25K personal capital, building the prototype</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <span style="background:var(--blue,#3b82f6);color:#fff;font-weight:700;padding:2px 10px;border-radius:4px;font-size:11px;">PHASE 1-2</span>
+              <span>Institutional-grade data + quant models, ready for external capital</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="background:var(--orange);color:#000;font-weight:700;padding:2px 10px;border-radius:4px;font-size:11px;">PHASE 3-5</span>
+              <span>Managing billions with full autonomy, multi-user, API platform</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -5104,13 +5138,14 @@ const PAGE_ALIASES = {
   'live data': 'marketdata', prices: 'marketdata', fundamentals: 'marketdata',
   watchlist: 'watchlist', 'watch list': 'watchlist', watching: 'watchlist', tracked: 'watchlist',
   progress: 'progress', log: 'progress', 'daily log': 'progress', changelog: 'progress', 'work log': 'progress',
-  alerts: 'alerts', alert: 'alerts', notifications: 'alerts', signals: 'alerts'
+  alerts: 'alerts', alert: 'alerts', notifications: 'alerts', signals: 'alerts',
+  about: 'about', mission: 'about', bitfunded: 'about'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', settings: 'Settings', marketdata: 'Market Data'
+  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data'
 };
 
 function toggleChat() {
