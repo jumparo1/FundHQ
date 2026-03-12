@@ -2267,17 +2267,39 @@ function migrateFromLocalStorage() {
 }
 
 // ===== NAVIGATION =====
+function showPage(pageName) {
+  const target = document.getElementById('page-' + pageName);
+  if (!target) return false;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nav = document.querySelector('.nav-item[data-page="' + pageName + '"]');
+  if (nav) nav.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  target.classList.remove('hidden');
+  // Close sidebar on mobile after nav
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  // Update URL hash
+  if (location.hash !== '#' + pageName) history.pushState(null, '', '#' + pageName);
+  return true;
+}
+
 document.querySelectorAll('.nav-item[data-page]').forEach(el => {
-  el.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    el.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-    document.getElementById('page-' + el.dataset.page).classList.remove('hidden');
-    // Close sidebar on mobile after nav
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebar-overlay').classList.remove('open');
-  });
+  el.addEventListener('click', () => showPage(el.dataset.page));
 });
+
+// Hash routing — back button + bookmarkable URLs
+window.addEventListener('hashchange', () => {
+  const page = location.hash.slice(1);
+  if (page) showPage(page);
+});
+
+// Navigate to hash on page load (or default to dashboard)
+(function() {
+  const hash = location.hash.slice(1);
+  if (hash && document.getElementById('page-' + hash)) {
+    showPage(hash);
+  }
+})();
 
 // ===== MOBILE HAMBURGER =====
 document.getElementById('menu-toggle').addEventListener('click', () => {
@@ -4627,9 +4649,7 @@ function getCurrentPage() {
 }
 
 function navigateTo(page) {
-  const nav = document.querySelector('.nav-item[data-page="' + page + '"]');
-  if (nav) { nav.click(); return true; }
-  return false;
+  return showPage(page);
 }
 
 // --- CRUD HELPERS ---
