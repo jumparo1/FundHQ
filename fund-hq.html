@@ -1711,9 +1711,16 @@ One-liner:   [single sentence summary]
 [List relevant data sources: CoinGecko, DefiLlama, Token Terminal, Token Unlocks, Hyperdash, project docs, etc.]
 
 ═══════════════════════════════════════════════════════
-18. X / SUBSTACK PREVIEW
+18. SUBSTACK ONE-PAGER
 ═══════════════════════════════════════════════════════
-[Write a ~300 word engaging teaser for social media / newsletter. Hook the reader, highlight key findings, end with the verdict.]
+[Convert sections 0-17 above into a Substack-ready article. Same structure, same content — just reformatted:]
+- Section dividers → --- + ## Heading markdown headers
+- Inline data → markdown tables
+- Bullets → - **Bold label:** text
+- Income statement → markdown table
+- Key insights → > blockquote
+- Add # Title + subtitle at top, disclaimer at bottom
+- Keep ALL sections, same order, same words — reformat only
 
 ═══════════════════════════════════════════════════════
 AI SCORE ADJUSTMENT (REQUIRED)
@@ -3209,16 +3216,26 @@ One-liner: [core reason for the call]
 CoinGecko | DefiLlama | Artemis | TokenTerminal | Token Unlocks | Dexscreener | DropsTab | SpotOnChain | Etherscan | Holderscan | Crunchbase | CoinCarp | CryptoRank | Hyperdash | Cookie.fun | GoatIndex | Coindar | Coinmarketcal | Tokenomist.ai | Official Docs | X (Twitter)
 
 ═══════════════════════════════════════════════════
-18. X / SUBSTACK PREVIEW
+18. SUBSTACK ONE-PAGER
 ═══════════════════════════════════════════════════
-[Paste ~300 word preview for X thread / Substack teaser here]
+[Convert the full report above into a Substack-ready article. Same structure, same content — reformatted for newsletter readability:]
 
-PROMPT: "Distill the full research into a punchy ~300 word X/Substack preview. Structure: bold hook (1-2 lines), what it does, simple analogy, how it works (2 sentences), 5-6 bulleted highlights, closing line, chart link, CTA to full article. CT-friendly tone, no hype."
+FORMAT RULES:
+- Section dividers (═══) become --- horizontal rules + ## Heading markdown headers
+- Inline key-value data → markdown tables (Overview, Supply, TA, Perp, Signal)
+- Bullet points → - **Bold label:** text
+- Income statement → proper markdown table
+- Key questions/takeaways → > blockquote callouts
+- Add # Title + subtitle line at top
+- Add disclaimer footer at bottom
+- Keep ALL 18 sections, same order, same words — just reformat
+
+PROMPT: "Take sections 0-17 of this report and convert them into a clean Substack article. Use markdown: ## headings, | tables |, **bold** labels, > blockquotes for key insights, --- dividers. Do not add, remove, or rewrite any content. Just reformat for newsletter readability. Add a title header and disclaimer footer."
 
 DISCLAIMER: This report was AI-generated with human edits. For informational purposes only - not financial advice. Always DYOR. The analyst may or may not hold tokens discussed.`;
 
 const STOCK_SECTIONS = ['Executive Summary', 'Investment Thesis', 'Financial Analysis', 'Valuation', 'Catalysts & Growth Drivers', 'Risk Assessment', 'Competitive Landscape', 'Technical Analysis', 'Management & Governance', 'Recommendation & Action Plan'];
-const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Governance', 'Tokenomics', 'Backers & Funding', 'Competitive Landscape & Valuation', 'Users, Growth & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources'];
+const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Governance', 'Tokenomics', 'Backers & Funding', 'Competitive Landscape & Valuation', 'Users, Growth & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources', 'Substack One-Pager'];
 
 // ===== STRUCTURED TEMPLATE DEFINITIONS =====
 const TEMPLATE_DEFS = {
