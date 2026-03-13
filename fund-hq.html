@@ -201,6 +201,7 @@ tbody tr:hover { background: var(--bg3); }
 .template-card .template-type { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 10px; display: inline-block; margin-bottom: 12px; }
 .template-type-stock { background: var(--blue-bg); color: var(--blue); }
 .template-type-crypto { background: var(--purple-bg); color: var(--purple); }
+.template-type-substack { background: rgba(255,140,0,0.15); color: #ff8c00; }
 .template-sections { list-style: none; padding: 0; margin: 16px 0; }
 .template-sections li { font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
 .template-sections li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
@@ -3698,6 +3699,181 @@ DISCLAIMER: This report was AI-generated with human edits. For informational pur
 const STOCK_SECTIONS = ['Executive Summary', 'Investment Thesis', 'Financial Analysis', 'Valuation', 'Catalysts & Growth Drivers', 'Risk Assessment', 'Competitive Landscape', 'Technical Analysis', 'Management & Governance', 'Recommendation & Action Plan'];
 const CRYPTO_SECTIONS = ['Intro', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Team', 'Tokenomics', 'Backers & Funding', 'Valuation, Competition & Revenue', 'Social Sentiment', 'Top Holders & Whale Activity', 'Chart & Technical Analysis', 'Catalysts & FUD', 'Final Thesis', 'Signal', 'Sources'];
 
+const SUBSTACK_TEMPLATE = `# [TOKEN NAME] ($[TICKER]) — [Provocative Title Here]
+
+*[Key fact 1]. [Key fact 2]. [Key fact 3]. Here's the full breakdown.*
+
+---
+
+## 0️⃣ One-Liner
+
+[What it is + what it does in one sentence. Simple enough for someone who's never heard of it.]
+
+---
+
+## 1️⃣ Overview
+
+- **Price:** $[price] ([daily %] today)
+- **Market Cap:** $[mcap] | **FDV:** $[fdv]
+- **24h Volume:** $[vol]
+- **Circulating Supply:** [circ] / [max] ([%])
+- **ATH:** $[ath] (-[%])
+- **Staked:** [amount] (~$[value]) — [%] of supply
+- **X:** @[handle] | **Website:** [url]
+
+---
+
+## 2️⃣ TL;DR
+
+- **What:** [Simple definition of the project]
+- **How:** [Core mechanism in one line]
+- **Why it matters:** [Key catalyst + unique differentiator]
+
+---
+
+## 3️⃣ Product & Features
+
+- **[Product 1]** — [metric]. [One-line description]
+- **[Product 2]** — [metric]. [One-line description]
+- **[Key mechanism]** — [how it works]
+- [Tech stack one-liner]
+
+---
+
+## 4️⃣ Moats
+
+| Moat | Score | Why |
+|------|-------|-----|
+| Tokenomics | /20 | [reason] |
+| Network Effects | /20 | [reason] |
+| Tech Differentiation | /20 | [reason] |
+| Revenue Traction | /20 | [reason] |
+| Institutional Backing | /20 | [reason] |
+| **Total** | **/100** | [one-line verdict] |
+
+---
+
+## 5️⃣ [Ecosystem / Key Data Section]
+
+[Tables, breakout data, key observations specific to this project]
+
+---
+
+## 6️⃣ Tokenomics
+
+**The Good:**
+- [Positive 1]
+- [Positive 2]
+- [Positive 3]
+
+**The Bad:**
+- [Negative 1]
+- [Negative 2]
+
+**The Ugly:**
+- [Harsh truth — revenue vs incentives, real multiples]
+
+---
+
+## 7️⃣ Backers & Smart Money
+
+[Market-bought vs allocated distinction]
+- **[Backer 1]** — ~$[amount] position
+- **[Backer 2]** — ~$[amount]
+- **[ETF/ETP]** — [status]
+
+---
+
+## 8️⃣ Valuation vs Peers
+
+| Project | FDV | Revenue | P/S | Edge |
+|---------|-----|---------|-----|------|
+| **[TOKEN]** | $[fdv] | $[rev] | [x] | [edge] |
+| [Peer 1] | $[fdv] | $[rev] | [x] | [edge] |
+| [Peer 2] | $[fdv] | $[rev] | [x] | [edge] |
+
+[Honest verdict — cheap, fair, or expensive vs peers]
+
+---
+
+## 9️⃣ Perp Positioning
+
+- **OI:** $[oi] | **Funding:** [rate]
+- **Whales:** [%] [LONG/SHORT]
+- **Retail:** [%] [LONG/SHORT], [%] in loss
+- **Liquidation clusters:** Longs $[range] | Shorts $[range]
+
+**What this means:** [Interpretation — smart money divergence, squeeze risk, etc.]
+
+---
+
+## 🔟 Chart & Technical
+
+- **Price:** $[price] | **ATH:** $[ath] (-[%])
+- **Trend:** [Direction + timeframe]
+- **Support:** $[levels]
+- **Resistance:** $[levels] — [significance]
+- **Invalidation:** Below $[level]
+- **Setup:** [One-liner — breakout, rejection, range-bound]
+
+---
+
+## 1️⃣1️⃣ Catalysts & FUD
+
+### Catalysts (Bull)
+
+**Near-term (confirmed):**
+- **[Catalyst 1]** — [details]. [Confidence %].
+- **[Catalyst 2]** — [details]. [Confidence %].
+
+**Mid-term:**
+- **[Catalyst 3]** — [details]. [Confidence %].
+- **[Catalyst 4]** — [details]. [Confidence %].
+
+**Development velocity:** [shipping pace assessment]
+
+### FUD (Bear)
+
+- [Risk 1]
+- [Risk 2]
+- [Risk 3]
+
+---
+
+## 1️⃣2️⃣ The Verdict
+
+### Signal: [emoji] [RATING] — [Conviction Level] ([X]/10)
+
+[2-3 sentence thesis summary — what makes this interesting AND what holds it back]
+
+### Scenarios
+
+| Case | Target | Probability | Driver |
+|------|--------|-------------|--------|
+| **Bull** | $[target] | [%] | [driver] |
+| **Base** | $[target] | [%] | [driver] |
+| **Bear** | $[target] | [%] | [driver] |
+
+### How to Position
+
+- **Aggressive ([X-Y]% portfolio):** [Who this is for]
+- **Moderate ([X-Y]%):** [Who this is for]
+- **Wait (0%):** [Condition to enter]
+
+**Entry:** $[zones]
+**Stop:** Below $[level]
+**Targets:** $[t1] → $[t2] → $[t3]
+
+[Closing one-liner — memorable, honest]
+
+---
+
+*AI-assisted research, refined by the analyst. Not financial advice — DYOR.*
+
+*Subscribe to [Asymmetric Jump](https://asymmetricjump.substack.com) for more deep dives and asymmetric opportunities.*`;
+
+const SUBSTACK_SECTIONS = ['Title & Hook', 'One-Liner', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Ecosystem Data', 'Tokenomics', 'Backers & Smart Money', 'Valuation vs Peers', 'Perp Positioning', 'Chart & Technical', 'Catalysts & FUD', 'The Verdict'];
+
 // ===== STRUCTURED TEMPLATE DEFINITIONS =====
 const TEMPLATE_DEFS = {
   crypto: {
@@ -3747,6 +3923,25 @@ const TEMPLATE_DEFS = {
       { id: 'numbers', title: 'Key Numbers', prompt: 'List the most important financial metrics: valuation, growth, profitability, and any standout data points.', bullets: ['Valuation (MCap, FDV, P/E)', 'Growth metrics (revenue growth, user growth)', 'Profitability (margins, FCF, yield)', 'Standout metric that defines the opportunity'] },
       { id: 'risks', title: 'What Could Go Wrong?', prompt: 'List the top 3 risks that could invalidate this thesis. Be honest and specific.', bullets: ['Risk #1 (biggest threat)', 'Risk #2 (competitive or macro)', 'Risk #3 (execution or technical)'] },
       { id: 'verdict', title: 'Verdict & Setup', prompt: 'Final call: buy/watch/avoid, conviction level, entry zone, stop loss, and target. One-line summary of the thesis.', bullets: ['Verdict (Buy/Watch/Avoid)', 'Conviction (High/Medium/Low)', 'Entry zone & stop loss', 'Target & R/R ratio', 'One-line thesis summary'] }
+    ]
+  },
+  substack: {
+    id: 'substack', label: 'Substack Article', badge: 'SUBSTACK', badgeClass: 'template-type-substack',
+    desc: 'Asymmetric Jump Substack format — opinionated, data-backed, reader-friendly. Emoji-numbered sections, moat scoring, positioning guidance.',
+    sections: [
+      { id: 'hook', title: 'Title & Hook', prompt: 'Write a provocative title with specific numbers (e.g. "The $4.5B Bitcoin of AI That\'s Down 72%"). Add a subtitle line with 3-4 key facts separated by periods.', bullets: ['Provocative title with $ amounts or %', 'Subtitle: key facts separated by periods', 'Hook the reader in one line'] },
+      { id: 'oneliner', title: 'One-Liner', prompt: 'Summarize what this project IS in one sentence. Simple enough for someone who has never heard of it.', bullets: ['What it is + what it does', 'Key differentiator in plain English', 'One sentence max'] },
+      { id: 'overview', title: 'Overview', prompt: 'Bullet-point overview: price, market cap, FDV, volume, circulating supply, ATH drawdown, staking %, and key links.', bullets: ['Price (with daily % change)', 'Market Cap | FDV', '24h Volume', 'Circulating / Max supply (%)', 'ATH and % drawdown', 'Key metrics (staked %, active users, etc)', 'X handle | Website'] },
+      { id: 'tldr', title: 'TL;DR', prompt: 'Three bullets: What (simple definition), How (mechanism in one line), Why it matters (catalyst + differentiator).', bullets: ['What: simple definition', 'How: mechanism in one line', 'Why it matters: catalyst + unique edge'] },
+      { id: 'product', title: 'Product & Features', prompt: 'List key products and features as bold-label bullets. Focus on what generates revenue or user growth. Include specific numbers.', bullets: ['Key products with metrics', 'Revenue-generating features', 'Tech stack (one line)', 'Unique mechanisms'] },
+      { id: 'moats', title: 'Moats', prompt: 'Score moats in a table: category | score /20 | one-line reason. Categories: Tokenomics, Network Effects, Tech Differentiation, Revenue Traction, Institutional Backing. Total /100.', bullets: ['5 moat categories scored /20 each', 'Table format: Moat | Score | Why', 'Total score /100', 'One-line verdict on moat strength'] },
+      { id: 'tokenomics', title: 'Tokenomics', prompt: 'Split into The Good, The Bad, The Ugly. Be honest. Include specific numbers for supply, inflation, staking yield, revenue vs incentives.', bullets: ['The Good (3 bullets)', 'The Bad (3 bullets)', 'The Ugly (harsh truth — revenue vs incentives, real P/S)'] },
+      { id: 'backers', title: 'Backers & Smart Money', prompt: 'List institutional backers with approximate position sizes. Note if tokens were market-bought vs allocated. Include ETF/ETP filings.', bullets: ['Major backers with $ amounts', 'Market-bought vs allocated distinction', 'ETF/ETP filings or products', 'Public proxies (listed companies holding)'] },
+      { id: 'valuation', title: 'Valuation vs Peers', prompt: 'Peer comparison table: Project | FDV | Revenue | P/S | Edge. Include 3 peers. Follow with honest verdict — cheap, fair, or expensive.', bullets: ['Peer table (3 comparisons)', 'P/S context vs sector', 'Revenue breakdown', 'Honest verdict line'] },
+      { id: 'perps', title: 'Perp Positioning', prompt: 'Whale vs retail positioning from Hyperdash or similar. OI, funding rate, size cohort breakdown, liquidation clusters. End with "What this means" interpretation.', bullets: ['OI and funding rate', 'Whale vs retail long/short split', 'PnL and profitability by cohort', 'Liquidation clusters', '"What this means" interpretation'] },
+      { id: 'chart', title: 'Chart & Technical', prompt: 'Price, ATH drawdown, trend, support/resistance, key level, BTC pair, setup. Bullet format, punchy.', bullets: ['Price | ATH (% drawdown)', 'Trend direction', 'Support & resistance levels', 'Key breakout/breakdown level', 'BTC pair strength', 'Setup (one-liner)'] },
+      { id: 'catalysts', title: 'Catalysts & FUD', prompt: 'Split into Catalysts (Bull) with near-term confirmed and mid-term probable (include confidence %), and FUD (Bear) as bullet list. Add development velocity note if applicable.', bullets: ['Near-term confirmed catalysts with confidence %', 'Mid-term catalysts with confidence %', 'Development velocity (shipping pace)', 'FUD bullets (honest bear case)'] },
+      { id: 'verdict', title: 'The Verdict', prompt: 'Signal rating (emoji + word + conviction /10). Bull/Base/Bear scenario table with targets, probabilities, drivers. Position sizing: Aggressive/Moderate/Wait with % portfolio. Entry, stop, targets. Close with one strong sentence.', bullets: ['Signal: emoji + rating + conviction /10', 'Scenario table: Bull/Base/Bear with targets & probabilities', 'How to Position: Aggressive/Moderate/Wait (% portfolio)', 'Entry zones, stop loss, targets', 'Closing one-liner (memorable)'] }
     ]
   }
 };
@@ -4482,7 +4677,7 @@ function rwExportAsReport() {
 
   const id = genId();
   const data = {
-    id, title: _rwState.projectName, type: _rwState.templateId === 'stock' ? 'stock' : 'crypto',
+    id, title: _rwState.projectName, type: _rwState.templateId === 'stock' ? 'stock' : _rwState.templateId === 'substack' ? 'substack' : 'crypto',
     content, rating: '', conviction: '',
     created: today(), updated: today(), editedBy: MY_NAME,
     score: scoreInfo ? scoreInfo.overall : null
@@ -4564,11 +4759,11 @@ function renderReports(filter = '') {
 
 // ===== USE TEMPLATE =====
 function useTemplate(type) {
-  const placeholder = type === 'stock' ? 'e.g. Tesla (TSLA)' : 'e.g. Ethereum (ETH)';
+  const placeholder = type === 'substack' ? 'e.g. Bittensor (TAO)' : type === 'stock' ? 'e.g. Tesla (TSLA)' : 'e.g. Ethereum (ETH)';
   const title = prompt('Enter the name of the project/company:', '');
   if (!title || !title.trim()) return;
   const id = genId();
-  const content = type === 'stock' ? STOCK_TEMPLATE : CRYPTO_TEMPLATE;
+  const content = type === 'stock' ? STOCK_TEMPLATE : type === 'substack' ? SUBSTACK_TEMPLATE : CRYPTO_TEMPLATE;
   const data = {
     id, title: title.trim(), type,
     content: content.replace(/\[TOKEN NAME\]/g, title.trim()).replace(/\[Company name[^\]]*\]/g, title.trim()),
