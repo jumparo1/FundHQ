@@ -47,6 +47,15 @@ input, textarea, select { font-family: inherit; }
 .nav-item .badge { margin-left: auto; background: var(--bg4); color: var(--text2); font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
 .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 
+/* ===== ADMIN AUTH ===== */
+body:not(.admin-mode) .admin-only { display: none !important; }
+.admin-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 12px; }
+.admin-bar .admin-badge { background: rgba(255,140,0,0.15); color: #ff8c00; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.5px; }
+.admin-bar .admin-logout { color: var(--text3); font-size: 11px; cursor: pointer; margin-left: auto; }
+.admin-bar .admin-logout:hover { color: var(--red); }
+.admin-login-btn { color: var(--text3); font-size: 12px; cursor: pointer; padding: 6px 12px; transition: color 0.15s; }
+.admin-login-btn:hover { color: var(--accent2); }
+
 /* ===== CONNECTION STATUS ===== */
 .conn-status { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg3); }
 .conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -667,6 +676,9 @@ tbody tr:hover { background: var(--bg3); }
         <span class="conn-text" id="conn-text">Connecting...</span>
       </div>
       <div class="conn-user" id="conn-user"></div>
+      <div id="admin-area">
+        <div class="admin-login-btn" onclick="showLoginModal()">&#128274; Login</div>
+      </div>
     </div>
   </div>
 
@@ -687,9 +699,9 @@ tbody tr:hover { background: var(--bg3); }
           <span style="font-size:13px;color:var(--text3);font-weight:600;margin-right:6px;">Quick Actions</span>
           <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=marketdata]').click()">&#128270; Search Market</button>
           <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=templates]').click()">&#128218; Research Templates</button>
-          <button class="btn btn-sm btn-ghost" onclick="openModal('report')">&#128196; New Report</button>
-          <button class="btn btn-sm btn-ghost" onclick="openModal('task')">&#10004; New Task</button>
-          <button class="btn btn-sm btn-ghost" onclick="openModal('project')">&#9889; Quick Dump</button>
+          <button class="btn btn-sm btn-ghost admin-only" onclick="openModal('report')">&#128196; New Report</button>
+          <button class="btn btn-sm btn-ghost admin-only" onclick="openModal('task')">&#10004; New Task</button>
+          <button class="btn btn-sm btn-ghost admin-only" onclick="openModal('project')">&#9889; Quick Dump</button>
         </div>
       </div>
 
@@ -808,7 +820,7 @@ tbody tr:hover { background: var(--bg3); }
         <h1>Deal Flow</h1>
         <p>Track deals from sourcing to close</p>
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="openModal('deal')">+ New Deal</button>
+          <button class="btn btn-primary admin-only" onclick="openModal('deal')">+ New Deal</button>
         </div>
       </div>
       <div class="pipeline" id="pipeline"></div>
@@ -820,7 +832,7 @@ tbody tr:hover { background: var(--bg3); }
         <h1>Project Dump</h1>
         <p>Quick capture for interesting projects and ideas</p>
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="openModal('project')">+ Add Project</button>
+          <button class="btn btn-primary admin-only" onclick="openModal('project')">+ Add Project</button>
         </div>
       </div>
       <div class="search-bar">
@@ -882,7 +894,7 @@ tbody tr:hover { background: var(--bg3); }
         <h1>Research Notes</h1>
         <p>Deep-dive analysis and due diligence</p>
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="openModal('research')">+ New Research</button>
+          <button class="btn btn-primary admin-only" onclick="openModal('research')">+ New Research</button>
         </div>
       </div>
       <div id="research-list"></div>
@@ -925,7 +937,7 @@ tbody tr:hover { background: var(--bg3); }
         <h1>Tasks</h1>
         <p>Track work across the team</p>
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="openModal('task')">+ New Task</button>
+          <button class="btn btn-primary admin-only" onclick="openModal('task')">+ New Task</button>
         </div>
       </div>
       <div class="task-filters" id="task-filters">
@@ -951,7 +963,7 @@ tbody tr:hover { background: var(--bg3); }
         <h1>Progress</h1>
         <p>Daily log of features built and work completed</p>
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="openProgressModal()">+ Log Today</button>
+          <button class="btn btn-primary admin-only" onclick="openProgressModal()">+ Log Today</button>
         </div>
       </div>
       <div id="progress-stats" style="margin-bottom:20px;"></div>
@@ -1150,6 +1162,7 @@ tbody tr:hover { background: var(--bg3); }
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Download a local JSON backup of all fund data.</p>
         <button class="btn btn-ghost" onclick="exportBackup()">Download Backup</button>
         <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+        <div class="admin-only">
         <h3 style="font-size:15px;margin-bottom:12px;">API Keys</h3>
         <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">Crypto data works immediately via CoinGecko (no key needed).</p>
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Stock data requires a free key from <a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">Financial Modeling Prep</a> (250 req/day).</p>
@@ -1175,7 +1188,8 @@ tbody tr:hover { background: var(--bg3); }
         <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
         <h3 style="font-size:15px;margin-bottom:12px;color:var(--red);">Danger Zone</h3>
         <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">This deletes ALL data for BOTH users. Cannot be undone.</p>
-        <button class="btn btn-danger btn-sm" onclick="resetAllData()">Reset All Data</button>
+        <button class="btn btn-danger btn-sm admin-only" onclick="resetAllData()">Reset All Data</button>
+        </div><!-- end admin-only -->
       </div>
     </div>
   </div>
@@ -1232,6 +1246,79 @@ function changeName() {
     document.getElementById('settings-name').textContent = MY_NAME;
   }
 }
+
+// ===== ADMIN AUTH =====
+const ADMIN_HASH = '8a1b3c5e9f2d4a6b8c0e1f3a5b7d9e2f4a6c8e0b2d4f6a8c0e2f4a6b8d0e2f'; // placeholder
+async function hashPass(user, pass) {
+  const enc = new TextEncoder().encode(user.toLowerCase() + ':' + pass);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+// Pre-compute the real hash on first load
+(async () => {
+  const h = await hashPass('jumparo', '1%club');
+  window._adminHash = h;
+})();
+
+function isAdmin() { return sessionStorage.getItem('fundHQ_admin') === 'true'; }
+
+async function adminLogin(user, pass) {
+  const h = await hashPass(user, pass);
+  if (h === window._adminHash) {
+    sessionStorage.setItem('fundHQ_admin', 'true');
+    document.body.classList.add('admin-mode');
+    updateAdminUI();
+    closeModal();
+    return true;
+  }
+  return false;
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('fundHQ_admin');
+  document.body.classList.remove('admin-mode');
+  updateAdminUI();
+}
+
+function updateAdminUI() {
+  const area = document.getElementById('admin-area');
+  if (isAdmin()) {
+    area.innerHTML = '<div class="admin-bar"><span class="admin-badge">ADMIN</span><span class="admin-logout" onclick="adminLogout()">Logout</span></div>';
+  } else {
+    area.innerHTML = '<div class="admin-login-btn" onclick="showLoginModal()">&#128274; Login</div>';
+  }
+}
+
+function showLoginModal() {
+  const html = `
+    <h2>Admin Login</h2>
+    <div class="form-group"><label>Username</label><input id="login-user" placeholder="Username" autocomplete="off"></div>
+    <div class="form-group"><label>Password</label><input id="login-pass" type="password" placeholder="Password" autocomplete="off"></div>
+    <div id="login-error" style="color:var(--red);font-size:12px;margin-bottom:8px;display:none;">Invalid credentials</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="handleLogin()">Login</button>
+    </div>
+  `;
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('login-user').focus();
+  document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+}
+
+async function handleLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const ok = await adminLogin(user, pass);
+  if (!ok) {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  }
+}
+
+// Init admin state on load
+if (isAdmin()) document.body.classList.add('admin-mode');
 
 // ===== FIREBASE INIT =====
 let firebaseReady = false;
@@ -2337,10 +2424,11 @@ async function doMarketSearch(q) {
       const watchDis = inWatchlist ? ' disabled' : '';
       const dumpLabel = inDump ? 'In Dump' : '+ Dump';
       const dumpDis = inDump ? ' disabled' : '';
+      const adm = isAdmin() ? '' : ' style="display:none;"';
       const actions = '<div class="search-actions">' +
-        '<button class="act-btn act-watch"' + watchDis + ' onclick="event.stopPropagation();addToWatchlist(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')" title="Add to watchlist">' + watchLabel + '</button>' +
-        '<button class="act-btn act-pipeline"' + dumpDis + ' onclick="event.stopPropagation();addToDump(\'' + typeStr + '\',\'' + esc(r.name) + '\',\'' + r.symbol + '\')" title="Add to Project Dump">' + dumpLabel + '</button>' +
-        '<button class="act-btn act-ai" onclick="event.stopPropagation();aiResearchFromSearch(\'' + typeStr + '\',\'' + idStr + '\',\'' + esc(r.name) + '\')" title="Generate AI research report">AI Report</button>' +
+        '<button class="act-btn act-watch admin-only"' + watchDis + ' onclick="event.stopPropagation();addToWatchlist(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')" title="Add to watchlist">' + watchLabel + '</button>' +
+        '<button class="act-btn act-pipeline admin-only"' + dumpDis + ' onclick="event.stopPropagation();addToDump(\'' + typeStr + '\',\'' + esc(r.name) + '\',\'' + r.symbol + '\')" title="Add to Project Dump">' + dumpLabel + '</button>' +
+        '<button class="act-btn act-ai admin-only" onclick="event.stopPropagation();aiResearchFromSearch(\'' + typeStr + '\',\'' + idStr + '\',\'' + esc(r.name) + '\')" title="Generate AI research report">AI Report</button>' +
         '</div>';
       return '<div class="market-search-item" onclick="selectSearchResult(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + actions + '</div>';
     }).join('');
@@ -2579,7 +2667,7 @@ function renderMarketData() {
     const imgHtml = w.image ? '<img src="' + w.image + '" alt="">' : '<div style="width:28px;height:28px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);">' + (w.symbol || '?')[0] + '</div>';
     const lookupId = w.type === 'crypto' ? w.coingeckoId : w.fmpSymbol;
     return '<div class="watchlist-card" onclick="showMarketDetail(\'' + w.type + '\',\'' + lookupId + '\')">' +
-      '<button class="wc-remove" onclick="event.stopPropagation();removeFromWatchlist(\'' + w.id + '\')" title="Remove">&times;</button>' +
+      '<button class="wc-remove admin-only" onclick="event.stopPropagation();removeFromWatchlist(\'' + w.id + '\')" title="Remove">&times;</button>' +
       '<div class="wc-header">' + imgHtml + '<div><div class="wc-name">' + esc(w.name) + '</div><div class="wc-symbol">' + w.symbol + '</div></div></div>' +
       '<div class="wc-price">' + priceStr + '</div>' +
       (changeStr ? '<div class="wc-change ' + cls + '">' + changeStr + '</div>' : '') +
@@ -3021,8 +3109,8 @@ function renderProjects(filter = '') {
       <td style="color:var(--text3);font-size:12px;">${esc(p.source||'')}</td>
       <td style="color:var(--text3);font-size:12px;">${fmtDate(p.created)}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="editProject('${p.id}')">Edit</button>
-        <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteProject('${p.id}')">Del</button>
+        <button class="btn btn-ghost btn-sm admin-only" onclick="editProject('${p.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm admin-only" style="color:var(--red);" onclick="deleteProject('${p.id}')">Del</button>
       </td>
     </tr>
   `).join('') : `<tr><td colspan="6" class="empty-state" style="padding:40px;"><p>No projects yet. Click "+ Add Project" to start.</p></td></tr>`;
@@ -3038,8 +3126,8 @@ function renderResearch() {
           <div class="meta">${esc(r.sector||'')} &middot; ${fmtDate(r.created)} &middot; by ${esc(r.author||r.editedBy||'Unknown')}</div>
         </div>
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-ghost btn-sm" onclick="editResearch('${r.id}')">Edit</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteResearch('${r.id}')">Del</button>
+          <button class="btn btn-ghost btn-sm admin-only" onclick="editResearch('${r.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm admin-only" style="color:var(--red);" onclick="deleteResearch('${r.id}')">Del</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -3061,6 +3149,7 @@ function renderResearch() {
 
 // ===== MODALS =====
 function openModal(type, id) {
+  if (!isAdmin() && !id && type !== 'report') return; // non-admins can only view existing items
   let html = '';
   if (type === 'deal') {
     const d = id ? DB.deals.find(x=>x.id===id) : null;
@@ -3079,9 +3168,9 @@ function openModal(type, id) {
       <div class="form-group"><label>Links</label><input id="m-links" value="${esc(d?.links||'')}" placeholder="Website, deck, docs..."></div>
       <div class="form-group"><label>Tags (comma-separated)</label><input id="m-tags" value="${esc(d?.tags||'')}" placeholder="DeFi, Infrastructure..."></div>
       <div class="modal-actions">
-        ${d ? `<button class="btn btn-danger btn-sm" onclick="deleteDeal('${d.id}')">Delete</button>` : ''}
+        ${d ? `<button class="btn btn-danger btn-sm admin-only" onclick="deleteDeal('${d.id}')">Delete</button>` : ''}
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveDeal('${d?.id||''}')">${d ? 'Update' : 'Create'} Deal</button>
+        <button class="btn btn-primary admin-only" onclick="saveDeal('${d?.id||''}')">${d ? 'Update' : 'Create'} Deal</button>
       </div>
     `;
   } else if (type === 'project') {
@@ -3097,9 +3186,9 @@ function openModal(type, id) {
       <div class="form-group"><label>Source</label><input id="m-source" value="${esc(p?.source||'')}" placeholder="Twitter, CT, podcast..."></div>
       <div class="form-group"><label>Notes</label><textarea id="m-notes" placeholder="Quick thoughts...">${esc(p?.notes||'')}</textarea></div>
       <div class="modal-actions">
-        ${p ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')">Delete</button>` : ''}
+        ${p ? `<button class="btn btn-danger btn-sm admin-only" onclick="deleteProject('${p.id}')">Delete</button>` : ''}
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveProject('${p?.id||''}')">${p ? 'Update' : 'Add'} Project</button>
+        <button class="btn btn-primary admin-only" onclick="saveProject('${p?.id||''}')">${p ? 'Update' : 'Add'} Project</button>
       </div>
     `;
   } else if (type === 'task') {
@@ -3120,9 +3209,9 @@ function openModal(type, id) {
         <datalist id="milestone-suggestions">${[...new Set(DB.tasks.map(x=>x.milestone).filter(Boolean))].map(m=>'<option value="'+esc(m)+'">').join('')}</datalist>
       </div>
       <div class="modal-actions">
-        ${t ? `<button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">Delete</button>` : ''}
+        ${t ? `<button class="btn btn-danger btn-sm admin-only" onclick="deleteTask('${t.id}')">Delete</button>` : ''}
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveTask('${t?.id||''}')">${t ? 'Update' : 'Create'} Task</button>
+        <button class="btn btn-primary admin-only" onclick="saveTask('${t?.id||''}')">${t ? 'Update' : 'Create'} Task</button>
       </div>
     `;
   } else if (type === 'report') {
@@ -3130,13 +3219,13 @@ function openModal(type, id) {
     const modal = document.getElementById('modal-content');
     modal.classList.add('modal-wide');
     const hasContent = r && r.content && r.content.trim();
-    const startInView = hasContent;
+    const startInView = hasContent || !isAdmin();
     html = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h2 style="margin:0;">${r ? esc(r.title) : 'New Report'}</h2>
         ${hasContent ? `<div class="rv-toggle">
           <button class="${startInView ? 'active' : ''}" onclick="toggleReportView('view')">View</button>
-          <button class="${startInView ? '' : 'active'}" onclick="toggleReportView('edit')">Edit</button>
+          <button class="${startInView ? '' : 'active'} admin-only" onclick="toggleReportView('edit')">Edit</button>
         </div>` : ''}
       </div>
       ${r ? `<div class="rv-meta">
@@ -3147,11 +3236,11 @@ function openModal(type, id) {
       <div id="rv-view-container" data-report-id="${r?.id||''}" style="display:${startInView ? 'block' : 'none'};">
         ${hasContent ? renderReportContent(r.content, r.images) : ''}
         <div class="modal-actions" style="margin-top:16px;">
-          ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
+          ${r ? `<button class="btn btn-danger btn-sm admin-only" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
           <button class="btn btn-ghost" onclick="closeModal()">Close</button>
         </div>
       </div>
-      <div id="rv-edit-container" style="display:${startInView ? 'none' : 'block'};">
+      <div id="rv-edit-container" class="admin-only" style="display:${startInView ? 'none' : 'block'};">
         <div class="form-group"><label>Title *</label><input id="m-title" value="${esc(r?.title||'')}" placeholder="e.g. Tesla (TSLA) or Ethereum (ETH)"></div>
         <div class="form-row">
           <div class="form-group"><label>Rating</label><select id="m-rating"><option value="">—</option><option${(r?.rating||'')==='Strong Buy'?' selected':''}>Strong Buy</option><option${(r?.rating||'')==='Buy'?' selected':''}>Buy</option><option${(r?.rating||'')==='Hold'?' selected':''}>Hold</option><option${(r?.rating||'')==='Sell'?' selected':''}>Sell</option><option${(r?.rating||'')==='Speculate'?' selected':''}>Speculate</option><option${(r?.rating||'')==='Avoid'?' selected':''}>Avoid</option><option${(r?.rating||'')==='Watch'?' selected':''}>Watch</option></select></div>
@@ -3215,9 +3304,9 @@ function openModal(type, id) {
       </div>
       <div class="form-group"><label>Additional Notes</label><textarea id="m-notes" placeholder="Anything else...">${esc(r?.notes||'')}</textarea></div>
       <div class="modal-actions">
-        ${r ? `<button class="btn btn-danger btn-sm" onclick="deleteResearch('${r.id}')">Delete</button>` : ''}
+        ${r ? `<button class="btn btn-danger btn-sm admin-only" onclick="deleteResearch('${r.id}')">Delete</button>` : ''}
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveResearch('${r?.id||''}')">${r ? 'Update' : 'Save'} Research</button>
+        <button class="btn btn-primary admin-only" onclick="saveResearch('${r?.id||''}')">${r ? 'Update' : 'Save'} Research</button>
       </div>
     `;
   }
@@ -3973,8 +4062,8 @@ function renderTemplates() {
       </div>
       <div class="tc-buttons">
         <button class="btn btn-ghost btn-sm" onclick="viewTemplate('${t.id}')">&#128065; View</button>
-        <button class="btn btn-ghost btn-sm" onclick="editTemplate('${t.id}')">&#9998; Edit</button>
-        <button class="btn btn-primary btn-sm" onclick="openTemplateWorkspace('${t.id}')">&#128640; Use Template</button>
+        <button class="btn btn-ghost btn-sm admin-only" onclick="editTemplate('${t.id}')">&#9998; Edit</button>
+        <button class="btn btn-primary btn-sm admin-only" onclick="openTemplateWorkspace('${t.id}')">&#128640; Use Template</button>
       </div>
     </div>
   `}).join('');
@@ -4017,8 +4106,8 @@ function viewTemplate(templateId) {
       <div class="rw-actions">
         <button class="btn btn-ghost btn-sm" onclick="tvToggleAll('${templateId}', true)">&#9660; Expand All</button>
         <button class="btn btn-ghost btn-sm" onclick="tvToggleAll('${templateId}', false)">&#9650; Collapse All</button>
-        <button class="btn btn-ghost btn-sm" onclick="editTemplate('${templateId}')">&#9998; Edit</button>
-        <button class="btn btn-primary btn-sm" onclick="openTemplateWorkspace('${templateId}')">&#128640; Use Template</button>
+        <button class="btn btn-ghost btn-sm admin-only" onclick="editTemplate('${templateId}')">&#9998; Edit</button>
+        <button class="btn btn-primary btn-sm admin-only" onclick="openTemplateWorkspace('${templateId}')">&#128640; Use Template</button>
       </div>
     </div>
     <div id="tv-sections">${renderViewSections(tpl, templateId)}</div>
@@ -4730,8 +4819,8 @@ function renderReports(filter = '') {
             <div class="report-meta">${fmtDate(r.updated||r.created||r.date)}${r.ticker ? ' &middot; $'+esc(r.ticker) : ''}</div>
           </div>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
+            <button class="btn btn-ghost btn-sm admin-only" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
+            <button class="btn btn-ghost btn-sm admin-only" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
           </div>
         </div>
         <div class="report-preview">${esc((r.content||'').substring(0,200))}</div>
@@ -4747,8 +4836,8 @@ function renderReports(filter = '') {
             <div class="report-meta">${fmtDate(r.updated||r.created)}${r.editedBy ? ' &middot; by '+esc(r.editedBy) : ''}${r.rating ? ' &middot; '+esc(r.rating) : ''}</div>
           </div>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
+            <button class="btn btn-ghost btn-sm admin-only" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
+            <button class="btn btn-ghost btn-sm admin-only" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
           </div>
         </div>
         <div class="report-preview">${esc((r.content||'').substring(0,200))}</div>
@@ -5866,7 +5955,7 @@ function renderProgress() {
             '<div style="flex:1;">' +
               '<div class="pg-item-text">' + esc(item.text) + '</div>' +
               '<div class="pg-item-meta">' + (item.editedBy ? item.editedBy : '') +
-                '<span style="margin-left:8px;cursor:pointer;color:var(--text3);" onclick="deleteProgressEntry(\'' + item.id + '\')" title="Remove">✕</span>' +
+                '<span class="admin-only" style="margin-left:8px;cursor:pointer;color:var(--text3);" onclick="deleteProgressEntry(\'' + item.id + '\')" title="Remove">✕</span>' +
               '</div>' +
             '</div>' +
           '</div>'
@@ -5956,6 +6045,7 @@ try {
 // ===== INIT =====
 document.getElementById('conn-user').textContent = MY_NAME;
 document.getElementById('settings-name').textContent = MY_NAME;
+updateAdminUI();
 
 if (!firebaseReady) {
   // Fallback: load from localStorage if Firebase not configured
