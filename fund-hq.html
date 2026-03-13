@@ -3789,6 +3789,10 @@ const SUBSTACK_TEMPLATE = `# [TOKEN NAME] ($[TICKER]) — [Provocative Title Her
 
 ---
 
+[Personal intro — 3-5 sentences. What caught your attention? Why did you go deep? Tease the tension. Make them need to keep reading. Write like you're talking to a sharp friend.]
+
+---
+
 ## 0️⃣ One-Liner
 
 [What it is + what it does in one sentence. Simple enough for someone who's never heard of it.]
@@ -3956,7 +3960,7 @@ const SUBSTACK_TEMPLATE = `# [TOKEN NAME] ($[TICKER]) — [Provocative Title Her
 
 *Subscribe to [Asymmetric Jump](https://asymmetricjump.substack.com) for more deep dives and asymmetric opportunities.*`;
 
-const SUBSTACK_SECTIONS = ['Title & Hook', 'One-Liner', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Ecosystem Data', 'Tokenomics', 'Backers & Smart Money', 'Valuation vs Peers', 'Perp Positioning', 'Chart & Technical', 'Catalysts & FUD', 'The Verdict'];
+const SUBSTACK_SECTIONS = ['Title & Hook', 'Introduction', 'One-Liner', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Ecosystem Data', 'Tokenomics', 'Backers & Smart Money', 'Valuation vs Peers', 'Perp Positioning', 'Chart & Technical', 'Catalysts & FUD', 'The Verdict'];
 
 // ===== STRUCTURED TEMPLATE DEFINITIONS =====
 const TEMPLATE_DEFS = {
@@ -4014,6 +4018,7 @@ const TEMPLATE_DEFS = {
     desc: 'Asymmetric Jump Substack format — opinionated, data-backed, reader-friendly. Emoji-numbered sections, moat scoring, positioning guidance.',
     sections: [
       { id: 'hook', title: 'Title & Hook', prompt: 'Write a provocative title with specific numbers (e.g. "The $4.5B Bitcoin of AI That\'s Down 72%"). Add a subtitle line with 3-4 key facts separated by periods.', bullets: ['Provocative title with $ amounts or %', 'Subtitle: key facts separated by periods', 'Hook the reader in one line'] },
+      { id: 'intro', title: 'Introduction', prompt: 'Write a personal, conversational intro (3-5 sentences). Speak directly to the reader like you\'re texting a sharp friend. Open with what caught YOUR attention — why you spent hours researching this. Tease the tension (bull case vs bear case) so they can\'t stop reading. End with a line that makes the full report feel essential. No corporate speak. No "in this article we will." Just raw curiosity and honesty.', bullets: ['Personal hook — what grabbed YOUR attention', 'Why you went deep on this one (story or observation)', 'Tease the core tension (e.g. "best setup in crypto or a value trap?")', 'Make the reader feel they\'d be missing out if they stopped here', 'Conversational tone — like talking to a sharp friend over coffee'] },
       { id: 'oneliner', title: 'One-Liner', prompt: 'Summarize what this project IS in one sentence. Simple enough for someone who has never heard of it.', bullets: ['What it is + what it does', 'Key differentiator in plain English', 'One sentence max'] },
       { id: 'overview', title: 'Overview', prompt: 'Bullet-point overview: price, market cap, FDV, volume, circulating supply, ATH drawdown, staking %, and key links.', bullets: ['Price (with daily % change)', 'Market Cap | FDV', '24h Volume', 'Circulating / Max supply (%)', 'ATH and % drawdown', 'Key metrics (staked %, active users, etc)', 'X handle | Website'] },
       { id: 'tldr', title: 'TL;DR', prompt: 'Three bullets: What (simple definition), How (mechanism in one line), Why it matters (catalyst + differentiator).', bullets: ['What: simple definition', 'How: mechanism in one line', 'Why it matters: catalyst + unique edge'] },
