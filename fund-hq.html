@@ -907,6 +907,10 @@ tbody tr:hover { background: var(--bg3); }
         <h1>Reports</h1>
         <p>All research reports created from templates</p>
       </div>
+      <div class="tabs" id="reports-tabs">
+        <button class="tab active" onclick="switchReportTab('research')">Research</button>
+        <button class="tab" onclick="switchReportTab('substack')">Substack</button>
+      </div>
       <div class="search-bar">
         <span class="search-icon">&#128269;</span>
         <input type="text" placeholder="Search reports..." oninput="renderReports(this.value)">
@@ -4501,28 +4505,61 @@ function rwExportAsReport() {
 }
 
 // ===== RENDER REPORTS =====
+let currentReportTab = 'research';
+
+function switchReportTab(tab) {
+  currentReportTab = tab;
+  document.querySelectorAll('#reports-tabs .tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`#reports-tabs .tab[onclick*="${tab}"]`).classList.add('active');
+  renderReports();
+}
+
 function renderReports(filter = '') {
   const f = (filter || '').toLowerCase();
+  const isSubstack = currentReportTab === 'substack';
   const filtered = [...DB.reports]
-    .filter(r => !f || r.title.toLowerCase().includes(f) || (r.type||'').toLowerCase().includes(f))
+    .filter(r => {
+      if (isSubstack) { if (r.type !== 'substack') return false; }
+      else { if (r.type === 'substack') return false; }
+      return !f || r.title.toLowerCase().includes(f) || (r.type||'').toLowerCase().includes(f);
+    })
     .sort((a,b) => (b.updated||b.created||'').localeCompare(a.updated||a.created||''));
 
-  document.getElementById('reports-list').innerHTML = filtered.length ? filtered.map(r => `
-    <div class="report-card" onclick="openModal('report','${r.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <span class="template-type ${r.type==='stock'?'template-type-stock':'template-type-crypto'}">${r.type==='stock'?'STOCK':'CRYPTO'}</span>
-          <h3 style="margin-top:6px;">${esc(r.title)}</h3>
-          <div class="report-meta">${fmtDate(r.updated||r.created)}${r.editedBy ? ' &middot; by '+esc(r.editedBy) : ''}${r.rating ? ' &middot; '+esc(r.rating) : ''}</div>
+  if (isSubstack) {
+    document.getElementById('reports-list').innerHTML = filtered.length ? filtered.map(r => `
+      <div class="report-card" onclick="openModal('report','${r.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <span class="template-type" style="background:rgba(255,140,0,0.15);color:#ff8c00;">SUBSTACK</span>
+            <h3 style="margin-top:6px;">${esc(r.title)}</h3>
+            <div class="report-meta">${fmtDate(r.updated||r.created||r.date)}${r.ticker ? ' &middot; $'+esc(r.ticker) : ''}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;">
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
-        </div>
+        <div class="report-preview">${esc((r.content||'').substring(0,200))}</div>
       </div>
-      <div class="report-preview">${esc((r.content||'').substring(0,200))}</div>
-    </div>
-  `).join('') : '<div class="empty-state"><div class="icon">&#128203;</div><p>No reports yet. Go to Templates to start a new research report.</p></div>';
+    `).join('') : '<div class="empty-state"><div class="icon">&#128196;</div><p>No Substack articles yet.</p></div>';
+  } else {
+    document.getElementById('reports-list').innerHTML = filtered.length ? filtered.map(r => `
+      <div class="report-card" onclick="openModal('report','${r.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <span class="template-type ${r.type==='stock'?'template-type-stock':'template-type-crypto'}">${r.type==='stock'?'STOCK':'CRYPTO'}</span>
+            <h3 style="margin-top:6px;">${esc(r.title)}</h3>
+            <div class="report-meta">${fmtDate(r.updated||r.created)}${r.editedBy ? ' &middot; by '+esc(r.editedBy) : ''}${r.rating ? ' &middot; '+esc(r.rating) : ''}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('report','${r.id}')">Edit</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="event.stopPropagation();deleteReport('${r.id}')">Del</button>
+          </div>
+        </div>
+        <div class="report-preview">${esc((r.content||'').substring(0,200))}</div>
+      </div>
+    `).join('') : '<div class="empty-state"><div class="icon">&#128203;</div><p>No reports yet. Go to Templates to start a new research report.</p></div>';
+  }
 }
 
 // ===== USE TEMPLATE =====
