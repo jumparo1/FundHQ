@@ -1248,23 +1248,18 @@ function changeName() {
 }
 
 // ===== ADMIN AUTH =====
-const ADMIN_HASH = '8a1b3c5e9f2d4a6b8c0e1f3a5b7d9e2f4a6c8e0b2d4f6a8c0e2f4a6b8d0e2f'; // placeholder
+const ADMIN_HASH = 'a87414018930e5175cada9cc15631b6ad61fe0fb86df2959457cec7802937c25';
 async function hashPass(user, pass) {
   const enc = new TextEncoder().encode(user.toLowerCase() + ':' + pass);
   const buf = await crypto.subtle.digest('SHA-256', enc);
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-// Pre-compute the real hash on first load
-(async () => {
-  const h = await hashPass('jumparo', '1%club');
-  window._adminHash = h;
-})();
 
 function isAdmin() { return sessionStorage.getItem('fundHQ_admin') === 'true'; }
 
 async function adminLogin(user, pass) {
   const h = await hashPass(user, pass);
-  if (h === window._adminHash) {
+  if (h === ADMIN_HASH) {
     sessionStorage.setItem('fundHQ_admin', 'true');
     document.body.classList.add('admin-mode');
     updateAdminUI();
