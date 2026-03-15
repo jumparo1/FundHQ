@@ -1084,9 +1084,13 @@ tbody tr:hover { background: var(--bg3); }
       <!-- WHALE DISCOVERY TAB -->
       <div id="hl-panel-whales" style="display:none;">
         <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <select id="hl-dex" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;">
+            <option value="perp">Crypto Perps</option>
+            <option value="xyz">XYZ (Stocks/Commodities/FX)</option>
+          </select>
           <div class="market-search" style="flex:1;min-width:200px;max-width:320px;position:relative;">
             <span class="search-icon">&#128269;</span>
-            <input type="text" id="hl-coin-filter" placeholder="Filter by coin (e.g. ETH, SOL)" autocomplete="off" oninput="hlFilterWhales()">
+            <input type="text" id="hl-coin-filter" placeholder="Filter by coin (e.g. ETH, CL, GOLD)" autocomplete="off" oninput="hlFilterWhales()">
           </div>
           <button class="btn btn-primary" onclick="hlDiscoverWhales()">&#128011; Scan Top Positions</button>
           <span id="hl-whale-status" style="font-size:12px;color:var(--text3);"></span>
@@ -1095,9 +1099,11 @@ tbody tr:hover { background: var(--bg3); }
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:12px;color:var(--text3);">Min position size:</span>
             <select id="hl-min-size" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:4px 8px;border-radius:6px;font-size:12px;">
-              <option value="100000">$100K+</option>
+              <option value="1000">$1K+</option>
+              <option value="10000">$10K+</option>
+              <option value="100000" selected>$100K+</option>
               <option value="500000">$500K+</option>
-              <option value="1000000" selected>$1M+</option>
+              <option value="1000000">$1M+</option>
               <option value="5000000">$5M+</option>
               <option value="10000000">$10M+</option>
               <option value="50000000">$50M+</option>
@@ -7039,6 +7045,11 @@ async function hlDiscoverWhales() {
   const container = document.getElementById('hl-whales-result');
   const coinFilter = document.getElementById('hl-coin-filter').value.trim().toUpperCase();
   const minSize = parseInt(document.getElementById('hl-min-size').value);
+  const dex = document.getElementById('hl-dex').value;
+
+  if (dex === 'xyz') {
+    return hlDiscoverXyz(coinFilter, minSize, status, container);
+  }
 
   status.textContent = 'Fetching leaderboard + market data...';
   container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Scanning top traders for whale positions...<br><span style="font-size:12px;">Leaderboard → Top wallets → Live positions</span></div>';
@@ -7169,6 +7180,106 @@ async function hlDiscoverWhales() {
     const uniqueWallets = new Set(filtered.map(p => p.address)).size;
     const sources = cgKey ? 'Leaderboard + CoinGlass' : 'Leaderboard';
     status.innerHTML = 'Found <b>'+filtered.length+'</b> whale positions from <b>'+uniqueWallets+'</b> wallets <span style="color:var(--accent);font-size:11px;">('+sources+')</span>';
+    hlRenderWhales();
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    container.innerHTML = '<div class="card" style="color:var(--red,#f87171);">'+e.message+'</div>';
+  }
+}
+
+// ===== XYZ DEX WHALE DISCOVERY (Stocks/Commodities/FX) =====
+async function hlDiscoverXyz(coinFilter, minSize, status, container) {
+  status.textContent = 'Fetching XYZ market data...';
+  container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Scanning XYZ dex for whale positions...<br><span style="font-size:12px;">Market data → Active coins → Recent trades → Positions</span></div>';
+
+  try {
+    // Step 1: Get xyz dex metadata with prices and OI
+    const meta = await hlPost({ type:'metaAndAssetCtxs', dex:'xyz' });
+    const xyzCoins = meta[0].universe.map((c, i) => ({
+      name: c.name, markPx: parseFloat(meta[1][i].markPx || 0),
+      oi: parseFloat(meta[1][i].openInterest || 0),
+      vol: parseFloat(meta[1][i].dayNtlVlm || 0)
+    }));
+    const markPxMap = {};
+    xyzCoins.forEach(c => { markPxMap[c.name] = c.markPx; });
+
+    // Step 2: Pick coins to scan — filter by name or take top by volume
+    let targetCoins = xyzCoins.filter(c => c.oi > 0).sort((a,b) => b.vol - a.vol);
+    if (coinFilter) targetCoins = targetCoins.filter(c => c.name.toUpperCase().replace('XYZ:','').includes(coinFilter));
+    targetCoins = targetCoins.slice(0, 12);
+
+    status.textContent = 'Scanning '+targetCoins.length+' XYZ coins for active traders...';
+
+    // Step 3: Fetch recent trades for each coin to discover active wallets
+    const scannedAddrs = new Set();
+    for (const coin of targetCoins) {
+      try {
+        const fills = await hlPost({ type:'recentTrades', coin: coin.name });
+        if (Array.isArray(fills)) {
+          fills.forEach(f => {
+            (f.users || []).forEach(u => { if (u && u.startsWith('0x')) scannedAddrs.add(u); });
+          });
+        }
+      } catch(e) { /* skip */ }
+    }
+
+    status.textContent = 'Found '+scannedAddrs.size+' traders, fetching positions...';
+
+    // Step 4: Also pull from leaderboard — top traders likely have xyz positions too
+    try {
+      const lbResp = await fetch('https://stats-data.hyperliquid.xyz/Mainnet/leaderboard').then(r => r.json());
+      const topAddrs = (lbResp.leaderboardRows || [])
+        .sort((a,b) => parseFloat(b.accountValue || 0) - parseFloat(a.accountValue || 0))
+        .slice(0, 30)
+        .map(r => r.ethAddress);
+      topAddrs.forEach(a => scannedAddrs.add(a));
+    } catch(e) { /* leaderboard fetch failed, continue with trade-based addrs */ }
+
+    status.textContent = 'Checking '+scannedAddrs.size+' wallets for XYZ positions...';
+
+    // Step 5: Fetch xyz clearinghouse state for all collected addresses
+    const allPositions = [];
+    const addrs = Array.from(scannedAddrs);
+    const batchSize = 5;
+    for (let i = 0; i < addrs.length; i += batchSize) {
+      const batch = addrs.slice(i, i + batchSize);
+      status.textContent = 'Scanning wallets '+Math.min(i+batchSize, addrs.length)+'/'+addrs.length+'...';
+      const results = await Promise.allSettled(
+        batch.map(addr => hlPost({ type:'clearinghouseState', user: addr, dex:'xyz' }))
+      );
+      results.forEach((res, idx) => {
+        if (res.status !== 'fulfilled') return;
+        const state = res.value;
+        const addr = batch[idx];
+        const mg = state.marginSummary || {};
+        const acctVal = parseFloat(mg.accountValue || 0);
+        const positions = (state.assetPositions || []).map(p => p.position).filter(p => Math.abs(parseFloat(p.szi || 0)) > 0);
+        positions.forEach(p => {
+          const sz = parseFloat(p.szi || 0);
+          const coin = p.coin;
+          const mark = markPxMap[coin] || parseFloat(p.entryPx || 0);
+          const notional = Math.abs(sz * mark);
+          const entry = parseFloat(p.entryPx || 0);
+          if (coinFilter && !coin.toUpperCase().replace('XYZ:','').includes(coinFilter)) return;
+          allPositions.push({
+            address: addr, coin: coin.replace('xyz:',''), side: sz > 0 ? 'LONG' : 'SHORT',
+            size: notional, entryPx: entry, markPx: mark,
+            upnl: parseFloat(p.unrealizedPnl || 0),
+            leverage: p.leverage ? parseFloat(p.leverage.value || 1) : 1,
+            acctVal: acctVal, liqPx: parseFloat(p.liquidationPx || 0),
+            fundingFee: 0, marginMode: p.leverage ? p.leverage.type || '' : '',
+            openTime: 0, updateTime: 0, positionQty: Math.abs(sz),
+            recentAction: null, source: 'xyz', monthPnl: 0, weekPnl: 0
+          });
+        });
+      });
+    }
+
+    // Filter by min size
+    const filtered = allPositions.filter(p => p.size >= minSize);
+    hlWhalesData = filtered;
+    const uniqueWallets = new Set(filtered.map(p => p.address)).size;
+    status.innerHTML = 'Found <b>'+filtered.length+'</b> XYZ positions from <b>'+uniqueWallets+'</b> wallets <span style="color:var(--accent);font-size:11px;">(XYZ dex)</span>';
     hlRenderWhales();
   } catch(e) {
     status.textContent = 'Error: ' + e.message;
