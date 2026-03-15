@@ -1067,6 +1067,7 @@ tbody tr:hover { background: var(--bg3); }
         <button class="market-tab active" onclick="hlShowTab('scanner')" id="hl-tab-scanner">Wallet Scanner</button>
         <button class="market-tab" onclick="hlShowTab('whales')" id="hl-tab-whales">Whale Discovery</button>
         <button class="market-tab" onclick="hlShowTab('saved')" id="hl-tab-saved">Saved Wallets</button>
+        <button class="market-tab" onclick="hlShowTab('perps')" id="hl-tab-perps">Perp Positioning</button>
       </div>
 
       <!-- SCANNER TAB -->
@@ -1125,6 +1126,31 @@ tbody tr:hover { background: var(--bg3); }
         <div class="empty-state" id="hl-saved-empty" style="display:none;">
           <p style="color:var(--text3);font-size:14px;">No saved wallets yet. Scan a wallet and click "Save" to track it.</p>
         </div>
+      </div>
+
+      <!-- PERP POSITIONING TAB -->
+      <div id="hl-panel-perps" style="display:none;">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <select id="hl-perp-dex" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;">
+            <option value="perp">Crypto Perps</option>
+            <option value="xyz">XYZ (Stocks/Commodities/FX)</option>
+          </select>
+          <div class="market-search" style="flex:1;min-width:200px;max-width:320px;position:relative;">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="hl-perp-filter" placeholder="Filter by coin..." autocomplete="off" oninput="hlFilterPerps()">
+          </div>
+          <button class="btn btn-primary" onclick="hlLoadPerps()">&#128200; Load Perp Data</button>
+          <span style="font-size:12px;color:var(--text3);">Sort:</span>
+          <select id="hl-perp-sort" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:4px 8px;border-radius:6px;font-size:12px;" onchange="hlRenderPerps()">
+            <option value="oi">Open Interest</option>
+            <option value="volume">24h Volume</option>
+            <option value="funding">Funding Rate</option>
+            <option value="premium">Premium</option>
+          </select>
+          <span id="hl-perp-status" style="font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div id="hl-perp-summary"></div>
+        <div id="hl-perp-result"></div>
       </div>
     </div>
 
@@ -6734,6 +6760,7 @@ function deleteProgressEntry(id) {
 var HL_API = 'https://api.hyperliquid.xyz/info';
 var hlWhalesData = []; // discovered whale positions
 var hlSavedWallets = [];
+var hlPerpsData = [];
 try { hlSavedWallets = JSON.parse(localStorage.getItem('hl_saved_wallets') || '[]'); } catch(e) { hlSavedWallets = []; }
 
 function hlEnsureVars() {
@@ -6826,11 +6853,12 @@ function docsShowTab(tab) {
 }
 
 function hlShowTab(tab) {
-  ['scanner','whales','saved'].forEach(t => {
+  ['scanner','whales','saved','perps'].forEach(t => {
     document.getElementById('hl-panel-' + t).style.display = t === tab ? '' : 'none';
     document.getElementById('hl-tab-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'saved') hlRenderSaved();
+  if (tab === 'perps' && Array.isArray(hlPerpsData) && !hlPerpsData.length) hlLoadPerps();
 }
 
 async function hlPost(body) {
@@ -7581,6 +7609,146 @@ function hlRenderWhales() {
     html += '<td><button class="btn btn-sm btn-ghost" onclick="hlToggleSave(\''+d.address+'\','+d.acctVal+')" title="'+(isSaved?'Saved':'Save')+'">'+(isSaved?'&#10003;':'&#128190;')+'</button></td>';
     html += '</tr>';
   });
+  html += '</table></div>';
+  container.innerHTML = html;
+}
+
+// ===== PERP POSITIONING =====
+async function hlLoadPerps() {
+  const status = document.getElementById('hl-perp-status');
+  const container = document.getElementById('hl-perp-result');
+  const summary = document.getElementById('hl-perp-summary');
+  const dex = document.getElementById('hl-perp-dex').value;
+  status.textContent = 'Loading perp data...';
+  container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Fetching open interest, funding rates, and volume...</div>';
+  summary.innerHTML = '';
+
+  try {
+    const body = dex === 'xyz' ? { type:'metaAndAssetCtxs', dex:'xyz' } : { type:'metaAndAssetCtxs' };
+    const meta = await hlPost(body);
+    const universe = meta[0].universe;
+    const ctxs = meta[1];
+
+    hlPerpsData = universe.map((coin, i) => {
+      const ctx = ctxs[i];
+      const markPx = parseFloat(ctx.markPx || 0);
+      const oraclePx = parseFloat(ctx.oraclePx || 0);
+      const oi = parseFloat(ctx.openInterest || 0);
+      const funding = parseFloat(ctx.funding || 0);
+      const premium = parseFloat(ctx.premium || 0);
+      const vol24h = parseFloat(ctx.dayNtlVlm || 0);
+      const prevDayPx = parseFloat(ctx.prevDayPx || 0);
+      const pxChange = prevDayPx ? ((markPx - prevDayPx) / prevDayPx * 100) : 0;
+      return {
+        coin: coin.name,
+        szDecimals: coin.szDecimals,
+        markPx, oraclePx, oi,
+        oiUsd: oi * markPx,
+        funding,
+        fundingAnnual: funding * 24 * 365 * 100,
+        premium,
+        vol24h,
+        pxChange,
+        maxLeverage: coin.maxLeverage || 0
+      };
+    }).filter(c => c.oiUsd > 0 || c.vol24h > 0);
+
+    status.innerHTML = '<b>' + hlPerpsData.length + '</b> active perps loaded' + (dex === 'xyz' ? ' (XYZ dex)' : '');
+    hlRenderPerps();
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    container.innerHTML = '<div class="card" style="color:var(--red,#f87171);">' + e.message + '</div>';
+  }
+}
+
+function hlFilterPerps() { hlRenderPerps(); }
+
+function hlRenderPerps() {
+  const container = document.getElementById('hl-perp-result');
+  const summary = document.getElementById('hl-perp-summary');
+  const sortBy = document.getElementById('hl-perp-sort').value;
+  const filter = document.getElementById('hl-perp-filter').value.trim().toUpperCase();
+
+  let data = [...hlPerpsData];
+  if (filter) data = data.filter(c => c.coin.toUpperCase().includes(filter));
+
+  // Sort
+  if (sortBy === 'volume') data.sort((a,b) => b.vol24h - a.vol24h);
+  else if (sortBy === 'funding') data.sort((a,b) => Math.abs(b.funding) - Math.abs(a.funding));
+  else if (sortBy === 'premium') data.sort((a,b) => Math.abs(b.premium) - Math.abs(a.premium));
+  else data.sort((a,b) => b.oiUsd - a.oiUsd);
+
+  if (!data.length) {
+    container.innerHTML = '<div class="empty-state"><p style="color:var(--text3);">No perps found. Try a different filter.</p></div>';
+    summary.innerHTML = '';
+    return;
+  }
+
+  // Summary cards
+  const totalOI = data.reduce((s,c) => s + c.oiUsd, 0);
+  const totalVol = data.reduce((s,c) => s + c.vol24h, 0);
+  const avgFunding = data.reduce((s,c) => s + c.funding, 0) / data.length;
+  const avgFundingAnn = avgFunding * 24 * 365 * 100;
+  const highFunding = data.filter(c => c.funding > 0.0001).length;
+  const negFunding = data.filter(c => c.funding < -0.00005).length;
+  const topByOI = data.slice().sort((a,b) => b.oiUsd - a.oiUsd).slice(0,3).map(c => c.coin).join(', ');
+
+  // Funding sentiment
+  const fundingSentiment = avgFunding > 0.0001 ? 'Longs Paying' : avgFunding < -0.00005 ? 'Shorts Paying' : 'Neutral';
+  const fundingColor = avgFunding > 0.0001 ? 'var(--green,#4ade80)' : avgFunding < -0.00005 ? 'var(--red,#f87171)' : 'var(--text3)';
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">';
+
+  html += '<div class="card" style="padding:14px 18px;"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Open Interest</div>';
+  html += '<div style="font-size:22px;font-weight:700;color:var(--text);">$' + hlFmt(totalOI) + '</div>';
+  html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Top: ' + topByOI + '</div></div>';
+
+  html += '<div class="card" style="padding:14px 18px;"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">24h Volume</div>';
+  html += '<div style="font-size:22px;font-weight:700;color:var(--text);">$' + hlFmt(totalVol) + '</div>';
+  html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">' + data.length + ' active markets</div></div>';
+
+  html += '<div class="card" style="padding:14px 18px;"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Avg Funding Rate</div>';
+  html += '<div style="font-size:22px;font-weight:700;color:' + fundingColor + ';">' + (avgFunding * 100).toFixed(4) + '%</div>';
+  html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">' + fundingSentiment + ' (' + avgFundingAnn.toFixed(1) + '% ann.)</div></div>';
+
+  html += '<div class="card" style="padding:14px 18px;"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Funding Breakdown</div>';
+  html += '<div style="font-size:16px;font-weight:700;"><span style="color:var(--green,#4ade80);">' + highFunding + '</span> paying / <span style="color:var(--red,#f87171);">' + negFunding + '</span> earning</div>';
+  html += '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--bg3);margin-top:8px;">';
+  var payPct = data.length ? Math.round(highFunding / data.length * 100) : 50;
+  html += '<div style="width:' + payPct + '%;background:var(--green,#4ade80);"></div>';
+  html += '<div style="width:' + (100-payPct) + '%;background:var(--red,#f87171);"></div></div>';
+  html += '<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px;">Longs pay ' + payPct + '% of markets</div></div>';
+
+  html += '</div>';
+  summary.innerHTML = html;
+
+  // Table
+  html = '<div style="overflow-x:auto;"><table style="width:100%;font-size:13px;border-collapse:collapse;">';
+  html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">';
+  html += '<th style="padding:8px 10px;">Coin</th><th>Mark Price</th><th>24h %</th><th>Open Interest</th><th>OI ($)</th><th>24h Volume</th>';
+  html += '<th>Funding (8h)</th><th>Funding (Ann.)</th><th>Premium</th><th>Max Lev</th></tr>';
+
+  data.forEach(c => {
+    const pxColor = c.pxChange >= 0 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)';
+    const fundColor = c.funding > 0.0001 ? 'var(--green,#4ade80)' : c.funding < -0.00005 ? 'var(--red,#f87171)' : 'var(--text3)';
+    const premColor = c.premium > 0.001 ? 'var(--green,#4ade80)' : c.premium < -0.001 ? 'var(--red,#f87171)' : 'var(--text3)';
+    const fundingSign = c.funding >= 0 ? '+' : '';
+    const premSign = c.premium >= 0 ? '+' : '';
+
+    html += '<tr style="border-bottom:1px solid var(--border);">';
+    html += '<td style="padding:8px 10px;font-weight:700;">' + c.coin + '</td>';
+    html += '<td>$' + (c.markPx >= 1 ? c.markPx.toLocaleString(undefined,{maximumFractionDigits:2}) : c.markPx.toPrecision(4)) + '</td>';
+    html += '<td style="color:' + pxColor + ';font-weight:600;">' + (c.pxChange >= 0 ? '+' : '') + c.pxChange.toFixed(2) + '%</td>';
+    html += '<td>' + hlFmt(c.oi) + '</td>';
+    html += '<td><b>$' + hlFmt(c.oiUsd) + '</b></td>';
+    html += '<td>$' + hlFmt(c.vol24h) + '</td>';
+    html += '<td style="color:' + fundColor + ';font-weight:600;">' + fundingSign + (c.funding * 100).toFixed(4) + '%</td>';
+    html += '<td style="color:' + fundColor + ';">' + fundingSign + c.fundingAnnual.toFixed(1) + '%</td>';
+    html += '<td style="color:' + premColor + ';">' + premSign + (c.premium * 100).toFixed(4) + '%</td>';
+    html += '<td>' + (c.maxLeverage || '-') + 'x</td>';
+    html += '</tr>';
+  });
+
   html += '</table></div>';
   container.innerHTML = html;
 }
