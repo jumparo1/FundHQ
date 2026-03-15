@@ -6096,6 +6096,71 @@ function hlEnsureVars() {
   if (!hlWhalesData || !Array.isArray(hlWhalesData)) hlWhalesData = [];
 }
 
+function hlIsFirebase() { try { return firebaseReady && dbRef; } catch(e) { return false; } }
+
+function hlSaveWallets() {
+  hlEnsureVars();
+  localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets));
+  // Sync to Firebase for Python agent access
+  if (hlIsFirebase()) {
+    const fbData = {};
+    hlSavedWallets.forEach(w => { fbData[w.address.slice(2,10)] = w; });
+    dbRef.child('hyperliquid').child('saved_wallets').set(fbData);
+  }
+}
+
+function hlLoadFromFirebase() {
+  // Load saved wallets from Firebase (merges with localStorage)
+  if (hlIsFirebase()) {
+    dbRef.child('hyperliquid').child('saved_wallets').once('value', (snap) => {
+      const data = snap.val();
+      if (data) {
+        const fbWallets = Object.values(data);
+        // Merge: Firebase wins for existing, add new ones
+        const addrSet = new Set(hlSavedWallets.map(w => w.address.toLowerCase()));
+        fbWallets.forEach(w => {
+          if (w.address && !addrSet.has(w.address.toLowerCase())) {
+            hlSavedWallets.push(w);
+            addrSet.add(w.address.toLowerCase());
+          }
+        });
+        localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets));
+        hlUpdateBadge();
+      }
+    });
+    // Load discovered whales from agent
+    dbRef.child('hyperliquid').child('discovered_whales').once('value', (snap) => {
+      const data = snap.val();
+      if (data && data.whales) {
+        const agentWhales = Object.values(data.whales);
+        // Pre-populate whale discovery with agent data
+        hlWhalesData = [];
+        agentWhales.forEach(w => {
+          if (w.positions) {
+            w.positions.forEach(p => {
+              hlWhalesData.push({
+                address: w.address,
+                coin: p.coin,
+                side: p.side,
+                size: p.size_usd,
+                entryPx: p.entry_px,
+                upnl: p.unrealized_pnl,
+                leverage: p.leverage,
+                acctVal: w.account_value,
+              });
+            });
+          }
+        });
+        if (hlWhalesData.length) {
+          const status = document.getElementById('hl-whale-status');
+          if (status) status.textContent = 'Loaded '+hlWhalesData.length+' positions from agent scan ('+data.updated?.split('T')[0]+')';
+          hlRenderWhales();
+        }
+      }
+    });
+  }
+}
+
 function hlShowTab(tab) {
   ['scanner','whales','saved'].forEach(t => {
     document.getElementById('hl-panel-' + t).style.display = t === tab ? '' : 'none';
@@ -6232,7 +6297,7 @@ function hlToggleSave(addr, acctVal) {
   } else {
     hlSavedWallets.push({ address: addr, savedAt: new Date().toISOString(), lastValue: acctVal, label: '' });
   }
-  localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets));
+  hlSaveWallets();
   hlRenderSaved();
   hlUpdateBadge();
   // Re-scan to update button state
@@ -6301,12 +6366,12 @@ async function hlRenderSaved() {
       if (el) el.innerHTML = '<span style="color:var(--red,#f87171);">Failed to load</span>';
     }
   }
-  localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets));
+  hlSaveWallets();
 }
 
 function hlUpdateLabel(addr, label) {
   const w = hlSavedWallets.find(w => w.address === addr);
-  if (w) { w.label = label; localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets)); }
+  if (w) { w.label = label; hlSaveWallets(); }
 }
 
 // ===== WHALE DISCOVERY =====
@@ -6441,7 +6506,7 @@ function hlRenderWhales() {
   container.innerHTML = html;
 }
 
-function renderHyperliquid() { hlUpdateBadge(); }
+function renderHyperliquid() { hlEnsureVars(); hlUpdateBadge(); hlLoadFromFirebase(); }
 
 function renderAll() {
   renderDashboard();
