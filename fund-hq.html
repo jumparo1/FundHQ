@@ -1096,9 +1096,11 @@ tbody tr:hover { background: var(--bg3); }
             <span style="font-size:12px;color:var(--text3);">Min position size:</span>
             <select id="hl-min-size" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:4px 8px;border-radius:6px;font-size:12px;">
               <option value="100000">$100K+</option>
-              <option value="500000" selected>$500K+</option>
-              <option value="1000000">$1M+</option>
+              <option value="500000">$500K+</option>
+              <option value="1000000" selected>$1M+</option>
               <option value="5000000">$5M+</option>
+              <option value="10000000">$10M+</option>
+              <option value="50000000">$50M+</option>
             </select>
             <span style="font-size:12px;color:var(--text3);">Sort by:</span>
             <select id="hl-sort" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:4px 8px;border-radius:6px;font-size:12px;" onchange="hlRenderWhales()">
@@ -1758,6 +1760,16 @@ cd ~/deploy && git add . && git commit && git push
           <div id="anthropic-test-result" style="font-size:12px;margin-top:4px;"></div>
           <p style="font-size:11px;color:var(--text3);margin-top:6px;">Powers "Research with AI" in reports. Get a key at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
         </div>
+        <div style="max-width:400px;margin-top:16px;">
+          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">CoinGlass API Key <span style="color:var(--accent);">(Whale Tracker)</span></label>
+          <input type="text" id="settings-coinglass-key" autocomplete="off" data-1p-ignore placeholder="Enter your CoinGlass API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" onclick="saveCoinglassKey(document.getElementById('settings-coinglass-key').value);document.getElementById('coinglass-test-result').textContent='Saved!';document.getElementById('coinglass-test-result').style.color='var(--green)';">Save Key</button>
+            <button class="btn btn-ghost btn-sm" onclick="testCoinglassKey()">Test Connection</button>
+          </div>
+          <div id="coinglass-test-result" style="font-size:12px;margin-top:4px;"></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Powers Hyperliquid whale discovery. Get a free key at <a href="https://www.coinglass.com/pricing" target="_blank" style="color:var(--accent);">coinglass.com</a></p>
+        </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
         <h3 style="font-size:15px;margin-bottom:12px;color:var(--red);">Danger Zone</h3>
         <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">This deletes ALL data for BOTH users. Cannot be undone.</p>
@@ -1963,6 +1975,28 @@ const marketCache = {
 
 function getFmpKey() { return localStorage.getItem('fundHQ_fmpApiKey') || '9DKc8Jhb3ZintHtPYoonssDzlMvkq6X0'; }
 function saveFmpKey(key) { localStorage.setItem('fundHQ_fmpApiKey', key.trim()); }
+
+function getCoinglassKey() { return localStorage.getItem('fundHQ_coinglassApiKey') || ''; }
+function saveCoinglassKey(key) { localStorage.setItem('fundHQ_coinglassApiKey', key.trim()); }
+
+async function testCoinglassKey() {
+  const inputVal = document.getElementById('settings-coinglass-key')?.value?.trim();
+  if (inputVal) saveCoinglassKey(inputVal);
+  const key = getCoinglassKey();
+  const el = document.getElementById('coinglass-test-result');
+  if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
+  try {
+    el.textContent = 'Testing...'; el.style.color = 'var(--text3)';
+    const resp = await fetch('https://open-api-v4.coinglass.com/api/hyperliquid/whale-position', { headers: { 'CG-API-KEY': key } });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.code === '0' && data.data?.length) { el.textContent = 'Connected! Found '+data.data.length+' whale positions.'; el.style.color = 'var(--green)'; }
+      else { el.textContent = 'Key works but no data returned'; el.style.color = 'var(--yellow)'; }
+    } else {
+      el.textContent = 'Error ' + resp.status + ': Invalid key or rate limited'; el.style.color = 'var(--red)';
+    }
+  } catch(e) { el.textContent = 'Connection failed: ' + e.message; el.style.color = 'var(--red)'; }
+}
 
 async function testFmpKey() {
   const inputVal = document.getElementById('settings-fmp-key')?.value?.trim();
@@ -7003,87 +7037,138 @@ async function hlDiscoverWhales() {
   hlEnsureVars();
   const status = document.getElementById('hl-whale-status');
   const container = document.getElementById('hl-whales-result');
-  status.textContent = 'Fetching market data...';
-  container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Scanning for whales... this may take 15-30 seconds</div>';
+  const coinFilter = document.getElementById('hl-coin-filter').value.trim().toUpperCase();
+  const minSize = parseInt(document.getElementById('hl-min-size').value);
+
+  status.textContent = 'Fetching leaderboard + market data...';
+  container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Scanning top traders for whale positions...<br><span style="font-size:12px;">Leaderboard → Top wallets → Live positions</span></div>';
 
   try {
-    // Step 1: Get all coins with open interest
-    const meta = await hlPost({ type:'metaAndAssetCtxs' });
-    const coins = meta[0].universe.map((c, i) => ({ name: c.name, oi: parseFloat(meta[1][i].openInterest || 0), markPx: parseFloat(meta[1][i].markPx || 0), funding: parseFloat(meta[1][i].funding || 0), volume: parseFloat(meta[1][i].dayNtlVlm || 0) }));
+    // Step 1: Fetch leaderboard (32K traders, free, no auth) + market prices in parallel
+    const [lbResp, meta] = await Promise.all([
+      fetch('https://stats-data.hyperliquid.xyz/Mainnet/leaderboard').then(r => r.json()),
+      hlPost({ type:'metaAndAssetCtxs' })
+    ]);
 
-    // Sort by OI and take top 15 most liquid coins
-    const coinFilter = document.getElementById('hl-coin-filter').value.trim().toUpperCase();
-    let targetCoins = coins.filter(c => c.oi > 0).sort((a,b) => b.oi - a.oi);
-    if (coinFilter) targetCoins = targetCoins.filter(c => c.name.toUpperCase().includes(coinFilter));
-    targetCoins = targetCoins.slice(0, 15);
+    // Build mark price map
+    const markPxMap = {};
+    meta[0].universe.forEach((c, i) => { markPxMap[c.name] = parseFloat(meta[1][i].markPx || 0); });
 
-    status.textContent = 'Scanning '+targetCoins.length+' coins for large positions...';
+    // Step 2: Sort leaderboard by account value, take top whales
+    let lbRows = (lbResp.leaderboardRows || [])
+      .map(r => ({ addr: r.ethAddress, acctVal: parseFloat(r.accountValue || 0), perfs: r.windowPerformances || [] }))
+      .filter(r => r.acctVal >= minSize)
+      .sort((a,b) => b.acctVal - a.acctVal);
 
-    // Step 2: For each coin, look at recent trades for large wallets
-    // We'll use the trades from the API to find active wallets
-    const minSize = parseInt(document.getElementById('hl-min-size').value);
-    const walletMap = new Map(); // addr -> { positions, totalNotional, totalUpnl }
+    // Take top 50 by account value (enough to find all major positions)
+    const topWallets = lbRows.slice(0, 50);
+    status.textContent = 'Found '+lbRows.length+' wallets with $'+hlFmt(minSize)+'+ — scanning top '+topWallets.length+' for positions...';
 
-    // Instead of scanning trades (which needs WebSocket), we'll use a known-whales approach:
-    // Scan clearinghouse for addresses seen in large L2 orders
-    // For MVP: fetch account states for well-known whale addresses from explorer
-
-    // Alternative approach: use the /info endpoint to find large positions
-    // We scan the order book for each top coin and collect large order placers
-    // Actually, the most practical MVP is to let users paste addresses and build their list
-
-    // For discovery: scan recent fills on top coins to find wallets
-    status.textContent = 'Scanning recent activity on top coins...';
-
+    // Step 3: Fetch positions for top wallets (parallel batches of 5)
     const allPositions = [];
-    const scannedAddrs = new Set();
-
-    // Fetch recent fills for discovery (public endpoint)
-    for (const coin of targetCoins.slice(0, 8)) {
-      try {
-        const fills = await hlPost({ type:'recentTrades', coin: coin.name });
-        if (Array.isArray(fills)) {
-          fills.forEach(f => {
-            if (f.users) f.users.forEach(u => { if (u && u.startsWith('0x')) scannedAddrs.add(u); });
-          });
-        }
-      } catch(e) { /* some coins may fail */ }
-    }
-
-    status.textContent = 'Found '+scannedAddrs.size+' addresses, checking positions...';
-
-    // Check positions for discovered addresses (batch — max 30)
-    const addrs = Array.from(scannedAddrs).slice(0, 30);
-    for (const addr of addrs) {
-      try {
-        const state = await hlPost({ type:'clearinghouseState', user: addr });
+    const batchSize = 5;
+    for (let i = 0; i < topWallets.length; i += batchSize) {
+      const batch = topWallets.slice(i, i + batchSize);
+      status.textContent = 'Scanning wallets '+Math.min(i+batchSize, topWallets.length)+'/'+topWallets.length+'...';
+      const results = await Promise.allSettled(
+        batch.map(w => hlPost({ type:'clearinghouseState', user: w.addr }))
+      );
+      results.forEach((res, idx) => {
+        if (res.status !== 'fulfilled') return;
+        const state = res.value;
+        const w = batch[idx];
         const mg = state.marginSummary || {};
         const acctVal = parseFloat(mg.accountValue || 0);
-        if (acctVal < minSize) continue;
-        const positions = (state.assetPositions || []).map(p => p.position).filter(p => parseFloat(p.szi) !== 0);
+        // Get monthly PnL from leaderboard
+        const perfMap = {};
+        w.perfs.forEach(p => { perfMap[p[0]] = p[1]; });
+        const monthPnl = parseFloat((perfMap.month || {}).pnl || 0);
+        const weekPnl = parseFloat((perfMap.week || {}).pnl || 0);
+
+        const positions = (state.assetPositions || []).map(p => p.position).filter(p => Math.abs(parseFloat(p.szi || 0)) > 0);
         positions.forEach(p => {
-          const sz = parseFloat(p.szi);
+          const sz = parseFloat(p.szi || 0);
           const entry = parseFloat(p.entryPx || 0);
-          const notional = Math.abs(sz * entry);
-          if (notional >= minSize) {
-            allPositions.push({
-              address: addr,
-              coin: p.coin,
-              side: sz > 0 ? 'LONG' : 'SHORT',
-              size: notional,
-              entryPx: entry,
-              upnl: parseFloat(p.unrealizedPnl || 0),
-              leverage: p.leverage ? parseFloat(p.leverage.value || 1) : 1,
-              acctVal: acctVal,
-              liqPx: parseFloat(p.liquidationPx || 0)
-            });
-          }
+          const mark = markPxMap[p.coin] || entry;
+          const notional = Math.abs(sz * mark);
+          const coin = p.coin;
+          if (coinFilter && !coin.toUpperCase().includes(coinFilter)) return;
+          if (notional < minSize * 0.1) return; // show positions >= 10% of min filter
+          allPositions.push({
+            address: w.addr, coin: coin, side: sz > 0 ? 'LONG' : 'SHORT',
+            size: notional, entryPx: entry, markPx: mark,
+            upnl: parseFloat(p.unrealizedPnl || 0),
+            leverage: p.leverage ? parseFloat(p.leverage.value || 1) : 1,
+            acctVal: acctVal, liqPx: parseFloat(p.liquidationPx || 0),
+            fundingFee: 0, marginMode: p.leverage ? p.leverage.type || '' : '',
+            openTime: 0, updateTime: 0, positionQty: Math.abs(sz),
+            recentAction: null, source: 'leaderboard',
+            monthPnl: monthPnl, weekPnl: weekPnl
+          });
         });
-      } catch(e) { /* skip */ }
+      });
     }
 
-    hlWhalesData = allPositions;
-    status.textContent = 'Found '+allPositions.length+' whale positions from '+scannedAddrs.size+' addresses';
+    // Step 4: Also fetch CoinGlass if key available (adds $1M+ positions with extra data)
+    const cgKey = getCoinglassKey();
+    if (cgKey) {
+      try {
+        status.textContent = 'Enriching with CoinGlass whale data...';
+        const [posResp, alertResp] = await Promise.all([
+          fetch('https://open-api-v4.coinglass.com/api/hyperliquid/whale-position', { headers: { 'CG-API-KEY': cgKey } }),
+          fetch('https://open-api-v4.coinglass.com/api/hyperliquid/whale-alert', { headers: { 'CG-API-KEY': cgKey } })
+        ]);
+        const posData = await posResp.json();
+        const alertData = await alertResp.json();
+        const alertMap = {};
+        if (alertData.code === '0' && alertData.data) {
+          alertData.data.forEach(a => { alertMap[a.user + '_' + a.symbol] = a; });
+        }
+        if (posData.code === '0' && posData.data) {
+          const existingKeys = new Set(allPositions.map(p => p.address.toLowerCase() + '_' + p.coin));
+          posData.data.forEach(p => {
+            const key = (p.user || '').toLowerCase() + '_' + (p.symbol || '');
+            if (existingKeys.has(key)) {
+              // Enrich existing position with CoinGlass data
+              const existing = allPositions.find(e => e.address.toLowerCase() === p.user.toLowerCase() && e.coin === p.symbol);
+              if (existing) {
+                existing.fundingFee = p.funding_fee || 0;
+                existing.marginMode = p.margin_mode || existing.marginMode;
+                existing.openTime = p.create_time || 0;
+                existing.updateTime = p.update_time || 0;
+                const alert = alertMap[p.user + '_' + p.symbol];
+                if (alert) existing.recentAction = alert.position_action === 1 ? 'OPENED' : 'CLOSED';
+                existing.source = 'leaderboard+coinglass';
+              }
+              return;
+            }
+            const posValue = Math.abs(p.position_value_usd || 0);
+            const coin = p.symbol || '';
+            if (posValue < minSize) return;
+            if (coinFilter && !coin.toUpperCase().includes(coinFilter)) return;
+            const alert = alertMap[p.user + '_' + coin];
+            allPositions.push({
+              address: p.user, coin: coin, side: p.position_size > 0 ? 'LONG' : 'SHORT',
+              size: posValue, entryPx: p.entry_price || 0, markPx: p.mark_price || 0,
+              upnl: p.unrealized_pnl || 0, leverage: p.leverage || 1,
+              acctVal: p.margin_balance || 0, liqPx: p.liq_price || 0,
+              fundingFee: p.funding_fee || 0, marginMode: p.margin_mode || '',
+              openTime: p.create_time || 0, updateTime: p.update_time || 0,
+              positionQty: Math.abs(p.position_size || 0),
+              recentAction: alert ? (alert.position_action === 1 ? 'OPENED' : 'CLOSED') : null,
+              source: 'coinglass', monthPnl: 0, weekPnl: 0
+            });
+          });
+        }
+      } catch(e) { /* CoinGlass enrichment failed, positions from leaderboard still valid */ }
+    }
+
+    // Filter by min size
+    const filtered = allPositions.filter(p => p.size >= minSize);
+    hlWhalesData = filtered;
+    const uniqueWallets = new Set(filtered.map(p => p.address)).size;
+    const sources = cgKey ? 'Leaderboard + CoinGlass' : 'Leaderboard';
+    status.innerHTML = 'Found <b>'+filtered.length+'</b> whale positions from <b>'+uniqueWallets+'</b> wallets <span style="color:var(--accent);font-size:11px;">('+sources+')</span>';
     hlRenderWhales();
   } catch(e) {
     status.textContent = 'Error: ' + e.message;
@@ -7091,7 +7176,16 @@ async function hlDiscoverWhales() {
   }
 }
 
-function hlFilterWhales() { /* just re-render with filter */ hlRenderWhales(); }
+function hlFilterWhales() { hlRenderWhales(); }
+
+function hlTimeSince(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  const hrs = Math.floor(diff / 3600000);
+  if (hrs < 1) return Math.floor(diff / 60000) + 'm ago';
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
 
 function hlRenderWhales() {
   hlEnsureVars();
@@ -7106,23 +7200,54 @@ function hlRenderWhales() {
   else if (sortBy === 'leverage') data.sort((a,b) => b.leverage - a.leverage);
   else data.sort((a,b) => b.size - a.size);
 
-  if (!data.length) { container.innerHTML = '<div class="empty-state"><p style="color:var(--text3);">No whale positions found. Try scanning or lower the min size.</p></div>'; return; }
+  if (!data.length) {
+    container.innerHTML = '<div class="empty-state"><p style="color:var(--text3);">No whale positions found. Try lowering min size or clearing the coin filter.</p>'
+      + (!getCoinglassKey() ? '<p style="color:var(--accent);font-size:12px;">Add a <b>CoinGlass API key</b> in Settings for extra whale data (open timestamps, funding fees, alerts).</p>' : '')
+      + '</div>';
+    return;
+  }
 
-  let html = '<div style="overflow-x:auto;"><table style="width:100%;font-size:13px;border-collapse:collapse;">';
-  html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);">';
-  html += '<th style="padding:8px 10px;">Wallet</th><th>Coin</th><th>Side</th><th>Size</th><th>Entry</th><th>uPnL</th><th>Lev</th><th>Acct Value</th><th></th></tr>';
+  // Stats bar
+  const totalNotional = data.reduce((s,d) => s + d.size, 0);
+  const totalPnl = data.reduce((s,d) => s + d.upnl, 0);
+  const longs = data.filter(d => d.side === 'LONG').length;
+  const shorts = data.filter(d => d.side === 'SHORT').length;
+  const longPct = Math.round(longs / data.length * 100);
+
+  let html = '<div class="card" style="margin-bottom:14px;padding:12px 18px;">';
+  html += '<div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">';
+  html += '<div><span style="color:var(--text3);">Total Notional</span><br><b style="font-size:16px;">$'+hlFmt(totalNotional)+'</b></div>';
+  html += '<div><span style="color:var(--text3);">Total uPnL</span><br><b style="font-size:16px;color:'+hlPnlColor(totalPnl)+';">$'+hlFmt(totalPnl)+'</b></div>';
+  html += '<div><span style="color:var(--text3);">Positions</span><br><b style="font-size:16px;">'+data.length+'</b></div>';
+  html += '<div><span style="color:var(--text3);">Long / Short</span><br>'
+    + '<span style="color:var(--green,#4ade80);font-weight:700;">'+longs+'</span>'
+    + ' <span style="color:var(--text3);">/</span> '
+    + '<span style="color:var(--red,#f87171);font-weight:700;">'+shorts+'</span>'
+    + ' <span style="font-size:11px;color:var(--text3);">('+longPct+'% long)</span></div>';
+  html += '</div></div>';
+
+  // Table
+  html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:13px;border-collapse:collapse;">';
+  html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">';
+  html += '<th style="padding:8px 10px;">Wallet</th><th>Coin</th><th>Side</th><th>Size</th><th>Entry</th><th>Mark</th><th>uPnL</th><th>Lev</th><th>Margin</th><th>Opened</th><th></th></tr>';
   data.forEach(d => {
     const sColor = d.side === 'LONG' ? 'var(--green,#4ade80)' : 'var(--red,#f87171)';
     const isSaved = hlSavedWallets.some(w => w.address.toLowerCase() === d.address.toLowerCase());
+    const pnlPct = d.entryPx ? ((d.markPx - d.entryPx) / d.entryPx * 100 * (d.side === 'LONG' ? 1 : -1)).toFixed(1) : '0';
     html += '<tr style="border-bottom:1px solid var(--border);">';
-    html += '<td style="padding:8px 10px;font-family:monospace;font-size:12px;"><a href="#" onclick="document.getElementById(\'hl-wallet-input\').value=\''+d.address+'\';hlShowTab(\'scanner\');hlScanWallet();return false;" style="color:var(--accent);">'+hlAddr(d.address)+'</a></td>';
+    html += '<td style="padding:8px 10px;font-family:monospace;font-size:12px;">'
+      + '<a href="#" onclick="document.getElementById(\'hl-wallet-input\').value=\''+d.address+'\';hlShowTab(\'scanner\');hlScanWallet();return false;" style="color:var(--accent);">'+hlAddr(d.address)+'</a>'
+      + (d.recentAction ? '<br><span style="font-size:10px;color:'+(d.recentAction==='OPENED'?'var(--green,#4ade80)':'var(--red,#f87171)')+';">'+d.recentAction+'</span>' : '')
+      + '</td>';
     html += '<td style="font-weight:600;">'+d.coin+'</td>';
     html += '<td style="color:'+sColor+';font-weight:600;">'+d.side+'</td>';
-    html += '<td>$'+hlFmt(d.size)+'</td>';
-    html += '<td>$'+d.entryPx.toLocaleString()+'</td>';
-    html += '<td style="color:'+hlPnlColor(d.upnl)+';">$'+hlFmt(d.upnl)+'</td>';
-    html += '<td>'+d.leverage+'x</td>';
+    html += '<td><b>$'+hlFmt(d.size)+'</b><br><span style="font-size:11px;color:var(--text3);">'+hlFmt(d.positionQty)+' '+d.coin+'</span></td>';
+    html += '<td>$'+Number(d.entryPx).toLocaleString(undefined,{maximumFractionDigits:2})+'</td>';
+    html += '<td>$'+Number(d.markPx).toLocaleString(undefined,{maximumFractionDigits:2})+'</td>';
+    html += '<td style="color:'+hlPnlColor(d.upnl)+';"><b>$'+hlFmt(d.upnl)+'</b><br><span style="font-size:11px;">'+pnlPct+'%</span></td>';
+    html += '<td>'+d.leverage+'x<br><span style="font-size:10px;color:var(--text3);">'+d.marginMode+'</span></td>';
     html += '<td>$'+hlFmt(d.acctVal)+'</td>';
+    html += '<td style="font-size:11px;color:var(--text3);">'+hlTimeSince(d.openTime)+'</td>';
     html += '<td><button class="btn btn-sm btn-ghost" onclick="hlToggleSave(\''+d.address+'\','+d.acctVal+')" title="'+(isSaved?'Saved':'Save')+'">'+(isSaved?'&#10003;':'&#128190;')+'</button></td>';
     html += '</tr>';
   });
@@ -7150,6 +7275,8 @@ function renderAll() {
   if (fmpInput && !fmpInput.value) fmpInput.value = getFmpKey();
   const anthropicInput = document.getElementById('settings-anthropic-key');
   if (anthropicInput && !anthropicInput.value) anthropicInput.value = getAnthropicKey();
+  const cgInput = document.getElementById('settings-coinglass-key');
+  if (cgInput && !cgInput.value) cgInput.value = getCoinglassKey();
 }
 
 // ===== LOAD CUSTOM TEMPLATES =====
