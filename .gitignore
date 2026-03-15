@@ -2,3 +2,5 @@
 .netlify/
 .claude/*
 !.claude/skills/
+agents/hyperliquid/venv/
+agents/hyperliquid/__pycache__/
