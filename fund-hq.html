@@ -7205,32 +7205,40 @@ async function hlDiscoverXyz(coinFilter, minSize, status, container) {
 
     // Step 2: Pick coins to scan — filter by name or take top by volume
     let targetCoins = xyzCoins.filter(c => c.oi > 0).sort((a,b) => b.vol - a.vol);
-    if (coinFilter) targetCoins = targetCoins.filter(c => c.name.toUpperCase().replace('XYZ:','').includes(coinFilter));
+    if (coinFilter) targetCoins = targetCoins.filter(c => c.name.toUpperCase().replace('XYZ:','') === coinFilter);
+    if (!targetCoins.length && coinFilter) targetCoins = xyzCoins.filter(c => c.oi > 0 && c.name.toUpperCase().replace('XYZ:','').includes(coinFilter));
     targetCoins = targetCoins.slice(0, 12);
 
     status.textContent = 'Scanning '+targetCoins.length+' XYZ coins for active traders...';
 
-    // Step 3: Fetch recent trades for each coin to discover active wallets
+    // Step 3: Aggressively collect wallets from recentTrades (multiple rounds)
     const scannedAddrs = new Set();
-    for (const coin of targetCoins) {
-      try {
-        const fills = await hlPost({ type:'recentTrades', coin: coin.name });
-        if (Array.isArray(fills)) {
-          fills.forEach(f => {
-            (f.users || []).forEach(u => { if (u && u.startsWith('0x')) scannedAddrs.add(u); });
-          });
-        }
-      } catch(e) { /* skip */ }
+    const tradeRounds = coinFilter ? 8 : 3; // more rounds when filtering specific coin
+    for (let round = 0; round < tradeRounds; round++) {
+      for (const coin of targetCoins) {
+        try {
+          const fills = await hlPost({ type:'recentTrades', coin: coin.name });
+          if (Array.isArray(fills)) {
+            fills.forEach(f => {
+              (f.users || []).forEach(u => { if (u && u.startsWith('0x')) scannedAddrs.add(u); });
+            });
+          }
+        } catch(e) { /* skip */ }
+      }
+      if (round < tradeRounds - 1) {
+        status.textContent = 'Collecting traders round '+(round+2)+'/'+tradeRounds+' ('+scannedAddrs.size+' found)...';
+        await new Promise(r => setTimeout(r, 500)); // small delay to get different trades
+      }
     }
 
-    status.textContent = 'Found '+scannedAddrs.size+' traders, fetching positions...';
+    status.textContent = 'Found '+scannedAddrs.size+' traders from trades, adding leaderboard...';
 
-    // Step 4: Also pull from leaderboard — top traders likely have xyz positions too
+    // Step 4: Pull top 200 leaderboard wallets (many may have xyz positions)
     try {
       const lbResp = await fetch('https://stats-data.hyperliquid.xyz/Mainnet/leaderboard').then(r => r.json());
       const topAddrs = (lbResp.leaderboardRows || [])
         .sort((a,b) => parseFloat(b.accountValue || 0) - parseFloat(a.accountValue || 0))
-        .slice(0, 30)
+        .slice(0, 200)
         .map(r => r.ethAddress);
       topAddrs.forEach(a => scannedAddrs.add(a));
     } catch(e) { /* leaderboard fetch failed, continue with trade-based addrs */ }
@@ -7260,7 +7268,8 @@ async function hlDiscoverXyz(coinFilter, minSize, status, container) {
           const mark = markPxMap[coin] || parseFloat(p.entryPx || 0);
           const notional = Math.abs(sz * mark);
           const entry = parseFloat(p.entryPx || 0);
-          if (coinFilter && !coin.toUpperCase().replace('XYZ:','').includes(coinFilter)) return;
+          const cleanCoin = coin.toUpperCase().replace('XYZ:','');
+          if (coinFilter && cleanCoin !== coinFilter) return;
           allPositions.push({
             address: addr, coin: coin.replace('xyz:',''), side: sz > 0 ? 'LONG' : 'SHORT',
             size: notional, entryPx: entry, markPx: mark,
@@ -7305,7 +7314,7 @@ function hlRenderWhales() {
   const coinFilter = document.getElementById('hl-coin-filter').value.trim().toUpperCase();
 
   let data = [...hlWhalesData];
-  if (coinFilter) data = data.filter(d => d.coin.toUpperCase().includes(coinFilter));
+  if (coinFilter) data = data.filter(d => d.coin.toUpperCase().replace('XYZ:','') === coinFilter || d.coin.toUpperCase() === coinFilter);
 
   if (sortBy === 'pnl') data.sort((a,b) => Math.abs(b.upnl) - Math.abs(a.upnl));
   else if (sortBy === 'leverage') data.sort((a,b) => b.leverage - a.leverage);
