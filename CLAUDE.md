@@ -32,7 +32,7 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 
 ## Pamela (AI Agent)
 - **Model:** Claude Haiku 4.5 (fast + cheap, ~$0.005/query)
-- **17 tools:** get_market_data, search_asset, get_watchlist, add_to_watchlist, remove_from_watchlist, get_tasks, create_task, get_projects, create_project, get_fund_stats, navigate_to_page, search_fund_hq, save_research, get_reports, get_report_content, create_alert, web_search
+- **20 tools:** search_crypto, get_crypto_data, search_stocks, get_stock_data, create_item, update_item, delete_item, find_items, search_all, add_to_watchlist, get_watchlist, navigate_to_page, get_fund_stats, save_research, get_reports, get_report_content, create_alert, hl_scan_wallet, hl_whale_positions, hl_saved_wallets + web_search
 - **System prompt:** 5-lens filter scoring, setup archetypes, anti-patterns, position sizing, live context injection (watchlist prices, recent reports, open tasks, unread alerts)
 - **Multi-turn:** Up to 8 tool-use turns per conversation
 
@@ -66,6 +66,7 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - 2026-03-15: Saved Wallets — label & track wallets with live position updates, Firebase sync
 - 2026-03-15: Python agent (`agents/hyperliquid/agent.py`) — wallet profiling, whale discovery, WebSocket monitoring, Firebase alerts
 - 2026-03-15: Firebase sync — saved wallets + discovered whales shared between frontend and Python agent
+- 2026-03-15: Pamela Hyperliquid tools (20 total) — hl_scan_wallet, hl_whale_positions, hl_saved_wallets
 - 2026-03-12: About page — Fund HQ mission, operating principles, scale trajectory as own tab under Overview
 - 2026-03-12: Full 5-phase roadmap — 35 items across Data Infrastructure, Quant Models, Risk Framework, Learning & Edge, Full Autonomy
 - 2026-03-12: Phase 0: Prototype marked complete (8 items)
