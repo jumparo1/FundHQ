@@ -20,7 +20,7 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Project Dump | Pipeline | Quick capture for project ideas |
 | Watchlist | Pipeline | Tracked assets with scores, detail view, Firebase sync |
 | Alerts | Pipeline | Signals from scheduled scans + Pamela, severity levels, browser notifications |
-| Templates | Research | 3 templates (Crypto 18s, Stock 10s, Quick Thesis 5s), view/edit modes |
+| Templates | Research | 4 templates (Crypto 16s, Stock 10s, Quick Thesis 5s, Commodity 12s), view/edit modes |
 | Reports | Research | AI-generated research reports, rating, conviction |
 | Market Data | Market | Live search/discovery, CoinGecko + FMP fundamentals |
 | Hyperliquid | Market | On-chain whale tracker — wallet scanner, whale discovery, saved wallets, perp positioning |
@@ -60,6 +60,7 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-15: Commodity Research template — 12 sections for oil, gold, natgas (supply/demand, geopolitics, seasonality, futures curve, CFTC COT, trade setup)
 - 2026-03-15: Perp Positioning tab — aggregate OI, funding rates, volume, premium across 190 perps (Crypto + XYZ dex)
 - 2026-03-15: Hyperliquid page — on-chain whale tracker with 4 tabs (Wallet Scanner, Whale Discovery, Saved Wallets, Perp Positioning)
 - 2026-03-15: Wallet Scanner — paste any 0x address, see account value, positions, PnL, win rate, trade history
