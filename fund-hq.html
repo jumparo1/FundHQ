@@ -1165,15 +1165,34 @@ tbody tr:hover { background: var(--bg3); }
         </div>
 
         <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#128172; Pamela — Chat Assistant</h3>
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#128172; Pamela — AI Agent (20 tools)</h3>
           <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;">Click the chat bubble (bottom-right) to open <strong style="color:var(--text);">Pamela</strong>, your fund assistant. She can:</p>
+            <p style="margin-bottom:8px;">Click the chat bubble (bottom-right) to open <strong style="color:var(--text);">Pamela</strong>, your fund assistant. Example commands:</p>
             <ul style="margin-left:16px;margin-bottom:8px;">
               <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">price btc</code> — check any crypto/stock price</li>
               <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">watch eth</code> — add to watchlist</li>
               <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">research sol</code> — generate an AI research report</li>
-              <li>Navigate to any page, search projects, and more</li>
+              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">who's long ETH?</code> — scan Hyperliquid for whale positions</li>
+              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">scan wallet 0x...</code> — profile a Hyperliquid wallet</li>
+              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">what wallets are we tracking?</code> — show saved HL wallets</li>
+              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">whale activity on SOL</code> — find large SOL positions</li>
+              <li>Navigate to any page, create tasks, search projects, and more</li>
             </ul>
+            <p style="color:var(--text3);font-size:12px;">Pamela uses Claude Haiku with multi-turn tool calling (up to 8 turns per query).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#128011; Hyperliquid — Whale Tracker</h3>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <p style="margin-bottom:8px;">Track whale wallets and large positions on <strong style="color:var(--text);">Hyperliquid</strong> (on-chain perp DEX). Three tabs:</p>
+            <ul style="margin-left:16px;margin-bottom:8px;">
+              <li><strong style="color:var(--accent);">Wallet Scanner</strong> — paste any 0x address to see account value, open positions, PnL, win rate, leverage, and recent trades</li>
+              <li><strong style="color:var(--accent);">Whale Discovery</strong> — scan top coins for $500K+ positions, filter by coin, sort by size/PnL/leverage</li>
+              <li><strong style="color:var(--accent);">Saved Wallets</strong> — save interesting wallets with custom labels, live position monitoring</li>
+            </ul>
+            <p style="margin-bottom:8px;"><strong style="color:var(--text);">Python Agent</strong> (run locally): monitors saved wallets every 5min, alerts on new positions, tracks whale PnL swings.</p>
+            <p style="color:var(--text3);font-size:12px;">All data from Hyperliquid public API — free, no API key needed. Saved wallets sync to Firebase.</p>
           </div>
         </div>
 
@@ -1202,7 +1221,49 @@ tbody tr:hover { background: var(--bg3); }
             <p><strong>CoinGecko</strong> — crypto prices, MCap, supply, ATH</p>
             <p><strong>FMP</strong> — stock fundamentals, P/E, ROE, D/E</p>
             <p><strong>DefiLlama</strong> — TVL data</p>
-            <p style="font-size:11px;color:var(--text3);margin-top:4px;">Data refreshes on search and watchlist refresh</p>
+            <p><strong>Hyperliquid</strong> — on-chain positions, PnL, trades</p>
+            <p style="font-size:11px;color:var(--text3);margin-top:4px;">CoinGecko + Hyperliquid = free, no key. FMP + AI need keys in Settings.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Updates -->
+      <div class="card" style="margin-top:20px;">
+        <h3 style="font-size:15px;margin-bottom:14px;">&#128640; Recent Updates</h3>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          <div style="margin-bottom:12px;">
+            <div style="font-weight:600;color:var(--accent);font-size:12px;">March 15, 2026</div>
+            <ul style="margin-left:16px;">
+              <li><strong>Hyperliquid Whale Tracker</strong> — new page with Wallet Scanner, Whale Discovery, and Saved Wallets</li>
+              <li><strong>Python Agent</strong> — persistent monitoring, wallet profiling (Grade A-F), WebSocket real-time trade alerts</li>
+              <li><strong>Pamela upgraded to 20 tools</strong> — 3 new Hyperliquid tools: scan wallets, find whale positions, check tracked wallets</li>
+              <li><strong>Firebase sync</strong> — saved wallets + discovered whales shared between frontend and Python agent</li>
+            </ul>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-weight:600;color:var(--accent);font-size:12px;">March 13, 2026</div>
+            <ul style="margin-left:16px;">
+              <li><strong>Admin auth</strong> — login system, view-only mode for visitors</li>
+              <li><strong>Substack templates</strong> — 13-section article template with Introduction</li>
+            </ul>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-weight:600;color:var(--accent);font-size:12px;">March 12, 2026</div>
+            <ul style="margin-left:16px;">
+              <li><strong>Pamela AI Agent</strong> — upgraded from regex bot to Claude tool_use with 17 tools, multi-turn</li>
+              <li><strong>Alerts page</strong> — severity-colored cards, browser notifications, scheduled scans via Firebase</li>
+              <li><strong>About page</strong> — fund mission, operating principles, scale trajectory</li>
+              <li><strong>Knowledge base</strong> — 5-lens filter, setup archetypes, anti-patterns, live context injection</li>
+              <li><strong>Web search</strong> — AI research now pulls live data and cites sources</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--accent);font-size:12px;">March 11, 2026</div>
+            <ul style="margin-left:16px;">
+              <li><strong>Initial launch</strong> — Dashboard, Watchlist, Market Data, Templates, Reports, Tasks, Progress</li>
+              <li><strong>Scoring system</strong> — auto 5-star ratings from live fundamentals</li>
+              <li><strong>GitHub Pages</strong> — migrated from Netlify, free hosting</li>
+            </ul>
           </div>
         </div>
       </div>
