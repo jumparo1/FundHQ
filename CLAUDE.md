@@ -23,7 +23,7 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Templates | Research | 3 templates (Crypto 18s, Stock 10s, Quick Thesis 5s), view/edit modes |
 | Reports | Research | AI-generated research reports, rating, conviction |
 | Market Data | Market | Live search/discovery, CoinGecko + FMP fundamentals |
-| Hyperliquid | Market | On-chain whale tracker — wallet scanner, whale discovery, saved wallets |
+| Hyperliquid | Market | On-chain whale tracker — wallet scanner, whale discovery, saved wallets, perp positioning |
 | Tasks | Management | Kanban board with milestones, priority, assignee |
 | Roadmap | Management | Tasks grouped by milestone with progress bars |
 | Progress | Management | Daily work log, timeline, streak tracking |
@@ -60,7 +60,8 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
-- 2026-03-15: Hyperliquid page — on-chain whale tracker with 3 tabs (Wallet Scanner, Whale Discovery, Saved Wallets)
+- 2026-03-15: Perp Positioning tab — aggregate OI, funding rates, volume, premium across 190 perps (Crypto + XYZ dex)
+- 2026-03-15: Hyperliquid page — on-chain whale tracker with 4 tabs (Wallet Scanner, Whale Discovery, Saved Wallets, Perp Positioning)
 - 2026-03-15: Wallet Scanner — paste any 0x address, see account value, positions, PnL, win rate, trade history
 - 2026-03-15: Whale Discovery — scans top coins via Hyperliquid API, finds $500K+ positions, sortable by size/PnL/leverage
 - 2026-03-15: Saved Wallets — label & track wallets with live position updates, Firebase sync

@@ -211,6 +211,7 @@ tbody tr:hover { background: var(--bg3); }
 .template-type-stock { background: var(--blue-bg); color: var(--blue); }
 .template-type-crypto { background: var(--purple-bg); color: var(--purple); }
 .template-type-substack { background: rgba(255,140,0,0.15); color: #ff8c00; }
+.template-type-commodity { background: rgba(218,165,32,0.15); color: #daa520; }
 .template-sections { list-style: none; padding: 0; margin: 16px 0; }
 .template-sections li { font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
 .template-sections li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
@@ -4769,6 +4770,24 @@ const TEMPLATE_DEFS = {
       { id: 'catalysts', title: 'Catalysts & FUD', prompt: 'Split into Catalysts (Bull) with near-term confirmed and mid-term probable (include confidence %), and FUD (Bear) as bullet list. Add development velocity note if applicable.', bullets: ['Near-term confirmed catalysts with confidence %', 'Mid-term catalysts with confidence %', 'Development velocity (shipping pace)', 'FUD bullets (honest bear case)'] },
       { id: 'verdict', title: 'The Verdict', prompt: 'Signal rating (emoji + word + conviction /10). Bull/Base/Bear scenario table with targets, probabilities, drivers. Position sizing: Aggressive/Moderate/Wait with % portfolio. Entry, stop, targets. Close with one strong sentence.', bullets: ['Signal: emoji + rating + conviction /10', 'Scenario table: Bull/Base/Bear with targets & probabilities', 'How to Position: Aggressive/Moderate/Wait (% portfolio)', 'Entry zones, stop loss, targets', 'Closing one-liner (memorable)'] }
     ]
+  },
+  commodity: {
+    id: 'commodity', label: 'Commodity Research', badge: 'COMMODITY', badgeClass: 'template-type-commodity',
+    desc: 'Commodity analysis for oil, gold, natgas, metals, agriculture. Supply/demand fundamentals, geopolitics, seasonality, futures curve, and trade setup.',
+    sections: [
+      { id: 'summary', title: 'Executive Summary', prompt: 'Provide a concise overview of this commodity: what it is, current spot price, recent price action (1W/1M/YTD %), why it matters now. Include the primary futures contract (e.g. CL for WTI crude, GC for gold). 1 paragraph max.', bullets: ['Commodity name & primary futures ticker', 'Current spot price & recent % change (1W/1M/YTD)', 'Why this commodity matters right now', 'Primary recommendation (Long/Short/Watch)'] },
+      { id: 'supply_demand', title: 'Supply & Demand Fundamentals', prompt: 'Analyze the current supply/demand balance for this commodity. Cover global production (top producers, output levels, spare capacity), demand drivers (sectors, countries, growth trends), inventory levels (commercial stocks, strategic reserves, days of supply), and the current balance (surplus/deficit, draw/build rate).', bullets: ['Global production (top 3 producers, output, spare capacity)', 'Demand drivers (sectors, countries, growth/decline)', 'Inventory levels (commercial stocks, strategic reserves)', 'Supply/demand balance (surplus or deficit, trend)', 'Key supply disruption risks'] },
+      { id: 'geopolitics', title: 'Geopolitics & Macro', prompt: 'Analyze geopolitical and macroeconomic factors affecting this commodity. Cover OPEC+ decisions (for oil), sanctions, trade wars, USD strength, interest rates, recession risk, and any active conflicts or policy changes that impact supply chains or pricing.', bullets: ['Geopolitical risks (conflicts, sanctions, embargoes)', 'Cartel/organization decisions (OPEC+, mining consortiums)', 'USD strength & interest rate impact', 'Trade policy (tariffs, export bans, sanctions)', 'Recession/growth outlook impact on demand'] },
+      { id: 'seasonality', title: 'Seasonality & Cycles', prompt: 'Analyze seasonal patterns for this commodity. Show historical monthly performance, identify the strongest/weakest months, note any super-cycles or multi-year patterns, and flag where we are in the current cycle.', bullets: ['Historical monthly performance (best/worst months)', 'Seasonal demand patterns (e.g. heating oil in winter, driving season)', 'Current position in seasonal cycle', 'Multi-year super-cycle analysis', 'Anomalies vs seasonal norms this year'] },
+      { id: 'futures_curve', title: 'Futures Curve & Positioning', prompt: 'Analyze the futures curve structure (contango vs backwardation, term structure slope), CFTC Commitments of Traders data (commercial vs speculative positioning, net long/short, extremes), open interest trends, and roll yield implications.', bullets: ['Curve structure (contango/backwardation, steepness)', 'Front-month vs 6M/12M spread', 'CFTC COT: commercial hedger positioning', 'CFTC COT: managed money / speculative positioning', 'Net positioning vs historical extremes', 'Open interest trend (rising/falling)'] },
+      { id: 'etfs_instruments', title: 'Trading Instruments', prompt: 'List the main ways to trade this commodity: futures contracts (ticker, exchange, contract size, tick value), popular ETFs/ETNs (ticker, AUM, expense ratio, structure — physical vs futures-based), leveraged products, and options liquidity. Note any roll/contango drag for futures-based ETFs.', bullets: ['Primary futures contract (exchange, size, tick value)', 'Top ETFs/ETNs (ticker, AUM, expense ratio)', 'Physical vs futures-based ETF structure', 'Leveraged/inverse products', 'Options liquidity & popular strikes', 'Contango/roll drag warning for futures ETFs'] },
+      { id: 'peers', title: 'Related Commodities & Equities', prompt: 'Map the related investment universe: correlated commodities (e.g. Brent vs WTI, gold vs silver), key producer equities (major companies, their valuation, dividend yield), and commodity-currency correlations (CAD, AUD, NOK, RUB).', bullets: ['Correlated commodities (spreads, ratios)', 'Top producer equities (3-5 companies, P/E, dividend yield)', 'Commodity-currency pairs (CAD, AUD, NOK)', 'Upstream vs downstream exposure', 'Relative value opportunities'] },
+      { id: 'technical', title: 'Technical Analysis', prompt: 'Analyze price action on the daily/weekly chart: trend direction, key support/resistance levels, moving averages (50/200 DMA, golden/death cross), RSI, MACD, volume profile, and any chart patterns (head & shoulders, channels, breakouts). Include price targets.', bullets: ['Trend direction & strength', 'Key support & resistance levels', '50-DMA & 200-DMA (golden/death cross)', 'RSI, MACD, volume profile', 'Chart patterns & breakout/breakdown levels', 'Price targets (TP1, TP2, TP3)'] },
+      { id: 'catalysts', title: 'Catalysts & Risks', prompt: 'List upcoming catalysts that could move the price (scheduled reports like EIA/API inventories, OPEC meetings, Fed decisions, earnings of major producers, weather events). Also list key risks (demand destruction, policy shifts, substitution, technology disruption).', bullets: ['Near-term catalysts (1-4 weeks): reports, meetings, data', 'Medium-term catalysts (1-6 months): policy, seasonal shift', 'Bullish risks (supply disruption, demand surge)', 'Bearish risks (demand destruction, policy shift, tech)', 'Key dates to watch (EIA, OPEC, Fed, crop reports)'] },
+      { id: 'thesis', title: 'Trade Thesis', prompt: 'Present the bull case (3 arguments) and bear case (3 arguments). State the base case scenario with probability-weighted expected return over the specified timeframe.', bullets: ['Bull case: 3 key arguments', 'Bear case: 3 key arguments', 'Base case scenario & probability', 'Timeframe (days/weeks/months)', 'Conviction level (High/Medium/Low)'] },
+      { id: 'trade_plan', title: 'Trade Setup & Execution', prompt: 'Provide a specific trade plan: instrument (futures, ETF, options, equity), direction (long/short), entry zone, stop loss, take profit targets, position sizing guidance, and R/R ratio. Include alternative setups if primary entry is missed.', bullets: ['Instrument (futures ticker / ETF / equity)', 'Direction (Long / Short)', 'Entry zone (price range or trigger)', 'Stop loss (price & % risk)', 'Take profit targets (TP1, TP2, TP3)', 'R/R ratio', 'Position sizing (% of portfolio)', 'Alternative setup if entry missed'] },
+      { id: 'sources', title: 'Sources & Data', prompt: 'List all data sources and tools used for this research.', bullets: ['EIA, IEA, OPEC (oil)', 'USDA (agriculture)', 'World Gold Council, LBMA (metals)', 'CFTC COT reports', 'TradingView, Finviz, Bloomberg', 'Baker Hughes rig count (oil)', 'Weather data sources'] }
+    ]
   }
 };
 
@@ -5091,7 +5110,7 @@ function openTemplateWorkspace(templateId, projectName) {
 
 async function rwFetchMarketData(name, type) {
   try {
-    if (type === 'stock') {
+    if (type === 'stock' || type === 'commodity') {
       const results = await searchStocks(name);
       if (results && results.length > 0) {
         _rwState.marketData = await fetchStockData(results[0].symbol);
@@ -5568,7 +5587,7 @@ function renderReports(filter = '') {
       <div class="report-card" onclick="openModal('report','${r.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div>
-            <span class="template-type ${r.type==='stock'?'template-type-stock':'template-type-crypto'}">${r.type==='stock'?'STOCK':'CRYPTO'}</span>
+            <span class="template-type ${r.type==='stock'?'template-type-stock':r.type==='commodity'?'template-type-commodity':'template-type-crypto'}">${r.type==='stock'?'STOCK':r.type==='commodity'?'COMMODITY':'CRYPTO'}</span>
             <h3 style="margin-top:6px;">${esc(r.title)}</h3>
             <div class="report-meta">${fmtDate(r.updated||r.created)}${r.editedBy ? ' &middot; by '+esc(r.editedBy) : ''}${r.rating ? ' &middot; '+esc(r.rating) : ''}</div>
           </div>
