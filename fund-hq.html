@@ -493,6 +493,70 @@ tbody tr:hover { background: var(--bg3); }
 .market-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 8px; padding: 3px; }
 .market-tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text3); transition: all 0.15s; }
 .market-tab.active { background: var(--accent); color: white; }
+
+/* ===== DOCS (GitBook-style) ===== */
+.docs-layout { display: flex; gap: 0; margin: -32px; min-height: calc(100vh - 0px); }
+.docs-sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--border); padding: 0; flex-shrink: 0; overflow-y: auto; max-height: calc(100vh); position: sticky; top: 0; }
+.docs-sidebar-header { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+.docs-nav-group { padding: 12px 12px 4px; }
+.docs-nav-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; padding: 4px 8px 6px; }
+.docs-nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 6px; font-size: 13px; color: var(--text2); cursor: pointer; transition: all 0.15s; font-weight: 500; margin-bottom: 1px; }
+.docs-nav-item:hover { background: var(--bg3); color: var(--text); }
+.docs-nav-item.active { background: var(--accent-bg); color: var(--accent2); font-weight: 600; }
+.docs-nav-icon { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+.docs-content { flex: 1; padding: 40px 56px; overflow-y: auto; max-height: calc(100vh); }
+.docs-section { max-width: 760px; }
+.docs-breadcrumb { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; }
+.docs-title { font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 12px; letter-spacing: -0.5px; }
+.docs-lead { font-size: 15px; color: var(--text2); line-height: 1.7; margin-bottom: 0; }
+.docs-divider { height: 1px; background: var(--border); margin: 24px 0; }
+.docs-body { font-size: 14px; color: var(--text2); line-height: 1.8; }
+.docs-body h2 { font-size: 18px; font-weight: 700; color: var(--text); margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.docs-body h2:first-child { margin-top: 0; }
+.docs-body p { margin-bottom: 12px; }
+.docs-body ul { margin: 8px 0 16px 20px; }
+.docs-body ul li { margin-bottom: 6px; }
+.docs-body ul li strong { color: var(--text); }
+.docs-body code { background: var(--bg3); padding: 2px 7px; border-radius: 4px; font-size: 12px; color: var(--accent2); font-family: 'SF Mono', 'Fira Code', monospace; }
+.docs-muted { font-size: 12px; color: var(--text3); }
+.docs-hint { background: var(--accent-bg); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--text2); margin: 12px 0; line-height: 1.6; }
+.docs-hint::before { content: '💡'; margin-right: 8px; }
+.docs-code-block { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 12px 0 16px; overflow-x: auto; }
+.docs-code-block pre { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: var(--text2); line-height: 1.7; margin: 0; white-space: pre; }
+.docs-table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+.docs-table th { text-align: left; padding: 10px 14px; background: var(--bg3); color: var(--text); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); }
+.docs-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+.docs-table tr:last-child td { border-bottom: none; }
+.docs-table tr:hover td { background: var(--bg3); }
+.docs-feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 20px; }
+.docs-feature-card { display: flex; align-items: flex-start; gap: 12px; padding: 14px; background: var(--bg3); border-radius: 8px; border: 1px solid var(--border); }
+.docs-feature-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.docs-feature-card strong { color: var(--text); font-size: 13px; }
+.docs-cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 20px; }
+.docs-cmd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; background: var(--bg3); border-radius: 6px; border: 1px solid var(--border); }
+.docs-cmd code { background: var(--bg); padding: 3px 8px; border-radius: 4px; font-size: 12px; color: var(--accent2); white-space: nowrap; }
+.docs-cmd span { font-size: 11px; color: var(--text3); text-align: right; }
+.docs-pipeline { display: flex; gap: 16px; margin-bottom: 0; }
+.docs-pipe-step { display: flex; flex-direction: column; align-items: center; width: 32px; flex-shrink: 0; }
+.docs-pipe-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.docs-pipe-line { width: 2px; flex: 1; background: var(--border); margin: 4px 0; }
+.docs-pipe-body { flex: 1; padding-bottom: 24px; }
+.docs-pipe-body h2 { font-size: 17px; font-weight: 700; color: var(--text); margin: 2px 0 8px; padding-bottom: 0; border-bottom: none; }
+.docs-pipe-body p { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 8px; }
+.docs-pipe-body ul { margin: 6px 0 10px 20px; font-size: 14px; color: var(--text2); }
+.docs-pipe-body ul li { margin-bottom: 4px; }
+.docs-roadmap-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border); background: var(--bg3); }
+.docs-roadmap-item.done { border-color: rgba(16,185,129,0.3); }
+.docs-roadmap-item.pending { opacity: 0.7; }
+.docs-roadmap-status { font-size: 16px; flex-shrink: 0; width: 24px; text-align: center; }
+.docs-roadmap-item.done .docs-roadmap-status { color: var(--green); }
+.docs-roadmap-item.pending .docs-roadmap-status { color: var(--text3); }
+.docs-roadmap-item strong { color: var(--text); }
+.docs-changelog-entry { margin-bottom: 28px; }
+.docs-changelog-date { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.docs-changelog-entry ul { margin: 0 0 0 18px; }
+.docs-changelog-entry ul li { margin-bottom: 6px; font-size: 14px; color: var(--text2); line-height: 1.6; }
+.docs-changelog-entry ul li strong { color: var(--text); }
 .watchlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
 .watchlist-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; position: relative; }
 .watchlist-card:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -1056,317 +1120,599 @@ tbody tr:hover { background: var(--bg3); }
       </div>
     </div>
 
-    <!-- ===== HELP ===== -->
+    <!-- ===== DOCS (GitBook-style) ===== -->
     <div id="page-help" class="page hidden">
-      <div class="page-header">
-        <h1>&#128218; Docs</h1>
-        <p>Documentation hub — architecture, tools, agents, and changelog</p>
-      </div>
-
-      <!-- Doc Tabs -->
-      <div class="market-tabs" style="margin-bottom:20px;">
-        <button class="market-tab active" onclick="docsShowTab('overview')" id="docs-tab-overview">Overview</button>
-        <button class="market-tab" onclick="docsShowTab('agents')" id="docs-tab-agents">Agents</button>
-        <button class="market-tab" onclick="docsShowTab('data')" id="docs-tab-data">Data &amp; APIs</button>
-        <button class="market-tab" onclick="docsShowTab('changelog')" id="docs-tab-changelog">Changelog</button>
-      </div>
-
-      <!-- ===== OVERVIEW TAB ===== -->
-      <div id="docs-panel-overview">
-
-      <!-- Pipeline Overview -->
-      <div class="card" style="margin-bottom:20px;">
-        <h3 style="font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px;">&#127919; Research Pipeline</h3>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
-          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <div style="font-size:24px;margin-bottom:6px;">&#128270;</div>
-            <div style="font-size:13px;font-weight:600;">1. Discover</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Market Data search</div>
+      <div class="docs-layout">
+        <!-- Docs Sidebar -->
+        <nav class="docs-sidebar">
+          <div class="docs-sidebar-header">
+            <div style="font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;">
+              <span style="font-size:16px;">&#128218;</span> Fund HQ Docs
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">v1.0 — March 2026</div>
           </div>
-          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
-          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <div style="font-size:24px;margin-bottom:6px;">&#11088;</div>
-            <div style="font-size:13px;font-weight:600;">2. Score</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Auto quant rating</div>
-          </div>
-          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
-          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <div style="font-size:24px;margin-bottom:6px;">&#128221;</div>
-            <div style="font-size:13px;font-weight:600;">3. Research</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Templates + AI</div>
-          </div>
-          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
-          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <div style="font-size:24px;margin-bottom:6px;">&#128203;</div>
-            <div style="font-size:13px;font-weight:600;">4. Report</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Save & review</div>
-          </div>
-          <div style="display:flex;align-items:center;color:var(--text3);font-size:20px;">&#8594;</div>
-          <div style="flex:1;min-width:140px;text-align:center;padding:16px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <div style="font-size:24px;margin-bottom:6px;">&#128200;</div>
-            <div style="font-size:13px;font-weight:600;">5. Track</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Watchlist monitor</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Detailed Steps -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">1</span> Discover — Find Projects</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;">Go to <strong style="color:var(--text);">Market Data</strong> and search for any crypto or stock.</p>
-            <p style="margin-bottom:8px;">Each search result shows 3 quick actions:</p>
-            <ul style="margin-left:16px;margin-bottom:8px;">
-              <li><strong style="color:var(--green);">+ Watch</strong> — add to your watchlist for live tracking</li>
-              <li><strong style="color:var(--blue);">+ Dump</strong> — save to Project Dump for later review</li>
-              <li><strong style="color:var(--purple);">AI Report</strong> — instantly generate a research report</li>
-            </ul>
-            <p style="color:var(--text3);font-size:12px;">Crypto uses CoinGecko (free, no key). Stocks need a free FMP key in Settings.</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">2</span> Score — Automatic Ratings</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;">Every asset gets a <strong style="color:var(--yellow);">5-star rating</strong> computed from live fundamentals.</p>
-            <p style="margin-bottom:8px;"><strong style="color:var(--text);">Crypto scores:</strong> Momentum, Liquidity, Value (dilution), Market Position, Recovery (ATH distance).</p>
-            <p style="margin-bottom:8px;"><strong style="color:var(--text);">Stock scores:</strong> Valuation (P/E), Profitability (ROE), Health (D/E), Momentum (52W range), Yield.</p>
-            <p>Stars appear on watchlist cards and in the research workspace. When AI research runs, it can add a &#177;0.5&#9733; qualitative adjustment.</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">3</span> Research — Templates & AI</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;">Go to <strong style="color:var(--text);">Templates</strong> and pick a framework:</p>
-            <ul style="margin-left:16px;margin-bottom:8px;">
-              <li><strong style="color:var(--purple);">Crypto Research</strong> — 18 sections (tokenomics, team, moats, whales, etc.)</li>
-              <li><strong style="color:var(--blue);">Stock Research</strong> — 10 sections (financials, valuation, DCF, etc.)</li>
-              <li><strong style="color:var(--purple);">Quick Thesis</strong> — 5 sections for fast screening</li>
-            </ul>
-            <p style="margin-bottom:8px;">Each section shows a <strong style="color:var(--text);">prompt</strong> (what to write) and <strong style="color:var(--text);">bullet points</strong> (what to cover).</p>
-            <p><strong style="color:var(--text);">Two ways to fill:</strong> write manually, or click <strong style="color:var(--accent2);">&#129302; AI</strong> to let Claude research it. You can also "Run All with AI" or "Fill Empty Only".</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">4</span> Report — Save & Review</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;">When your research is done, click <strong style="color:var(--text);">Save as Report</strong> to compile all sections into a formatted report.</p>
-            <p style="margin-bottom:8px;">Reports are saved to Firebase and appear in the <strong style="color:var(--text);">Reports</strong> page. You can:</p>
-            <ul style="margin-left:16px;margin-bottom:8px;">
-              <li>Set a <strong>Rating</strong> (Strong Buy, Buy, Hold, Sell, Avoid, etc.)</li>
-              <li>Set <strong>Conviction</strong> (High, Medium, Low)</li>
-              <li>Edit the content anytime</li>
-              <li>Re-run AI research with a different model</li>
-            </ul>
-            <p style="color:var(--text3);font-size:12px;">All reports sync in real-time between users via Firebase.</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="background:var(--accent-bg);color:var(--accent2);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">5</span> Track — Watchlist Monitor</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;">Your <strong style="color:var(--text);">Watchlist</strong> tracks live prices, 24h changes, key metrics, and scores.</p>
-            <p style="margin-bottom:8px;">Click any card to see the full <strong style="color:var(--text);">detail view</strong> with all metrics and the score breakdown.</p>
-            <p>Hit <strong style="color:var(--text);">&#8635; Refresh All</strong> to update prices and re-compute scores for everything at once.</p>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Architecture card -->
-      <div class="card" style="margin-top:20px;">
-        <h3 style="font-size:15px;margin-bottom:12px;">&#127959; Architecture</h3>
-        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-          <p style="margin-bottom:8px;"><strong style="color:var(--text);">Frontend:</strong> Single HTML file (vanilla JS, no build tools) hosted on GitHub Pages</p>
-          <p style="margin-bottom:8px;"><strong style="color:var(--text);">Database:</strong> Firebase Realtime Database — all data syncs in real-time between users</p>
-          <p style="margin-bottom:8px;"><strong style="color:var(--text);">AI:</strong> Claude API (Haiku/Sonnet/Opus) via Pamela agent + web search</p>
-          <p style="margin-bottom:8px;"><strong style="color:var(--text);">On-chain:</strong> Hyperliquid public API (free, no auth) — positions, trades, wallet data</p>
-          <p><strong style="color:var(--text);">Scheduled tasks:</strong> 3 Claude Code cron jobs push alerts to Firebase (daily scan, watchlist refresh, weekly deep dive)</p>
-        </div>
-      </div>
-
-      </div><!-- /overview -->
-
-      <!-- ===== AGENTS TAB ===== -->
-      <div id="docs-panel-agents" style="display:none;">
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#128172; Pamela — AI Agent</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:8px;"><strong style="color:var(--text);">20 tools</strong> via Claude Haiku tool_use API (multi-turn, up to 8 turns per query).</p>
-            <p style="margin-bottom:10px;">Click the chat bubble (bottom-right) to talk to Pamela.</p>
-            <div style="font-weight:600;color:var(--text);margin-bottom:6px;font-size:12px;">EXAMPLE COMMANDS</div>
-            <ul style="margin-left:16px;margin-bottom:8px;">
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">price btc</code> — crypto/stock price</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">watch eth</code> — add to watchlist</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">research sol</code> — AI research report</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">who's long ETH?</code> — whale positions</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">scan wallet 0x...</code> — profile wallet</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">whale activity on SOL</code> — large positions</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">what wallets are we tracking?</code></li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">create task: review TAO thesis</code></li>
-            </ul>
-            <div style="font-weight:600;color:var(--text);margin-bottom:6px;font-size:12px;margin-top:12px;">ALL 20 TOOLS</div>
-            <div style="font-size:11px;color:var(--text3);line-height:1.6;">
-              search_crypto, get_crypto_data, search_stocks, get_stock_data, create_item, update_item, delete_item, find_items, search_all, add_to_watchlist, get_watchlist, navigate_to_page, get_fund_stats, save_research, get_reports, get_report_content, create_alert, hl_scan_wallet, hl_whale_positions, hl_saved_wallets
+          <div class="docs-nav-group">
+            <div class="docs-nav-label">Getting Started</div>
+            <div class="docs-nav-item active" onclick="docsNav('overview')">
+              <span class="docs-nav-icon">&#127968;</span> Overview
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('pipeline')">
+              <span class="docs-nav-icon">&#127919;</span> Research Pipeline
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('architecture')">
+              <span class="docs-nav-icon">&#127959;</span> Architecture
             </div>
           </div>
-        </div>
 
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#128011; Hyperliquid Agent</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:10px;">On-chain whale tracker for Hyperliquid perp DEX. Two components:</p>
-            <div style="font-weight:600;color:var(--text);margin-bottom:6px;font-size:12px;">FRONTEND (Fund HQ Page)</div>
-            <ul style="margin-left:16px;margin-bottom:12px;">
-              <li><strong style="color:var(--accent);">Wallet Scanner</strong> — paste 0x address, see positions, PnL, win rate, trades</li>
-              <li><strong style="color:var(--accent);">Whale Discovery</strong> — scan top coins for $500K+ positions</li>
-              <li><strong style="color:var(--accent);">Saved Wallets</strong> — label + track wallets, live updates</li>
-            </ul>
-            <div style="font-weight:600;color:var(--text);margin-bottom:6px;font-size:12px;">PYTHON AGENT (Local/Server)</div>
-            <ul style="margin-left:16px;margin-bottom:8px;">
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">python agent.py</code> — 24/7 monitoring + WebSocket</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">python agent.py discover</code> — find whales</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">python agent.py profile 0x...</code> — grade A-F</li>
-              <li><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">python agent.py scan</code> — check saved wallets</li>
-            </ul>
-            <p style="color:var(--text3);font-size:12px;">Profiling scores: win rate, profit factor, leverage risk. Alerts push to Firebase.</p>
+          <div class="docs-nav-group">
+            <div class="docs-nav-label">Agents</div>
+            <div class="docs-nav-item" onclick="docsNav('pamela')">
+              <span class="docs-nav-icon">&#128172;</span> Pamela (AI)
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('hyperliquid')">
+              <span class="docs-nav-icon">&#128011;</span> Hyperliquid Agent
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('scheduled')">
+              <span class="docs-nav-icon">&#9200;</span> Scheduled Scans
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('agent-roadmap')">
+              <span class="docs-nav-icon">&#128640;</span> Agent Roadmap
+            </div>
           </div>
-        </div>
 
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#9200; Scheduled Scans</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:10px;">3 automated Claude Code cron jobs that push alerts to Firebase:</p>
-            <ul style="margin-left:16px;">
-              <li><strong style="color:var(--text);">Daily Market Scan</strong> (8am weekdays) — top movers, unusual volume, narrative shifts, asymmetric setups</li>
-              <li><strong style="color:var(--text);">Watchlist Refresh</strong> (8pm daily) — price changes, score shifts, breakout/breakdown signals</li>
-              <li><strong style="color:var(--text);">Weekly Deep Dive</strong> (Sunday 10am) — sector rotation, new narratives, top 3 opportunities</li>
-            </ul>
+          <div class="docs-nav-group">
+            <div class="docs-nav-label">Reference</div>
+            <div class="docs-nav-item" onclick="docsNav('scoring')">
+              <span class="docs-nav-icon">&#11088;</span> Scoring System
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('apis')">
+              <span class="docs-nav-icon">&#128279;</span> APIs & Data Sources
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('models')">
+              <span class="docs-nav-icon">&#129302;</span> AI Models
+            </div>
           </div>
-        </div>
 
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">&#127919; Agent Roadmap</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.7;">
-            <p style="margin-bottom:10px;">Building toward multiple agents managing $1B AUM:</p>
-            <ul style="margin-left:16px;">
-              <li style="color:var(--green);">&#10003; <strong>Pamela</strong> — AI research + fund ops (20 tools)</li>
-              <li style="color:var(--green);">&#10003; <strong>Hyperliquid Agent</strong> — whale tracking + wallet profiling</li>
-              <li style="color:var(--green);">&#10003; <strong>Market Scanner</strong> — scheduled scans + alerts</li>
-              <li>&#9744; <strong>Risk Agent</strong> — portfolio VaR, correlation, position sizing</li>
-              <li>&#9744; <strong>Execution Agent</strong> — auto-trade based on signals</li>
-              <li>&#9744; <strong>Macro Agent</strong> — macro data, Fed, rates, liquidity</li>
-            </ul>
+          <div class="docs-nav-group">
+            <div class="docs-nav-label">Updates</div>
+            <div class="docs-nav-item" onclick="docsNav('changelog')">
+              <span class="docs-nav-icon">&#128220;</span> Changelog
+            </div>
           </div>
-        </div>
-      </div>
+        </nav>
 
-      </div><!-- /agents -->
+        <!-- Docs Content -->
+        <div class="docs-content" id="docs-content-scroll">
 
-      <!-- ===== DATA & APIs TAB ===== -->
-      <div id="docs-panel-data" style="display:none;">
+          <!-- OVERVIEW -->
+          <section class="docs-section" id="docs-s-overview">
+            <div class="docs-breadcrumb">Getting Started</div>
+            <h1 class="docs-title">Overview</h1>
+            <p class="docs-lead">Fund HQ is an AI-powered fundamental research engine that discovers asymmetric opportunities in crypto and equities before the market prices them in.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <h2>What is Fund HQ?</h2>
+              <p>A single-page application for managing the full research lifecycle — from discovery to tracking. It combines live market data, automated scoring, AI-powered research, and on-chain whale intelligence into one dashboard.</p>
+              <h2>Key Features</h2>
+              <div class="docs-feature-grid">
+                <div class="docs-feature-card">
+                  <div class="docs-feature-icon" style="background:var(--accent-bg);color:var(--accent2);">&#128270;</div>
+                  <div><strong>Market Data</strong><br><span class="docs-muted">Search crypto & stocks with live fundamentals</span></div>
+                </div>
+                <div class="docs-feature-card">
+                  <div class="docs-feature-icon" style="background:var(--yellow-bg);color:var(--yellow);">&#11088;</div>
+                  <div><strong>Auto Scoring</strong><br><span class="docs-muted">5-star quant ratings from live data</span></div>
+                </div>
+                <div class="docs-feature-card">
+                  <div class="docs-feature-icon" style="background:var(--purple-bg);color:var(--purple);">&#129302;</div>
+                  <div><strong>AI Research</strong><br><span class="docs-muted">Claude-powered deep analysis with web search</span></div>
+                </div>
+                <div class="docs-feature-card">
+                  <div class="docs-feature-icon" style="background:var(--green-bg);color:var(--green);">&#128011;</div>
+                  <div><strong>Whale Tracking</strong><br><span class="docs-muted">Hyperliquid on-chain wallet intelligence</span></div>
+                </div>
+                <div class="docs-feature-card">
+                  <div class="docs-feature-icon" style="background:var(--red-bg);color:var(--red);">&#128276;</div>
+                  <div><strong>Smart Alerts</strong><br><span class="docs-muted">Scheduled scans push signals to your feed</span></div>
+                </div>
+                <div class="docs-feature-card">
+                  <div class="docs-feature-icon" style="background:var(--blue-bg);color:var(--blue);">&#128172;</div>
+                  <div><strong>Pamela Agent</strong><br><span class="docs-muted">20-tool AI assistant for fund ops</span></div>
+                </div>
+              </div>
+              <h2>Pages</h2>
+              <table class="docs-table">
+                <thead><tr><th>Page</th><th>Section</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Dashboard</strong></td><td>Overview</td><td>Stats, quick actions, watchlist, reports, tasks at a glance</td></tr>
+                  <tr><td><strong>About</strong></td><td>Overview</td><td>Mission, operating principles, scale trajectory</td></tr>
+                  <tr><td><strong>Project Dump</strong></td><td>Pipeline</td><td>Quick capture for project ideas</td></tr>
+                  <tr><td><strong>Watchlist</strong></td><td>Pipeline</td><td>Tracked assets with scores, detail view, Firebase sync</td></tr>
+                  <tr><td><strong>Alerts</strong></td><td>Pipeline</td><td>Signals from scheduled scans + Pamela</td></tr>
+                  <tr><td><strong>Templates</strong></td><td>Research</td><td>Crypto (18s), Stock (10s), Quick Thesis (5s)</td></tr>
+                  <tr><td><strong>Reports</strong></td><td>Research</td><td>AI-generated reports with rating and conviction</td></tr>
+                  <tr><td><strong>Market Data</strong></td><td>Market</td><td>Live search, CoinGecko + FMP fundamentals</td></tr>
+                  <tr><td><strong>Hyperliquid</strong></td><td>Market</td><td>Whale tracker — wallet scanner, discovery, saved wallets</td></tr>
+                  <tr><td><strong>Tasks</strong></td><td>Management</td><td>Kanban board with milestones, priority, assignee</td></tr>
+                  <tr><td><strong>Roadmap</strong></td><td>Management</td><td>Tasks grouped by milestone with progress bars</td></tr>
+                  <tr><td><strong>Progress</strong></td><td>Management</td><td>Daily work log, timeline, streak tracking</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;">&#128279; API Keys</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-            <p><strong style="color:var(--green);">CoinGecko</strong> — free, no key needed. Crypto prices, market cap, supply, ATH/ATL, categories.</p>
-            <p><strong style="color:var(--blue);">FMP</strong> — free key required (<a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">get one here</a>). Use <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;">/stable/</code> endpoints. Stock fundamentals, P/E, ROE, D/E.</p>
-            <p><strong style="color:var(--purple);">Anthropic</strong> — API key for Pamela + AI research (<a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">get one here</a>). Models: Haiku ($0.005/query), Sonnet, Opus.</p>
-            <p><strong style="color:var(--green);">Hyperliquid</strong> — free, no key needed. All /info endpoints are public and unauthenticated.</p>
-            <p style="font-size:11px;color:var(--text3);margin-top:8px;">All keys stored in Settings &#8594; browser localStorage (per-domain). Never committed to GitHub.</p>
-          </div>
-        </div>
+          <!-- RESEARCH PIPELINE -->
+          <section class="docs-section" id="docs-s-pipeline" style="display:none;">
+            <div class="docs-breadcrumb">Getting Started</div>
+            <h1 class="docs-title">Research Pipeline</h1>
+            <p class="docs-lead">A 5-step workflow from discovery to tracking — designed to surface asymmetric setups systematically.</p>
+            <div class="docs-divider"></div>
 
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;">&#128202; Data Sources</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-            <p><strong style="color:var(--text);">CoinGecko</strong> — crypto prices, MCap, FDV, volume, supply, ATH, categories, links</p>
-            <p><strong style="color:var(--text);">FMP /stable/</strong> — stock price, P/E, ROE, D/E, dividend yield, beta, sector, 52W range</p>
-            <p><strong style="color:var(--text);">DefiLlama</strong> — TVL data for DeFi protocols</p>
-            <p><strong style="color:var(--text);">Hyperliquid /info</strong> — wallet positions, trade history, OI, funding, recent trades (with buyer/seller addresses)</p>
-            <p><strong style="color:var(--text);">Claude Web Search</strong> — live news, catalysts, sentiment via Anthropic web_search tool</p>
-          </div>
-        </div>
+            <div class="docs-pipeline">
+              <div class="docs-pipe-step">
+                <div class="docs-pipe-num">1</div>
+                <div class="docs-pipe-line"></div>
+              </div>
+              <div class="docs-pipe-body">
+                <h2>Discover</h2>
+                <p>Go to <strong>Market Data</strong> and search for any crypto or stock. Each result shows 3 quick actions:</p>
+                <ul>
+                  <li><strong style="color:var(--green);">+ Watch</strong> — add to watchlist for live tracking</li>
+                  <li><strong style="color:var(--blue);">+ Dump</strong> — save to Project Dump for later</li>
+                  <li><strong style="color:var(--purple);">AI Report</strong> — instantly generate a research report</li>
+                </ul>
+                <div class="docs-hint">Crypto uses CoinGecko (free, no key). Stocks need a free FMP key in Settings.</div>
+              </div>
+            </div>
 
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;">&#129302; AI Models</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-            <p><strong style="color:var(--text);">Haiku</strong> — fastest, cheapest (~$0.005/query). Best for quick lookups, Pamela chat.</p>
-            <p><strong style="color:var(--text);">Sonnet</strong> — balanced quality & speed. Good for medium research.</p>
-            <p><strong style="color:var(--text);">Opus</strong> — highest quality, slowest. Best for deep fundamental analysis.</p>
-            <p style="font-size:11px;color:var(--text3);margin-top:8px;">Select model in the research workspace or report editor. Pamela defaults to Haiku.</p>
-          </div>
-        </div>
+            <div class="docs-pipeline">
+              <div class="docs-pipe-step">
+                <div class="docs-pipe-num">2</div>
+                <div class="docs-pipe-line"></div>
+              </div>
+              <div class="docs-pipe-body">
+                <h2>Score</h2>
+                <p>Every asset gets a <strong style="color:var(--yellow);">5-star rating</strong> computed from live fundamentals:</p>
+                <ul>
+                  <li><strong>Crypto:</strong> Momentum, Liquidity, Value (dilution), Market Position, Recovery</li>
+                  <li><strong>Stocks:</strong> Valuation (P/E), Profitability (ROE), Health (D/E), Momentum, Yield</li>
+                </ul>
+                <p>AI research can add a &#177;0.5&#9733; qualitative adjustment based on catalysts and sentiment.</p>
+              </div>
+            </div>
 
-        <div class="card">
-          <h3 style="font-size:15px;margin-bottom:12px;">&#128200; Scoring System</h3>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-            <p style="margin-bottom:6px;"><strong style="color:var(--text);">Crypto (5 stars):</strong> Momentum, Liquidity, Value (dilution), Market Position, Recovery (ATH distance)</p>
-            <p style="margin-bottom:6px;"><strong style="color:var(--text);">Stock (5 stars):</strong> Valuation (P/E), Profitability (ROE), Health (D/E), Momentum (52W), Yield</p>
-            <p style="margin-bottom:6px;"><strong style="color:var(--text);">AI overlay:</strong> &#177;0.5&#9733; from research report analysis</p>
-            <p><strong style="color:var(--text);">5-Lens Filter (/25):</strong> Catalyst + Valuation + Momentum + Risk:Reward + Narrative</p>
-          </div>
-        </div>
-      </div>
+            <div class="docs-pipeline">
+              <div class="docs-pipe-step">
+                <div class="docs-pipe-num">3</div>
+                <div class="docs-pipe-line"></div>
+              </div>
+              <div class="docs-pipe-body">
+                <h2>Research</h2>
+                <p>Pick a template in <strong>Templates</strong>:</p>
+                <ul>
+                  <li><strong style="color:var(--purple);">Crypto Research</strong> — 18 sections (tokenomics, team, moats, whales, etc.)</li>
+                  <li><strong style="color:var(--blue);">Stock Research</strong> — 10 sections (financials, valuation, DCF, etc.)</li>
+                  <li><strong style="color:var(--purple);">Quick Thesis</strong> — 5 sections for fast screening</li>
+                </ul>
+                <p>Fill manually or click <strong style="color:var(--accent2);">AI</strong> to let Claude research it. Options: "Run All with AI" or "Fill Empty Only".</p>
+              </div>
+            </div>
 
-      </div><!-- /data -->
+            <div class="docs-pipeline">
+              <div class="docs-pipe-step">
+                <div class="docs-pipe-num">4</div>
+                <div class="docs-pipe-line"></div>
+              </div>
+              <div class="docs-pipe-body">
+                <h2>Report</h2>
+                <p>Click <strong>Save as Report</strong> to compile sections into a formatted report. Reports appear in the <strong>Reports</strong> page where you can:</p>
+                <ul>
+                  <li>Set a <strong>Rating</strong> (Strong Buy, Buy, Hold, Sell, Avoid)</li>
+                  <li>Set <strong>Conviction</strong> (High, Medium, Low)</li>
+                  <li>Edit content or re-run AI with a different model</li>
+                </ul>
+                <div class="docs-hint">All reports sync in real-time between users via Firebase.</div>
+              </div>
+            </div>
 
-      <!-- ===== CHANGELOG TAB ===== -->
-      <div id="docs-panel-changelog" style="display:none;">
+            <div class="docs-pipeline">
+              <div class="docs-pipe-step">
+                <div class="docs-pipe-num">5</div>
+                <div class="docs-pipe-line" style="display:none;"></div>
+              </div>
+              <div class="docs-pipe-body">
+                <h2>Track</h2>
+                <p>Your <strong>Watchlist</strong> tracks live prices, 24h changes, key metrics, and scores. Click any card for the full detail view with score breakdown.</p>
+                <p>Hit <strong>Refresh All</strong> to update prices and re-compute scores for everything at once.</p>
+              </div>
+            </div>
+          </section>
 
-      <div class="card">
-        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-          <div style="margin-bottom:16px;">
-            <div style="font-weight:700;color:var(--accent);font-size:13px;margin-bottom:6px;">March 15, 2026</div>
-            <ul style="margin-left:16px;">
-              <li><strong>Hyperliquid Whale Tracker</strong> — new page with Wallet Scanner, Whale Discovery, and Saved Wallets</li>
-              <li><strong>Python Agent</strong> — persistent monitoring, wallet profiling (Grade A-F), WebSocket real-time trade alerts</li>
-              <li><strong>Pamela upgraded to 20 tools</strong> — 3 new Hyperliquid tools: scan wallets, find whale positions, check tracked wallets</li>
-              <li><strong>Firebase sync</strong> — saved wallets + discovered whales shared between frontend and Python agent</li>
-              <li><strong>Docs page</strong> — renamed from Help, restructured with tabs (Overview, Agents, Data, Changelog)</li>
-            </ul>
-          </div>
-          <div style="margin-bottom:16px;">
-            <div style="font-weight:700;color:var(--accent);font-size:13px;margin-bottom:6px;">March 13, 2026</div>
-            <ul style="margin-left:16px;">
-              <li><strong>Admin auth</strong> — login system (jumparo/1%club), view-only mode for visitors</li>
-              <li><strong>Substack templates</strong> — 13-section article template with Introduction section</li>
-            </ul>
-          </div>
-          <div style="margin-bottom:16px;">
-            <div style="font-weight:700;color:var(--accent);font-size:13px;margin-bottom:6px;">March 12, 2026</div>
-            <ul style="margin-left:16px;">
-              <li><strong>Pamela AI Agent</strong> — upgraded from regex bot to Claude tool_use with 17 tools, multi-turn (max 8 turns)</li>
-              <li><strong>Alerts page</strong> — severity-colored cards (info/warning/opportunity), expand/dismiss, browser notifications</li>
-              <li><strong>Scheduled tasks</strong> — 3 cron jobs (daily scan, watchlist refresh, weekly deep dive) write alerts to Firebase</li>
-              <li><strong>About page</strong> — fund mission, operating principles, scale trajectory</li>
-              <li><strong>Knowledge base</strong> — 4 SKILL.md files: Mission, Trading Edge, Asymmetric Setups, Fundamental Analysis</li>
-              <li><strong>Web search</strong> — AI research pulls live data and cites sources</li>
-              <li><strong>5-phase roadmap</strong> — 35 items from Prototype to Full Autonomy</li>
-            </ul>
-          </div>
-          <div>
-            <div style="font-weight:700;color:var(--accent);font-size:13px;margin-bottom:6px;">March 11, 2026</div>
-            <ul style="margin-left:16px;">
-              <li><strong>Initial launch</strong> — Dashboard, Watchlist, Market Data, Templates, Reports, Tasks, Progress</li>
-              <li><strong>Scoring system</strong> — automatic 5-star ratings from live fundamentals (crypto + stocks)</li>
-              <li><strong>GitHub Pages</strong> — migrated from Netlify (free, no bandwidth limits)</li>
-              <li><strong>Firebase</strong> — all data syncs in real-time, localStorage fallback</li>
-              <li><strong>AI Research</strong> — Claude API direct from browser, model selector (Haiku/Sonnet/Opus)</li>
-              <li><strong>Market Data</strong> — CoinGecko (crypto) + FMP (stocks) search + fundamentals</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+          <!-- ARCHITECTURE -->
+          <section class="docs-section" id="docs-s-architecture" style="display:none;">
+            <div class="docs-breadcrumb">Getting Started</div>
+            <h1 class="docs-title">Architecture</h1>
+            <p class="docs-lead">How the system is built — stack, data flow, and deployment.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <h2>Tech Stack</h2>
+              <table class="docs-table">
+                <thead><tr><th>Layer</th><th>Technology</th><th>Details</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Frontend</strong></td><td>Vanilla JS</td><td>Single HTML file, no build tools, dark theme</td></tr>
+                  <tr><td><strong>Database</strong></td><td>Firebase RTDB</td><td>Real-time sync between users, localStorage fallback</td></tr>
+                  <tr><td><strong>Hosting</strong></td><td>GitHub Pages</td><td>Free, auto-deploys from <code>jumparo1/JumpTools</code></td></tr>
+                  <tr><td><strong>AI</strong></td><td>Claude API</td><td>Haiku/Sonnet/Opus via tool_use, web search</td></tr>
+                  <tr><td><strong>On-chain</strong></td><td>Hyperliquid API</td><td>Free, no auth — positions, trades, wallet data</td></tr>
+                  <tr><td><strong>Automation</strong></td><td>Claude Code crons</td><td>3 scheduled tasks push alerts to Firebase</td></tr>
+                </tbody>
+              </table>
 
-      </div><!-- /changelog -->
+              <h2>Data Flow</h2>
+              <div class="docs-code-block">
+<pre>User &#8594; Fund HQ (Browser)
+         &#8595;                    &#8595;                    &#8595;
+   CoinGecko/FMP      Claude API         Hyperliquid API
+   (market data)      (AI research)      (on-chain data)
+         &#8595;                    &#8595;                    &#8595;
+         &#8594;&#8594;&#8594; Firebase RTDB &#8592;&#8592;&#8592;
+                  &#8593;
+         Python Agent (cron / WebSocket)
+         Claude Code scheduled tasks</pre>
+              </div>
+
+              <h2>Deploy Flow</h2>
+              <div class="docs-code-block">
+<pre>cp fund-hq.html ~/deploy/
+cd ~/deploy && git add . && git commit && git push
+# GitHub Pages auto-builds in ~30s</pre>
+              </div>
+              <div class="docs-hint">API keys stored in browser localStorage (per-domain). Never committed to GitHub.</div>
+            </div>
+          </section>
+
+          <!-- PAMELA -->
+          <section class="docs-section" id="docs-s-pamela" style="display:none;">
+            <div class="docs-breadcrumb">Agents</div>
+            <h1 class="docs-title">Pamela — AI Agent</h1>
+            <p class="docs-lead">20-tool AI assistant powered by Claude Haiku. Multi-turn conversations with up to 8 tool-use turns per query.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <h2>How to Use</h2>
+              <p>Click the chat bubble (bottom-right corner) to open Pamela. Type naturally — she'll figure out which tools to use.</p>
+
+              <h2>Example Commands</h2>
+              <div class="docs-cmd-grid">
+                <div class="docs-cmd"><code>price btc</code><span>crypto/stock price</span></div>
+                <div class="docs-cmd"><code>watch eth</code><span>add to watchlist</span></div>
+                <div class="docs-cmd"><code>research sol</code><span>AI research report</span></div>
+                <div class="docs-cmd"><code>who's long ETH?</code><span>whale positions</span></div>
+                <div class="docs-cmd"><code>scan wallet 0x...</code><span>profile wallet</span></div>
+                <div class="docs-cmd"><code>whale activity on SOL</code><span>large positions</span></div>
+                <div class="docs-cmd"><code>what wallets are we tracking?</code><span>saved wallets</span></div>
+                <div class="docs-cmd"><code>create task: review TAO thesis</code><span>new task</span></div>
+              </div>
+
+              <h2>All 20 Tools</h2>
+              <table class="docs-table">
+                <thead><tr><th>Tool</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td><code>search_crypto</code></td><td>Search CoinGecko for crypto assets</td></tr>
+                  <tr><td><code>get_crypto_data</code></td><td>Get detailed crypto fundamentals</td></tr>
+                  <tr><td><code>search_stocks</code></td><td>Search FMP for stock tickers</td></tr>
+                  <tr><td><code>get_stock_data</code></td><td>Get stock price, financials, ratios</td></tr>
+                  <tr><td><code>create_item</code></td><td>Create a task, project, or dump entry</td></tr>
+                  <tr><td><code>update_item</code></td><td>Update any item's fields</td></tr>
+                  <tr><td><code>delete_item</code></td><td>Remove an item from the database</td></tr>
+                  <tr><td><code>find_items</code></td><td>Query items by type and filters</td></tr>
+                  <tr><td><code>search_all</code></td><td>Full-text search across everything</td></tr>
+                  <tr><td><code>add_to_watchlist</code></td><td>Add asset to watchlist with scoring</td></tr>
+                  <tr><td><code>get_watchlist</code></td><td>Get current watchlist with prices</td></tr>
+                  <tr><td><code>navigate_to_page</code></td><td>Switch to any Fund HQ page</td></tr>
+                  <tr><td><code>get_fund_stats</code></td><td>Dashboard stats (counts, streaks)</td></tr>
+                  <tr><td><code>save_research</code></td><td>Save completed research as report</td></tr>
+                  <tr><td><code>get_reports</code></td><td>List all saved research reports</td></tr>
+                  <tr><td><code>get_report_content</code></td><td>Read full report content</td></tr>
+                  <tr><td><code>create_alert</code></td><td>Push alert to Alerts page</td></tr>
+                  <tr><td><code>hl_scan_wallet</code></td><td>Scan Hyperliquid wallet (positions, PnL)</td></tr>
+                  <tr><td><code>hl_whale_positions</code></td><td>Find whale positions on a coin</td></tr>
+                  <tr><td><code>hl_saved_wallets</code></td><td>Get list of tracked wallets</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- HYPERLIQUID AGENT -->
+          <section class="docs-section" id="docs-s-hyperliquid" style="display:none;">
+            <div class="docs-breadcrumb">Agents</div>
+            <h1 class="docs-title">Hyperliquid Agent</h1>
+            <p class="docs-lead">On-chain whale tracker for Hyperliquid perpetual DEX. Finds profitable wallets and monitors whale activity.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <h2>Frontend (Fund HQ Page)</h2>
+              <p>Three tabs in the Hyperliquid page:</p>
+              <table class="docs-table">
+                <thead><tr><th>Tab</th><th>What it does</th></tr></thead>
+                <tbody>
+                  <tr><td><strong style="color:var(--accent);">Wallet Scanner</strong></td><td>Paste any 0x address — see account value, open positions, PnL, win rate, trade history</td></tr>
+                  <tr><td><strong style="color:var(--accent);">Whale Discovery</strong></td><td>Scans top coins via Hyperliquid API, finds $500K+ positions, sortable by size/PnL/leverage</td></tr>
+                  <tr><td><strong style="color:var(--accent);">Saved Wallets</strong></td><td>Label and track wallets with live position updates, synced to Firebase</td></tr>
+                </tbody>
+              </table>
+
+              <h2>Python Agent</h2>
+              <p>Backend agent for persistent monitoring. Located at <code>agents/hyperliquid/agent.py</code>.</p>
+              <div class="docs-cmd-grid">
+                <div class="docs-cmd"><code>python agent.py</code><span>24/7 monitoring + WebSocket</span></div>
+                <div class="docs-cmd"><code>python agent.py discover</code><span>find whales on watched coins</span></div>
+                <div class="docs-cmd"><code>python agent.py profile 0x...</code><span>grade wallet A-F</span></div>
+                <div class="docs-cmd"><code>python agent.py scan</code><span>check all saved wallets</span></div>
+              </div>
+
+              <h2>Wallet Scoring</h2>
+              <p>Wallets are graded A-F based on:</p>
+              <ul>
+                <li><strong>Win rate</strong> — percentage of profitable trades</li>
+                <li><strong>Profit factor</strong> — gross profit / gross loss ratio</li>
+                <li><strong>Leverage risk</strong> — penalty for consistently high leverage</li>
+              </ul>
+              <div class="docs-hint">Alerts push to Firebase when whales open $1M+ positions, close $500K+ positions, or when unrealized PnL swings 20%+.</div>
+
+              <h2>API Reference</h2>
+              <div class="docs-code-block">
+<pre>POST https://api.hyperliquid.xyz/info
+
+// Get wallet positions (weight: 2)
+{"type": "clearinghouseState", "user": "0x..."}
+
+// Get trade history (weight: 20)
+{"type": "userFills", "user": "0x..."}
+
+// Get recent trades with addresses (weight: 20)
+{"type": "recentTrades", "coin": "BTC"}
+
+// Get market meta (OI, funding, volume)
+{"type": "metaAndAssetCtxs"}</pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- SCHEDULED SCANS -->
+          <section class="docs-section" id="docs-s-scheduled" style="display:none;">
+            <div class="docs-breadcrumb">Agents</div>
+            <h1 class="docs-title">Scheduled Scans</h1>
+            <p class="docs-lead">3 automated Claude Code cron jobs that run on schedule and push alerts to Firebase.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <table class="docs-table">
+                <thead><tr><th>Task</th><th>Schedule</th><th>What it does</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Daily Market Scan</strong></td>
+                    <td>8am weekdays</td>
+                    <td>Top movers, unusual volume, narrative shifts, asymmetric setups</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Watchlist Refresh</strong></td>
+                    <td>8pm daily</td>
+                    <td>Price changes, score shifts, breakout/breakdown signals</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Weekly Deep Dive</strong></td>
+                    <td>Sunday 10am</td>
+                    <td>Sector rotation, new narratives, top 3 opportunities with full scoring</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="docs-hint">All alerts appear in the Fund HQ Alerts page in real-time via Firebase REST API.</div>
+            </div>
+          </section>
+
+          <!-- AGENT ROADMAP -->
+          <section class="docs-section" id="docs-s-agent-roadmap" style="display:none;">
+            <div class="docs-breadcrumb">Agents</div>
+            <h1 class="docs-title">Agent Roadmap</h1>
+            <p class="docs-lead">Building toward multiple autonomous agents managing $1B AUM.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <div class="docs-roadmap-item done">
+                <div class="docs-roadmap-status">&#10003;</div>
+                <div>
+                  <strong>Pamela</strong> — AI research + fund ops
+                  <div class="docs-muted">20 tools, multi-turn conversations, web search, all fund operations</div>
+                </div>
+              </div>
+              <div class="docs-roadmap-item done">
+                <div class="docs-roadmap-status">&#10003;</div>
+                <div>
+                  <strong>Hyperliquid Agent</strong> — whale tracking + wallet profiling
+                  <div class="docs-muted">Wallet scanner, whale discovery, A-F grading, WebSocket monitoring, Firebase alerts</div>
+                </div>
+              </div>
+              <div class="docs-roadmap-item done">
+                <div class="docs-roadmap-status">&#10003;</div>
+                <div>
+                  <strong>Market Scanner</strong> — scheduled scans + alerts
+                  <div class="docs-muted">3 cron jobs: daily scan, watchlist refresh, weekly deep dive</div>
+                </div>
+              </div>
+              <div class="docs-roadmap-item pending">
+                <div class="docs-roadmap-status">&#9744;</div>
+                <div>
+                  <strong>Risk Agent</strong> — portfolio risk management
+                  <div class="docs-muted">VaR calculations, correlation analysis, position sizing, portfolio construction</div>
+                </div>
+              </div>
+              <div class="docs-roadmap-item pending">
+                <div class="docs-roadmap-status">&#9744;</div>
+                <div>
+                  <strong>Execution Agent</strong> — automated trading
+                  <div class="docs-muted">Signal-based trade execution, order management, slippage control</div>
+                </div>
+              </div>
+              <div class="docs-roadmap-item pending">
+                <div class="docs-roadmap-status">&#9744;</div>
+                <div>
+                  <strong>Macro Agent</strong> — macro intelligence
+                  <div class="docs-muted">Fed policy, rates, liquidity conditions, macro regime classification</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SCORING SYSTEM -->
+          <section class="docs-section" id="docs-s-scoring" style="display:none;">
+            <div class="docs-breadcrumb">Reference</div>
+            <h1 class="docs-title">Scoring System</h1>
+            <p class="docs-lead">Automated quantitative ratings computed from live market data.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <h2>Crypto Score (5 Stars)</h2>
+              <table class="docs-table">
+                <thead><tr><th>Factor</th><th>What it measures</th></tr></thead>
+                <tbody>
+                  <tr><td>Momentum</td><td>24h and 7d price change strength</td></tr>
+                  <tr><td>Liquidity</td><td>24h volume relative to market cap</td></tr>
+                  <tr><td>Value</td><td>Market cap vs FDV dilution ratio</td></tr>
+                  <tr><td>Market Position</td><td>Market cap rank and dominance</td></tr>
+                  <tr><td>Recovery</td><td>Distance from all-time high</td></tr>
+                </tbody>
+              </table>
+
+              <h2>Stock Score (5 Stars)</h2>
+              <table class="docs-table">
+                <thead><tr><th>Factor</th><th>What it measures</th></tr></thead>
+                <tbody>
+                  <tr><td>Valuation</td><td>P/E ratio vs sector average</td></tr>
+                  <tr><td>Profitability</td><td>Return on equity (ROE)</td></tr>
+                  <tr><td>Health</td><td>Debt-to-equity ratio</td></tr>
+                  <tr><td>Momentum</td><td>Position within 52-week range</td></tr>
+                  <tr><td>Yield</td><td>Dividend yield attractiveness</td></tr>
+                </tbody>
+              </table>
+
+              <h2>AI Overlay</h2>
+              <p>When AI research runs, it can add a <strong style="color:var(--yellow);">&#177;0.5&#9733;</strong> qualitative adjustment based on catalysts, sentiment, and narrative strength.</p>
+
+              <h2>5-Lens Filter (/25)</h2>
+              <p>Advanced scoring for asymmetric setups. Each lens scores 1-5:</p>
+              <ul>
+                <li><strong>Catalyst</strong> — upcoming events, partnerships, launches</li>
+                <li><strong>Valuation</strong> — relative to peers and intrinsic value</li>
+                <li><strong>Momentum</strong> — price trend, volume confirmation</li>
+                <li><strong>Risk:Reward</strong> — asymmetry of the setup</li>
+                <li><strong>Narrative</strong> — market attention, story strength</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- APIs & DATA SOURCES -->
+          <section class="docs-section" id="docs-s-apis" style="display:none;">
+            <div class="docs-breadcrumb">Reference</div>
+            <h1 class="docs-title">APIs & Data Sources</h1>
+            <p class="docs-lead">External services powering Fund HQ's data layer.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <h2>API Keys</h2>
+              <table class="docs-table">
+                <thead><tr><th>Service</th><th>Key Required?</th><th>Data Provided</th></tr></thead>
+                <tbody>
+                  <tr><td><strong style="color:var(--green);">CoinGecko</strong></td><td>No (free)</td><td>Crypto prices, MCap, FDV, volume, supply, ATH, categories</td></tr>
+                  <tr><td><strong style="color:var(--blue);">FMP</strong></td><td>Yes (<a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">free key</a>)</td><td>Stock price, P/E, ROE, D/E, dividend yield, beta, sector</td></tr>
+                  <tr><td><strong style="color:var(--purple);">Anthropic</strong></td><td>Yes (<a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">get key</a>)</td><td>AI research, Pamela chat, web search</td></tr>
+                  <tr><td><strong style="color:var(--green);">Hyperliquid</strong></td><td>No (free)</td><td>Wallet positions, trades, OI, funding rates</td></tr>
+                  <tr><td><strong style="color:var(--blue);">DefiLlama</strong></td><td>No (free)</td><td>TVL data for DeFi protocols</td></tr>
+                </tbody>
+              </table>
+              <div class="docs-hint">All keys stored in Settings &#8594; browser localStorage (per-domain). Never committed to GitHub.</div>
+
+              <h2>Endpoint Notes</h2>
+              <ul>
+                <li><strong>FMP:</strong> Use <code>/stable/</code> endpoints (not v3). Field names: <code>marketCap</code> not <code>mktCap</code>.</li>
+                <li><strong>Hyperliquid:</strong> All <code>/info</code> POST requests. Weight-based rate limiting (2-20 per call).</li>
+                <li><strong>Claude:</strong> Direct browser access with <code>anthropic-dangerous-direct-browser-access</code> header.</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- AI MODELS -->
+          <section class="docs-section" id="docs-s-models" style="display:none;">
+            <div class="docs-breadcrumb">Reference</div>
+            <h1 class="docs-title">AI Models</h1>
+            <p class="docs-lead">Claude model selection guide for different use cases.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+              <table class="docs-table">
+                <thead><tr><th>Model</th><th>Speed</th><th>Cost</th><th>Best For</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Haiku</strong></td><td>Fastest</td><td>~$0.005/query</td><td>Quick lookups, Pamela chat, basic research</td></tr>
+                  <tr><td><strong>Sonnet</strong></td><td>Medium</td><td>~$0.03/query</td><td>Balanced research, moderate analysis</td></tr>
+                  <tr><td><strong>Opus</strong></td><td>Slowest</td><td>~$0.15/query</td><td>Deep fundamental analysis, complex research</td></tr>
+                </tbody>
+              </table>
+              <div class="docs-hint">Select model in the research workspace or report editor. Pamela defaults to Haiku for speed.</div>
+            </div>
+          </section>
+
+          <!-- CHANGELOG -->
+          <section class="docs-section" id="docs-s-changelog" style="display:none;">
+            <div class="docs-breadcrumb">Updates</div>
+            <h1 class="docs-title">Changelog</h1>
+            <p class="docs-lead">Release history and feature updates.</p>
+            <div class="docs-divider"></div>
+            <div class="docs-body">
+
+              <div class="docs-changelog-entry">
+                <div class="docs-changelog-date">March 15, 2026</div>
+                <ul>
+                  <li><strong>Hyperliquid Whale Tracker</strong> — new page with Wallet Scanner, Whale Discovery, and Saved Wallets</li>
+                  <li><strong>Python Agent</strong> — persistent monitoring, wallet profiling (Grade A-F), WebSocket real-time trade alerts</li>
+                  <li><strong>Pamela upgraded to 20 tools</strong> — 3 new Hyperliquid tools: scan wallets, find whale positions, check tracked wallets</li>
+                  <li><strong>Firebase sync</strong> — saved wallets + discovered whales shared between frontend and Python agent</li>
+                  <li><strong>Docs page</strong> — GitBook-style documentation hub with sidebar navigation</li>
+                </ul>
+              </div>
+
+              <div class="docs-changelog-entry">
+                <div class="docs-changelog-date">March 13, 2026</div>
+                <ul>
+                  <li><strong>Admin auth</strong> — login system with SHA-256 hashed credentials, view-only mode for visitors</li>
+                  <li><strong>Substack publishing</strong> — Reports split into Research/Substack tabs, 13-section article template</li>
+                  <li><strong>Report template</strong> — improved Catalysts & FUD section for research quality</li>
+                </ul>
+              </div>
+
+              <div class="docs-changelog-entry">
+                <div class="docs-changelog-date">March 12, 2026</div>
+                <ul>
+                  <li><strong>Pamela AI Agent</strong> — upgraded from regex bot to Claude tool_use with 17 tools, multi-turn (max 8 turns)</li>
+                  <li><strong>Alerts page</strong> — severity-colored cards, expand/dismiss, browser notifications</li>
+                  <li><strong>Scheduled tasks</strong> — 3 cron jobs write alerts to Firebase</li>
+                  <li><strong>About page</strong> — fund mission, operating principles, scale trajectory</li>
+                  <li><strong>Knowledge base</strong> — 4 SKILL.md files: Mission, Trading Edge, Asymmetric Setups, Fundamental Analysis</li>
+                  <li><strong>Web search</strong> — AI research pulls live data and cites sources</li>
+                  <li><strong>5-phase roadmap</strong> — 35 items from Prototype to Full Autonomy</li>
+                </ul>
+              </div>
+
+              <div class="docs-changelog-entry">
+                <div class="docs-changelog-date">March 11, 2026</div>
+                <ul>
+                  <li><strong>Initial launch</strong> — Dashboard, Watchlist, Market Data, Templates, Reports, Tasks, Progress</li>
+                  <li><strong>Scoring system</strong> — automatic 5-star ratings from live fundamentals (crypto + stocks)</li>
+                  <li><strong>GitHub Pages</strong> — migrated from Netlify (free, no bandwidth limits)</li>
+                  <li><strong>Firebase</strong> — all data syncs in real-time, localStorage fallback</li>
+                  <li><strong>AI Research</strong> — Claude API direct from browser, model selector (Haiku/Sonnet/Opus)</li>
+                  <li><strong>Market Data</strong> — CoinGecko (crypto) + FMP (stocks) search + fundamentals</li>
+                </ul>
+              </div>
+
+            </div>
+          </section>
+
+        </div><!-- /docs-content -->
+      </div><!-- /docs-layout -->
     </div>
 
     <!-- ===== SETTINGS ===== -->
@@ -6420,14 +6766,23 @@ function hlLoadFromFirebase() {
   }
 }
 
-// ===== DOCS TABS =====
-function docsShowTab(tab) {
-  ['overview','agents','data','changelog'].forEach(t => {
-    const panel = document.getElementById('docs-panel-' + t);
-    const btn = document.getElementById('docs-tab-' + t);
-    if (panel) panel.style.display = t === tab ? '' : 'none';
-    if (btn) btn.classList.toggle('active', t === tab);
+// ===== DOCS NAVIGATION (GitBook-style) =====
+function docsNav(page) {
+  var docsPages = ['overview','pipeline','architecture','pamela','hyperliquid','scheduled','agent-roadmap','scoring','apis','models','changelog'];
+  docsPages.forEach(p => {
+    const section = document.getElementById('docs-s-' + p);
+    if (section) section.style.display = p === page ? '' : 'none';
   });
+  document.querySelectorAll('.docs-nav-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('onclick') === "docsNav('" + page + "')");
+  });
+  const content = document.getElementById('docs-content-scroll');
+  if (content) content.scrollTop = 0;
+}
+// Legacy compat
+function docsShowTab(tab) {
+  const map = {overview:'overview', agents:'pamela', data:'apis', changelog:'changelog'};
+  docsNav(map[tab] || tab);
 }
 
 function hlShowTab(tab) {
