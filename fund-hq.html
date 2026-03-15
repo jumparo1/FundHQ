@@ -1675,7 +1675,10 @@ const PAMELA_TOOLS = [
   { name: 'save_research', description: 'Save a research report to the database. Use this after analyzing an asset to persist your findings. Include a clear verdict (BUY/SPECULATE/HOLD/AVOID) and conviction level.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Asset name or research title' }, type: { type: 'string', enum: ['crypto', 'stock'], description: 'Asset type' }, content: { type: 'string', description: 'Full research content with analysis, data, and verdict' }, rating: { type: 'string', enum: ['Strong Buy', 'Buy', 'Speculate', 'Hold', 'Sell', 'Avoid'], description: 'Rating verdict' }, conviction: { type: 'string', enum: ['High', 'Medium', 'Low'], description: 'Conviction level' } }, required: ['title', 'content'] } },
   { name: 'get_reports', description: 'Get recent research reports from the database. Use this to check past research, avoid duplicate work, and build on previous analysis. Returns title, type, rating, conviction, and date for each report.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Optional search query to filter reports by title' }, limit: { type: 'number', description: 'Max reports to return (default 10)' } } } },
   { name: 'get_report_content', description: 'Get the full content of a specific research report by title. Use this to read past analysis in detail before updating or building on it.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Report title to search for (fuzzy match)' } }, required: ['title'] } },
-  { name: 'create_alert', description: 'Create an alert in Fund HQ to flag opportunities, risks, or noteworthy findings. Use severity "opportunity" for actionable setups scoring 18+/25 on the 5-lens filter.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Alert title (e.g. "SOL breaking out of accumulation")' }, content: { type: 'string', description: 'Alert body — details, bullet points, data. Use markdown formatting.' }, severity: { type: 'string', enum: ['info', 'warning', 'opportunity'], description: 'info=neutral update, warning=risk/caution, opportunity=actionable asymmetric setup' } }, required: ['title', 'content', 'severity'] } }
+  { name: 'create_alert', description: 'Create an alert in Fund HQ to flag opportunities, risks, or noteworthy findings. Use severity "opportunity" for actionable setups scoring 18+/25 on the 5-lens filter.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Alert title (e.g. "SOL breaking out of accumulation")' }, content: { type: 'string', description: 'Alert body — details, bullet points, data. Use markdown formatting.' }, severity: { type: 'string', enum: ['info', 'warning', 'opportunity'], description: 'info=neutral update, warning=risk/caution, opportunity=actionable asymmetric setup' } }, required: ['title', 'content', 'severity'] } },
+  { name: 'hl_scan_wallet', description: 'Scan a Hyperliquid wallet address to see its positions, PnL, win rate, and trade history. Returns account value, open positions with entry/leverage/uPnL, and recent trade stats.', input_schema: { type: 'object', properties: { address: { type: 'string', description: 'Wallet address (0x...)' } }, required: ['address'] } },
+  { name: 'hl_whale_positions', description: 'Find whale positions on Hyperliquid for a specific coin or across all watched coins. Scans recent trades to discover large wallets (>$500K positions). Use this when user asks "who is long ETH?" or "show me whale activity on SOL".', input_schema: { type: 'object', properties: { coin: { type: 'string', description: 'Coin to scan (e.g. "ETH", "BTC", "SOL"). If omitted, scans top watched coins.' }, min_size: { type: 'number', description: 'Minimum position size in USD (default 500000)' } } } },
+  { name: 'hl_saved_wallets', description: 'Get all saved/tracked Hyperliquid wallets with their labels and last known account values. Use this to check which wallets we are monitoring.', input_schema: { type: 'object', properties: {} } }
 ];
 
 function buildPamelaSystemPrompt() {
@@ -1774,6 +1777,17 @@ When doing deep research, build a crypto income statement:
 - **Past research:** use get_reports to check what you've already analyzed
 - **Deletes:** delete_item returns confirmation prompt — tell user to confirm
 - **Creating items:** always confirm with key details
+- **"Who's long ETH?" / "whale activity on SOL":** use hl_whale_positions with coin filter
+- **"Scan this wallet":** use hl_scan_wallet with the address
+- **"What wallets are we tracking?":** use hl_saved_wallets
+- **Whale intel:** when showing whale positions, highlight largest positions, unusual leverage (>20x), and profitable/unprofitable wallets
+
+## HYPERLIQUID ON-CHAIN
+You have direct access to Hyperliquid on-chain data. Use it to:
+- Find what whales are doing on specific coins (hl_whale_positions)
+- Profile any wallet's trading performance (hl_scan_wallet)
+- Check which wallets we're monitoring (hl_saved_wallets)
+- Combine whale data with fundamental analysis for conviction
 
 ## LIVE CONTEXT
 - Today: ${new Date().toISOString().split('T')[0]}
@@ -1782,6 +1796,7 @@ When doing deep research, build a crypto income statement:
 - Recent reports: ${recentReports || '(none)'}
 - Open tasks: ${openTasks || '(none)'}
 - Unread alerts: ${(DB.alerts || []).filter(a => !a.dismissed).length}
+- Tracked HL wallets: ${(hlSavedWallets || []).length}
 - Always use exact numbers from fetched data — never approximate
 - If a tool returns an error, explain and suggest alternatives
 - Use create_alert to flag important findings. Use severity "opportunity" for setups scoring 18+/25 on the 5-lens filter, "warning" for risks, "info" for general updates.`;
@@ -1934,6 +1949,87 @@ async function executeToolCall(name, input) {
       else { DB.alerts.push(data); localStorage.setItem('fundHQ', JSON.stringify(DB)); }
       renderAlerts(); updateBadges();
       return { created: true, id, title: input.title, severity: input.severity };
+    }
+    case 'hl_scan_wallet': {
+      const addr = (input.address || '').trim();
+      if (!addr || !addr.startsWith('0x')) return { error: 'Invalid wallet address' };
+      try {
+        const [state, fills] = await Promise.all([
+          hlPost({ type: 'clearinghouseState', user: addr }),
+          hlPost({ type: 'userFills', user: addr })
+        ]);
+        const mg = state.marginSummary || {};
+        const acctVal = parseFloat(mg.accountValue || 0);
+        const positions = (state.assetPositions || []).map(p => p.position).filter(p => parseFloat(p.szi) !== 0);
+        let wins = 0, losses = 0, totalPnl = 0;
+        fills.forEach(f => { const pnl = parseFloat(f.closedPnl || 0); if (pnl > 0) wins++; else if (pnl < 0) losses++; totalPnl += pnl; });
+        const wr = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : 'N/A';
+        return {
+          address: addr,
+          account_value: acctVal,
+          closed_pnl: Math.round(totalPnl * 100) / 100,
+          win_rate: wr + '%',
+          wins, losses, total_trades: fills.length,
+          open_positions: positions.map(p => {
+            const sz = parseFloat(p.szi);
+            return {
+              coin: p.coin, side: sz > 0 ? 'LONG' : 'SHORT',
+              size_usd: Math.round(Math.abs(sz * parseFloat(p.entryPx || 0))),
+              entry: parseFloat(p.entryPx || 0),
+              unrealized_pnl: Math.round(parseFloat(p.unrealizedPnl || 0) * 100) / 100,
+              leverage: p.leverage ? (p.leverage.value || 1) + 'x' : '1x'
+            };
+          })
+        };
+      } catch(e) { return { error: 'Failed to scan wallet: ' + e.message }; }
+    }
+    case 'hl_whale_positions': {
+      try {
+        const coins = input.coin ? [input.coin.toUpperCase()] : ['BTC', 'ETH', 'SOL', 'HYPE', 'DOGE', 'SUI'];
+        const minSize = input.min_size || 500000;
+        const addresses = new Set();
+        for (const coin of coins) {
+          try {
+            const trades = await hlPost({ type: 'recentTrades', coin });
+            if (Array.isArray(trades)) trades.forEach(t => { if (t.users) t.users.forEach(u => { if (u && u.startsWith('0x')) addresses.add(u); }); });
+          } catch(e) {}
+        }
+        const whalePositions = [];
+        const checked = Array.from(addresses).slice(0, 30);
+        for (const addr of checked) {
+          try {
+            const state = await hlPost({ type: 'clearinghouseState', user: addr });
+            const acctVal = parseFloat((state.marginSummary || {}).accountValue || 0);
+            if (acctVal < 100000) continue;
+            (state.assetPositions || []).forEach(ap => {
+              const p = ap.position || ap;
+              const sz = parseFloat(p.szi || 0);
+              if (sz === 0) return;
+              const entry = parseFloat(p.entryPx || 0);
+              const notional = Math.abs(sz * entry);
+              if (notional < minSize) return;
+              if (input.coin && p.coin !== input.coin.toUpperCase()) return;
+              whalePositions.push({
+                wallet: addr.slice(0, 10) + '...',
+                full_address: addr,
+                coin: p.coin,
+                side: sz > 0 ? 'LONG' : 'SHORT',
+                size_usd: Math.round(notional),
+                entry_price: entry,
+                unrealized_pnl: Math.round(parseFloat(p.unrealizedPnl || 0)),
+                leverage: (p.leverage ? p.leverage.value || 1 : 1) + 'x',
+                account_value: Math.round(acctVal)
+              });
+            });
+          } catch(e) {}
+        }
+        whalePositions.sort((a, b) => b.size_usd - a.size_usd);
+        return { coins_scanned: coins, addresses_checked: checked.length, whale_positions: whalePositions.slice(0, 15) };
+      } catch(e) { return { error: 'Whale scan failed: ' + e.message }; }
+    }
+    case 'hl_saved_wallets': {
+      hlEnsureVars();
+      return { saved_wallets: hlSavedWallets.map(w => ({ address: w.address, label: w.label || '', last_value: w.lastValue || 0, saved_at: w.savedAt })), count: hlSavedWallets.length };
     }
     default: return { error: 'Unknown tool: ' + name };
   }
