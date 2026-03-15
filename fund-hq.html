@@ -660,6 +660,7 @@ tbody tr:hover { background: var(--bg3); }
 
     <div class="nav-section">Market</div>
     <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
+    <div class="nav-item" data-page="hyperliquid"><span class="icon">&#128011;</span> Hyperliquid <span class="badge" id="badge-hl-wallets">0</span></div>
 
     <div class="nav-section">Management</div>
     <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
@@ -988,6 +989,71 @@ tbody tr:hover { background: var(--bg3); }
         </div>
       </div>
       <div id="market-detail" style="margin-top:0;"></div>
+    </div>
+
+    <!-- ===== HYPERLIQUID ===== -->
+    <div id="page-hyperliquid" class="page hidden">
+      <div class="page-header">
+        <h1>&#128011; Hyperliquid</h1>
+        <p>On-chain whale tracker — find profitable wallets &amp; monitor positions</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="market-tabs" style="margin-bottom:20px;">
+        <button class="market-tab active" onclick="hlShowTab('scanner')" id="hl-tab-scanner">Wallet Scanner</button>
+        <button class="market-tab" onclick="hlShowTab('whales')" id="hl-tab-whales">Whale Discovery</button>
+        <button class="market-tab" onclick="hlShowTab('saved')" id="hl-tab-saved">Saved Wallets</button>
+      </div>
+
+      <!-- SCANNER TAB -->
+      <div id="hl-panel-scanner">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <div class="market-search" style="flex:1;min-width:280px;max-width:560px;position:relative;">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="hl-wallet-input" placeholder="Paste wallet address (0x...)" autocomplete="off" style="font-family:monospace;font-size:13px;">
+          </div>
+          <button class="btn btn-primary" onclick="hlScanWallet()">Scan Wallet</button>
+        </div>
+        <div id="hl-scanner-result"></div>
+      </div>
+
+      <!-- WHALE DISCOVERY TAB -->
+      <div id="hl-panel-whales" style="display:none;">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <div class="market-search" style="flex:1;min-width:200px;max-width:320px;position:relative;">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="hl-coin-filter" placeholder="Filter by coin (e.g. ETH, SOL)" autocomplete="off" oninput="hlFilterWhales()">
+          </div>
+          <button class="btn btn-primary" onclick="hlDiscoverWhales()">&#128011; Scan Top Positions</button>
+          <span id="hl-whale-status" style="font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div class="card" style="margin-bottom:16px;padding:14px 18px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:12px;color:var(--text3);">Min position size:</span>
+            <select id="hl-min-size" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:4px 8px;border-radius:6px;font-size:12px;">
+              <option value="100000">$100K+</option>
+              <option value="500000" selected>$500K+</option>
+              <option value="1000000">$1M+</option>
+              <option value="5000000">$5M+</option>
+            </select>
+            <span style="font-size:12px;color:var(--text3);">Sort by:</span>
+            <select id="hl-sort" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:4px 8px;border-radius:6px;font-size:12px;" onchange="hlRenderWhales()">
+              <option value="size">Position Size</option>
+              <option value="pnl">Unrealized PnL</option>
+              <option value="leverage">Leverage</option>
+            </select>
+          </div>
+        </div>
+        <div id="hl-whales-result"></div>
+      </div>
+
+      <!-- SAVED WALLETS TAB -->
+      <div id="hl-panel-saved" style="display:none;">
+        <div id="hl-saved-list"></div>
+        <div class="empty-state" id="hl-saved-empty" style="display:none;">
+          <p style="color:var(--text3);font-size:14px;">No saved wallets yet. Scan a wallet and click "Save" to track it.</p>
+        </div>
+      </div>
     </div>
 
     <!-- ===== HELP ===== -->
@@ -6019,6 +6085,364 @@ function deleteProgressEntry(id) {
   }
 }
 
+// ===== HYPERLIQUID ENGINE =====
+var HL_API = 'https://api.hyperliquid.xyz/info';
+var hlWhalesData = []; // discovered whale positions
+var hlSavedWallets = [];
+try { hlSavedWallets = JSON.parse(localStorage.getItem('hl_saved_wallets') || '[]'); } catch(e) { hlSavedWallets = []; }
+
+function hlEnsureVars() {
+  if (!hlSavedWallets || !Array.isArray(hlSavedWallets)) { try { hlSavedWallets = JSON.parse(localStorage.getItem('hl_saved_wallets') || '[]'); } catch(e) { hlSavedWallets = []; } }
+  if (!hlWhalesData || !Array.isArray(hlWhalesData)) hlWhalesData = [];
+}
+
+function hlShowTab(tab) {
+  ['scanner','whales','saved'].forEach(t => {
+    document.getElementById('hl-panel-' + t).style.display = t === tab ? '' : 'none';
+    document.getElementById('hl-tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'saved') hlRenderSaved();
+}
+
+async function hlPost(body) {
+  const res = await fetch('https://api.hyperliquid.xyz/info', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error('HL API error: ' + res.status);
+  return res.json();
+}
+
+// Format helpers
+function hlFmt(n) { if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2)+'M'; if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1)+'K'; return n.toFixed(2); }
+function hlAddr(a) { return a.slice(0,6)+'...'+a.slice(-4); }
+function hlPnlColor(n) { return n >= 0 ? 'var(--green, #4ade80)' : 'var(--red, #f87171)'; }
+
+// ===== WALLET SCANNER =====
+async function hlScanWallet() {
+  hlEnsureVars();
+  const addr = document.getElementById('hl-wallet-input').value.trim();
+  if (!addr || !addr.startsWith('0x')) { document.getElementById('hl-scanner-result').innerHTML = '<div class="card" style="color:var(--red,#f87171)">Enter a valid 0x wallet address</div>'; return; }
+  document.getElementById('hl-scanner-result').innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Scanning wallet...</div>';
+  try {
+    const [state, fills] = await Promise.all([
+      hlPost({ type:'clearinghouseState', user: addr }),
+      hlPost({ type:'userFills', user: addr })
+    ]);
+    hlRenderWalletProfile(addr, state, fills);
+  } catch(e) {
+    document.getElementById('hl-scanner-result').innerHTML = '<div class="card" style="color:var(--red,#f87171)">Error: '+e.message+'</div>';
+  }
+}
+
+function hlRenderWalletProfile(addr, state, fills) {
+  hlEnsureVars();
+  const mg = state.marginSummary || {};
+  const acctVal = parseFloat(mg.accountValue || 0);
+  const totalPnl = parseFloat(mg.totalRawUsd || 0);
+  const positions = (state.assetPositions || []).map(p => p.position).filter(p => parseFloat(p.szi) !== 0);
+
+  // Compute fill stats
+  let totalClosed = 0, wins = 0, losses = 0;
+  fills.forEach(f => { const pnl = parseFloat(f.closedPnl || 0); if (pnl > 0) wins++; else if (pnl < 0) losses++; totalClosed += pnl; });
+  const wr = (wins+losses) > 0 ? ((wins/(wins+losses))*100).toFixed(1) : 'N/A';
+  const isSaved = hlSavedWallets.some(w => w.address.toLowerCase() === addr.toLowerCase());
+
+  let html = '<div class="card" style="margin-bottom:16px;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">';
+  html += '<div><span style="font-family:monospace;font-size:15px;color:var(--accent);">'+addr+'</span>';
+  html += ' <a href="https://app.hyperliquid.xyz/explorer/address/'+addr+'" target="_blank" style="font-size:11px;color:var(--text3);">Explorer &#8599;</a></div>';
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button class="btn btn-sm '+(isSaved?'btn-ghost':'btn-primary')+'" onclick="hlToggleSave(\''+addr+'\','+acctVal+')">'+(isSaved?'&#10003; Saved':'&#128190; Save Wallet')+'</button>';
+  html += '</div></div>';
+
+  // Stats row
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px;">';
+  html += hlStatCard('Account Value', '$'+hlFmt(acctVal), 'var(--accent)');
+  html += hlStatCard('Open Positions', positions.length, 'var(--text1)');
+  html += hlStatCard('Closed PnL', '$'+hlFmt(totalClosed), hlPnlColor(totalClosed));
+  html += hlStatCard('Win Rate', wr === 'N/A' ? wr : wr+'%', parseFloat(wr) >= 50 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)');
+  html += hlStatCard('Wins / Losses', wins+' / '+losses, 'var(--text2)');
+  html += hlStatCard('Total Trades', fills.length, 'var(--text2)');
+  html += '</div>';
+  html += '</div>';
+
+  // Open positions
+  if (positions.length) {
+    html += '<div class="card" style="margin-bottom:16px;"><h3 style="font-size:14px;color:var(--text2);margin-bottom:14px;">Open Positions</h3>';
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:13px;border-collapse:collapse;">';
+    html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);"><th style="padding:6px 10px;">Coin</th><th>Side</th><th>Size</th><th>Entry</th><th>Mark</th><th>uPnL</th><th>Leverage</th><th>Liq. Price</th></tr>';
+    positions.forEach(p => {
+      const sz = parseFloat(p.szi);
+      const side = sz > 0 ? 'LONG' : 'SHORT';
+      const sideColor = sz > 0 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)';
+      const entry = parseFloat(p.entryPx || 0);
+      const upnl = parseFloat(p.unrealizedPnl || 0);
+      const notional = Math.abs(sz) * entry;
+      const lev = p.leverage ? (p.leverage.value || '-') : '-';
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:6px 10px;font-weight:600;">'+p.coin+'</td>';
+      html += '<td style="color:'+sideColor+';font-weight:600;">'+side+'</td>';
+      html += '<td>$'+hlFmt(notional)+'</td>';
+      html += '<td>$'+parseFloat(entry).toLocaleString()+'</td>';
+      html += '<td>-</td>';
+      html += '<td style="color:'+hlPnlColor(upnl)+'">$'+hlFmt(upnl)+'</td>';
+      html += '<td>'+lev+'x</td>';
+      html += '<td>$'+(parseFloat(p.liquidationPx||0)).toLocaleString()+'</td>';
+      html += '</tr>';
+    });
+    html += '</table></div></div>';
+  }
+
+  // Recent trades (last 20)
+  if (fills.length) {
+    const recent = fills.slice(0, 20);
+    html += '<div class="card"><h3 style="font-size:14px;color:var(--text2);margin-bottom:14px;">Recent Trades (last 20)</h3>';
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);"><th style="padding:5px 8px;">Time</th><th>Coin</th><th>Side</th><th>Price</th><th>Size</th><th>Closed PnL</th></tr>';
+    recent.forEach(f => {
+      const t = new Date(f.time).toLocaleString();
+      const cpnl = parseFloat(f.closedPnl || 0);
+      const dir = f.dir || f.side || '';
+      const dirColor = dir.includes('Long') || dir.includes('Buy') || f.side === 'B' ? 'var(--green,#4ade80)' : 'var(--red,#f87171)';
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:5px 8px;color:var(--text3);">'+t+'</td>';
+      html += '<td style="font-weight:600;">'+f.coin+'</td>';
+      html += '<td style="color:'+dirColor+';">'+dir+'</td>';
+      html += '<td>$'+parseFloat(f.px).toLocaleString()+'</td>';
+      html += '<td>'+parseFloat(f.sz).toLocaleString()+'</td>';
+      html += '<td style="color:'+hlPnlColor(cpnl)+';">'+(cpnl !== 0 ? '$'+hlFmt(cpnl) : '-')+'</td>';
+      html += '</tr>';
+    });
+    html += '</table></div></div>';
+  }
+
+  document.getElementById('hl-scanner-result').innerHTML = html;
+}
+
+function hlStatCard(label, value, color) {
+  return '<div style="background:var(--bg2);border-radius:8px;padding:12px 14px;text-align:center;">'
+    + '<div style="font-size:11px;color:var(--text3);margin-bottom:4px;">'+label+'</div>'
+    + '<div style="font-size:18px;font-weight:700;color:'+color+';">'+value+'</div></div>';
+}
+
+// ===== SAVE/UNSAVE WALLETS =====
+function hlToggleSave(addr, acctVal) {
+  hlEnsureVars();
+  const idx = hlSavedWallets.findIndex(w => w.address.toLowerCase() === addr.toLowerCase());
+  if (idx >= 0) {
+    hlSavedWallets.splice(idx, 1);
+  } else {
+    hlSavedWallets.push({ address: addr, savedAt: new Date().toISOString(), lastValue: acctVal, label: '' });
+  }
+  localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets));
+  hlRenderSaved();
+  hlUpdateBadge();
+  // Re-scan to update button state
+  const input = document.getElementById('hl-wallet-input');
+  if (input && input.value.trim().toLowerCase() === addr.toLowerCase()) hlScanWallet();
+}
+
+function hlUpdateBadge() {
+  const b = document.getElementById('badge-hl-wallets');
+  if (b) b.textContent = hlSavedWallets.length || '';
+}
+
+// ===== SAVED WALLETS =====
+async function hlRenderSaved() {
+  hlEnsureVars();
+  const container = document.getElementById('hl-saved-list');
+  const empty = document.getElementById('hl-saved-empty');
+  if (!hlSavedWallets.length) { container.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  // Show cards with loading state, then fill in live data
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">';
+  hlSavedWallets.forEach(w => {
+    html += '<div class="card" id="hl-saved-'+w.address.slice(2,10)+'" style="position:relative;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+    html += '<div>';
+    html += '<input type="text" value="'+(w.label||'')+'" placeholder="Add label..." '
+      + 'style="background:transparent;border:none;color:var(--text1);font-size:14px;font-weight:600;width:180px;padding:0;" '
+      + 'onchange="hlUpdateLabel(\''+w.address+'\',this.value)">';
+    html += '<div style="font-family:monospace;font-size:11px;color:var(--text3);">'+hlAddr(w.address)
+      + ' <a href="https://app.hyperliquid.xyz/explorer/address/'+w.address+'" target="_blank" style="color:var(--accent);">&#8599;</a></div>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<button class="btn btn-sm btn-ghost" onclick="document.getElementById(\'hl-wallet-input\').value=\''+w.address+'\';hlShowTab(\'scanner\');hlScanWallet();" title="Full scan">&#128269;</button>';
+    html += '<button class="btn btn-sm btn-ghost" onclick="hlToggleSave(\''+w.address+'\',0)" title="Remove" style="color:var(--red,#f87171);">&#10005;</button>';
+    html += '</div></div>';
+    html += '<div id="hl-live-'+w.address.slice(2,10)+'" style="color:var(--text3);font-size:12px;">Loading...</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Fetch live data for each saved wallet (max 5 concurrent)
+  for (const w of hlSavedWallets) {
+    try {
+      const state = await hlPost({ type:'clearinghouseState', user: w.address });
+      const mg = state.marginSummary || {};
+      const acctVal = parseFloat(mg.accountValue || 0);
+      const positions = (state.assetPositions || []).map(p => p.position).filter(p => parseFloat(p.szi) !== 0);
+      let posHtml = positions.length ? positions.map(p => {
+        const sz = parseFloat(p.szi);
+        const side = sz > 0 ? 'L' : 'S';
+        const sColor = sz > 0 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)';
+        const upnl = parseFloat(p.unrealizedPnl || 0);
+        const notional = Math.abs(sz * parseFloat(p.entryPx || 0));
+        return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">'
+          + '<span style="font-weight:600;">'+p.coin+' <span style="color:'+sColor+';font-size:11px;">'+side+'</span></span>'
+          + '<span>$'+hlFmt(notional)+'</span>'
+          + '<span style="color:'+hlPnlColor(upnl)+';">'+hlFmt(upnl)+'</span></div>';
+      }).join('') : '<span style="color:var(--text3);">No open positions</span>';
+      const el = document.getElementById('hl-live-'+w.address.slice(2,10));
+      if (el) el.innerHTML = '<div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px;">$'+hlFmt(acctVal)+'</div>' + posHtml;
+      w.lastValue = acctVal;
+    } catch(e) {
+      const el = document.getElementById('hl-live-'+w.address.slice(2,10));
+      if (el) el.innerHTML = '<span style="color:var(--red,#f87171);">Failed to load</span>';
+    }
+  }
+  localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets));
+}
+
+function hlUpdateLabel(addr, label) {
+  const w = hlSavedWallets.find(w => w.address === addr);
+  if (w) { w.label = label; localStorage.setItem('hl_saved_wallets', JSON.stringify(hlSavedWallets)); }
+}
+
+// ===== WHALE DISCOVERY =====
+async function hlDiscoverWhales() {
+  hlEnsureVars();
+  const status = document.getElementById('hl-whale-status');
+  const container = document.getElementById('hl-whales-result');
+  status.textContent = 'Fetching market data...';
+  container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Scanning for whales... this may take 15-30 seconds</div>';
+
+  try {
+    // Step 1: Get all coins with open interest
+    const meta = await hlPost({ type:'metaAndAssetCtxs' });
+    const coins = meta[0].universe.map((c, i) => ({ name: c.name, oi: parseFloat(meta[1][i].openInterest || 0), markPx: parseFloat(meta[1][i].markPx || 0), funding: parseFloat(meta[1][i].funding || 0), volume: parseFloat(meta[1][i].dayNtlVlm || 0) }));
+
+    // Sort by OI and take top 15 most liquid coins
+    const coinFilter = document.getElementById('hl-coin-filter').value.trim().toUpperCase();
+    let targetCoins = coins.filter(c => c.oi > 0).sort((a,b) => b.oi - a.oi);
+    if (coinFilter) targetCoins = targetCoins.filter(c => c.name.toUpperCase().includes(coinFilter));
+    targetCoins = targetCoins.slice(0, 15);
+
+    status.textContent = 'Scanning '+targetCoins.length+' coins for large positions...';
+
+    // Step 2: For each coin, look at recent trades for large wallets
+    // We'll use the trades from the API to find active wallets
+    const minSize = parseInt(document.getElementById('hl-min-size').value);
+    const walletMap = new Map(); // addr -> { positions, totalNotional, totalUpnl }
+
+    // Instead of scanning trades (which needs WebSocket), we'll use a known-whales approach:
+    // Scan clearinghouse for addresses seen in large L2 orders
+    // For MVP: fetch account states for well-known whale addresses from explorer
+
+    // Alternative approach: use the /info endpoint to find large positions
+    // We scan the order book for each top coin and collect large order placers
+    // Actually, the most practical MVP is to let users paste addresses and build their list
+
+    // For discovery: scan recent fills on top coins to find wallets
+    status.textContent = 'Scanning recent activity on top coins...';
+
+    const allPositions = [];
+    const scannedAddrs = new Set();
+
+    // Fetch recent fills for discovery (public endpoint)
+    for (const coin of targetCoins.slice(0, 8)) {
+      try {
+        const fills = await hlPost({ type:'recentTrades', coin: coin.name });
+        if (Array.isArray(fills)) {
+          fills.forEach(f => {
+            if (f.users) f.users.forEach(u => { if (u && u.startsWith('0x')) scannedAddrs.add(u); });
+          });
+        }
+      } catch(e) { /* some coins may fail */ }
+    }
+
+    status.textContent = 'Found '+scannedAddrs.size+' addresses, checking positions...';
+
+    // Check positions for discovered addresses (batch — max 30)
+    const addrs = Array.from(scannedAddrs).slice(0, 30);
+    for (const addr of addrs) {
+      try {
+        const state = await hlPost({ type:'clearinghouseState', user: addr });
+        const mg = state.marginSummary || {};
+        const acctVal = parseFloat(mg.accountValue || 0);
+        if (acctVal < minSize) continue;
+        const positions = (state.assetPositions || []).map(p => p.position).filter(p => parseFloat(p.szi) !== 0);
+        positions.forEach(p => {
+          const sz = parseFloat(p.szi);
+          const entry = parseFloat(p.entryPx || 0);
+          const notional = Math.abs(sz * entry);
+          if (notional >= minSize) {
+            allPositions.push({
+              address: addr,
+              coin: p.coin,
+              side: sz > 0 ? 'LONG' : 'SHORT',
+              size: notional,
+              entryPx: entry,
+              upnl: parseFloat(p.unrealizedPnl || 0),
+              leverage: p.leverage ? parseFloat(p.leverage.value || 1) : 1,
+              acctVal: acctVal,
+              liqPx: parseFloat(p.liquidationPx || 0)
+            });
+          }
+        });
+      } catch(e) { /* skip */ }
+    }
+
+    hlWhalesData = allPositions;
+    status.textContent = 'Found '+allPositions.length+' whale positions from '+scannedAddrs.size+' addresses';
+    hlRenderWhales();
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    container.innerHTML = '<div class="card" style="color:var(--red,#f87171);">'+e.message+'</div>';
+  }
+}
+
+function hlFilterWhales() { /* just re-render with filter */ hlRenderWhales(); }
+
+function hlRenderWhales() {
+  hlEnsureVars();
+  const container = document.getElementById('hl-whales-result');
+  const sortBy = document.getElementById('hl-sort').value;
+  const coinFilter = document.getElementById('hl-coin-filter').value.trim().toUpperCase();
+
+  let data = [...hlWhalesData];
+  if (coinFilter) data = data.filter(d => d.coin.toUpperCase().includes(coinFilter));
+
+  if (sortBy === 'pnl') data.sort((a,b) => Math.abs(b.upnl) - Math.abs(a.upnl));
+  else if (sortBy === 'leverage') data.sort((a,b) => b.leverage - a.leverage);
+  else data.sort((a,b) => b.size - a.size);
+
+  if (!data.length) { container.innerHTML = '<div class="empty-state"><p style="color:var(--text3);">No whale positions found. Try scanning or lower the min size.</p></div>'; return; }
+
+  let html = '<div style="overflow-x:auto;"><table style="width:100%;font-size:13px;border-collapse:collapse;">';
+  html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);">';
+  html += '<th style="padding:8px 10px;">Wallet</th><th>Coin</th><th>Side</th><th>Size</th><th>Entry</th><th>uPnL</th><th>Lev</th><th>Acct Value</th><th></th></tr>';
+  data.forEach(d => {
+    const sColor = d.side === 'LONG' ? 'var(--green,#4ade80)' : 'var(--red,#f87171)';
+    const isSaved = hlSavedWallets.some(w => w.address.toLowerCase() === d.address.toLowerCase());
+    html += '<tr style="border-bottom:1px solid var(--border);">';
+    html += '<td style="padding:8px 10px;font-family:monospace;font-size:12px;"><a href="#" onclick="document.getElementById(\'hl-wallet-input\').value=\''+d.address+'\';hlShowTab(\'scanner\');hlScanWallet();return false;" style="color:var(--accent);">'+hlAddr(d.address)+'</a></td>';
+    html += '<td style="font-weight:600;">'+d.coin+'</td>';
+    html += '<td style="color:'+sColor+';font-weight:600;">'+d.side+'</td>';
+    html += '<td>$'+hlFmt(d.size)+'</td>';
+    html += '<td>$'+d.entryPx.toLocaleString()+'</td>';
+    html += '<td style="color:'+hlPnlColor(d.upnl)+';">$'+hlFmt(d.upnl)+'</td>';
+    html += '<td>'+d.leverage+'x</td>';
+    html += '<td>$'+hlFmt(d.acctVal)+'</td>';
+    html += '<td><button class="btn btn-sm btn-ghost" onclick="hlToggleSave(\''+d.address+'\','+d.acctVal+')" title="'+(isSaved?'Saved':'Save')+'">'+(isSaved?'&#10003;':'&#128190;')+'</button></td>';
+    html += '</tr>';
+  });
+  html += '</table></div>';
+  container.innerHTML = html;
+}
+
+function renderHyperliquid() { hlUpdateBadge(); }
+
 function renderAll() {
   renderDashboard();
   renderPipeline();
@@ -6031,6 +6455,7 @@ function renderAll() {
   renderProgress();
   renderAlerts();
   renderMarketData();
+  renderHyperliquid();
   // Load API keys into settings fields if present
   const fmpInput = document.getElementById('settings-fmp-key');
   if (fmpInput && !fmpInput.value) fmpInput.value = getFmpKey();
