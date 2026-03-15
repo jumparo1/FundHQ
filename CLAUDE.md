@@ -63,7 +63,9 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - 2026-03-15: Hyperliquid page — on-chain whale tracker with 3 tabs (Wallet Scanner, Whale Discovery, Saved Wallets)
 - 2026-03-15: Wallet Scanner — paste any 0x address, see account value, positions, PnL, win rate, trade history
 - 2026-03-15: Whale Discovery — scans top coins via Hyperliquid API, finds $500K+ positions, sortable by size/PnL/leverage
-- 2026-03-15: Saved Wallets — label & track wallets with live position updates from localStorage
+- 2026-03-15: Saved Wallets — label & track wallets with live position updates, Firebase sync
+- 2026-03-15: Python agent (`agents/hyperliquid/agent.py`) — wallet profiling, whale discovery, WebSocket monitoring, Firebase alerts
+- 2026-03-15: Firebase sync — saved wallets + discovered whales shared between frontend and Python agent
 - 2026-03-12: About page — Fund HQ mission, operating principles, scale trajectory as own tab under Overview
 - 2026-03-12: Full 5-phase roadmap — 35 items across Data Infrastructure, Quant Models, Risk Framework, Learning & Edge, Full Autonomy
 - 2026-03-12: Phase 0: Prototype marked complete (8 items)
