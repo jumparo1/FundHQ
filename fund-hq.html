@@ -7318,24 +7318,234 @@ function hlRenderWhales() {
     return;
   }
 
-  // Stats bar
+  // ===== WHALE INTELLIGENCE REPORT =====
+  const longPos = data.filter(d => d.side === 'LONG');
+  const shortPos = data.filter(d => d.side === 'SHORT');
   const totalNotional = data.reduce((s,d) => s + d.size, 0);
   const totalPnl = data.reduce((s,d) => s + d.upnl, 0);
-  const longs = data.filter(d => d.side === 'LONG').length;
-  const shorts = data.filter(d => d.side === 'SHORT').length;
-  const longPct = Math.round(longs / data.length * 100);
+  const longNotional = longPos.reduce((s,d) => s + d.size, 0);
+  const shortNotional = shortPos.reduce((s,d) => s + d.size, 0);
+  const longWallets = new Set(longPos.map(d => d.address)).size;
+  const shortWallets = new Set(shortPos.map(d => d.address)).size;
+  const totalWallets = new Set(data.map(d => d.address)).size;
+  const longPctCount = data.length ? Math.round(longPos.length / data.length * 100) : 0;
+  const longPctNotional = totalNotional ? Math.round(longNotional / totalNotional * 100) : 0;
+  const longPctWallets = totalWallets ? Math.round(longWallets / totalWallets * 100) : 0;
 
-  let html = '<div class="card" style="margin-bottom:14px;padding:12px 18px;">';
-  html += '<div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">';
+  // Determine dominant sentiment
+  const sentiment = longPctNotional >= 65 ? 'Heavily Long' : longPctNotional >= 55 ? 'Lean Long' : longPctNotional <= 35 ? 'Heavily Short' : longPctNotional <= 45 ? 'Lean Short' : 'Neutral';
+  const sentColor = longPctNotional >= 55 ? 'var(--green,#4ade80)' : longPctNotional <= 45 ? 'var(--red,#f87171)' : 'var(--text3)';
+
+  // Build bar helper
+  function hlBar(longPct) {
+    return '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--bg3);margin-top:4px;">'
+      + '<div style="width:'+longPct+'%;background:var(--green,#4ade80);"></div>'
+      + '<div style="width:'+(100-longPct)+'%;background:var(--red,#f87171);"></div>'
+      + '</div>';
+  }
+
+  let html = '<div class="card" style="margin-bottom:14px;padding:16px 20px;">';
+  // Header row
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">';
+  html += '<div style="font-size:15px;font-weight:700;color:var(--text);">Whale Intelligence Report</div>';
+  html += '<div style="font-size:14px;font-weight:700;color:'+sentColor+';">'+sentiment+'</div>';
+  html += '</div>';
+
+  // Sentiment breakdown grid
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">';
+
+  // By Notional ($)
+  html += '<div style="background:var(--bg2);border-radius:8px;padding:12px;">';
+  html += '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">By Notional Value</div>';
+  html += '<div style="display:flex;justify-content:space-between;font-size:13px;">';
+  html += '<span style="color:var(--green,#4ade80);">Long $'+hlFmt(longNotional)+'</span>';
+  html += '<span style="color:var(--red,#f87171);">Short $'+hlFmt(shortNotional)+'</span>';
+  html += '</div>';
+  html += hlBar(longPctNotional);
+  html += '<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:4px;">'+longPctNotional+'% / '+(100-longPctNotional)+'%</div>';
+  html += '</div>';
+
+  // By Position Count
+  html += '<div style="background:var(--bg2);border-radius:8px;padding:12px;">';
+  html += '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">By Position Count</div>';
+  html += '<div style="display:flex;justify-content:space-between;font-size:13px;">';
+  html += '<span style="color:var(--green,#4ade80);">'+longPos.length+' longs</span>';
+  html += '<span style="color:var(--red,#f87171);">'+shortPos.length+' shorts</span>';
+  html += '</div>';
+  html += hlBar(longPctCount);
+  html += '<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:4px;">'+longPctCount+'% / '+(100-longPctCount)+'%</div>';
+  html += '</div>';
+
+  // By Unique Wallets
+  html += '<div style="background:var(--bg2);border-radius:8px;padding:12px;">';
+  html += '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">By Unique Wallets</div>';
+  html += '<div style="display:flex;justify-content:space-between;font-size:13px;">';
+  html += '<span style="color:var(--green,#4ade80);">'+longWallets+' long</span>';
+  html += '<span style="color:var(--red,#f87171);">'+shortWallets+' short</span>';
+  html += '</div>';
+  html += hlBar(longPctWallets);
+  html += '<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:4px;">'+longPctWallets+'% / '+(100-longPctWallets)+'%</div>';
+  html += '</div>';
+
+  html += '</div>'; // end grid
+
+  // Summary stats row
+  html += '<div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;padding-top:12px;border-top:1px solid var(--border);">';
   html += '<div><span style="color:var(--text3);">Total Notional</span><br><b style="font-size:16px;">$'+hlFmt(totalNotional)+'</b></div>';
   html += '<div><span style="color:var(--text3);">Total uPnL</span><br><b style="font-size:16px;color:'+hlPnlColor(totalPnl)+';">$'+hlFmt(totalPnl)+'</b></div>';
   html += '<div><span style="color:var(--text3);">Positions</span><br><b style="font-size:16px;">'+data.length+'</b></div>';
-  html += '<div><span style="color:var(--text3);">Long / Short</span><br>'
-    + '<span style="color:var(--green,#4ade80);font-weight:700;">'+longs+'</span>'
-    + ' <span style="color:var(--text3);">/</span> '
-    + '<span style="color:var(--red,#f87171);font-weight:700;">'+shorts+'</span>'
-    + ' <span style="font-size:11px;color:var(--text3);">('+longPct+'% long)</span></div>';
-  html += '</div></div>';
+  html += '<div><span style="color:var(--text3);">Wallets</span><br><b style="font-size:16px;">'+totalWallets+'</b></div>';
+  html += '</div>';
+
+  html += '</div>'; // end report card
+
+  // ===== LIQUIDATION MAP =====
+  const liqData = data.filter(d => d.liqPx > 0);
+  if (liqData.length > 0) {
+    // Group liquidation prices into clusters by coin
+    const coinGroups = {};
+    liqData.forEach(d => {
+      const coin = d.coin.replace('xyz:','');
+      if (!coinGroups[coin]) coinGroups[coin] = { longs: [], shorts: [] };
+      if (d.side === 'LONG') coinGroups[coin].longs.push(d);
+      else coinGroups[coin].shorts.push(d);
+    });
+
+    html += '<div class="card" style="margin-bottom:14px;padding:16px 20px;">';
+    html += '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;">Liquidation Map</div>';
+
+    Object.keys(coinGroups).forEach(coin => {
+      const g = coinGroups[coin];
+      const allCoinPos = data.filter(d => d.coin.replace('xyz:','') === coin);
+      const mark = allCoinPos.length > 0 ? allCoinPos[0].markPx : 0;
+
+      // Long liquidations are BELOW price (if price drops, longs get liquidated)
+      const longLiqs = g.longs.filter(d => d.liqPx > 0).sort((a,b) => b.liqPx - a.liqPx);
+      // Short liquidations are ABOVE price (if price rises, shorts get liquidated)
+      const shortLiqs = g.shorts.filter(d => d.liqPx > 0).sort((a,b) => a.liqPx - b.liqPx);
+
+      html += '<div style="margin-bottom:14px;">';
+      html += '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">'+coin+' <span style="color:var(--text3);font-weight:400;">mark: $'+Number(mark).toLocaleString(undefined,{maximumFractionDigits:2})+'</span></div>';
+
+      // Short liquidations (above price — if price goes up)
+      if (shortLiqs.length > 0) {
+        html += '<div style="font-size:11px;color:var(--text3);margin-bottom:4px;">&#9650; SHORT LIQUIDATIONS (price goes up)</div>';
+        shortLiqs.forEach(d => {
+          const dist = mark > 0 ? ((d.liqPx - mark) / mark * 100).toFixed(1) : '?';
+          const barWidth = Math.min(Math.max(d.size / totalNotional * 800, 20), 100);
+          html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px;">';
+          html += '<span style="color:var(--red,#f87171);width:80px;text-align:right;font-family:monospace;">$'+Number(d.liqPx).toLocaleString(undefined,{maximumFractionDigits:2})+'</span>';
+          html += '<div style="background:var(--red,#f87171);opacity:0.6;height:6px;width:'+barWidth+'%;border-radius:3px;"></div>';
+          html += '<span style="color:var(--text3);">$'+hlFmt(d.size)+' '+d.leverage+'x</span>';
+          html += '<span style="color:var(--text3);">(+'+dist+'%)</span>';
+          html += '<span style="font-family:monospace;color:var(--text3);font-size:11px;">'+hlAddr(d.address)+'</span>';
+          html += '</div>';
+        });
+      }
+
+      // Current price marker
+      html += '<div style="display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px;">';
+      html += '<span style="color:var(--accent);width:80px;text-align:right;font-family:monospace;font-weight:700;">$'+Number(mark).toLocaleString(undefined,{maximumFractionDigits:2})+'</span>';
+      html += '<div style="flex:1;height:2px;background:var(--accent);border-radius:1px;"></div>';
+      html += '<span style="color:var(--accent);font-weight:600;font-size:11px;">MARK PRICE</span>';
+      html += '</div>';
+
+      // Long liquidations (below price — if price drops)
+      if (longLiqs.length > 0) {
+        html += '<div style="font-size:11px;color:var(--text3);margin-bottom:4px;">&#9660; LONG LIQUIDATIONS (price goes down)</div>';
+        longLiqs.forEach(d => {
+          const dist = mark > 0 ? ((d.liqPx - mark) / mark * 100).toFixed(1) : '?';
+          const barWidth = Math.min(Math.max(d.size / totalNotional * 800, 20), 100);
+          html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px;">';
+          html += '<span style="color:var(--green,#4ade80);width:80px;text-align:right;font-family:monospace;">$'+Number(d.liqPx).toLocaleString(undefined,{maximumFractionDigits:2})+'</span>';
+          html += '<div style="background:var(--green,#4ade80);opacity:0.6;height:6px;width:'+barWidth+'%;border-radius:3px;"></div>';
+          html += '<span style="color:var(--text3);">$'+hlFmt(d.size)+' '+d.leverage+'x</span>';
+          html += '<span style="color:var(--text3);">('+dist+'%)</span>';
+          html += '<span style="font-family:monospace;color:var(--text3);font-size:11px;">'+hlAddr(d.address)+'</span>';
+          html += '</div>';
+        });
+      }
+
+      html += '</div>';
+    });
+
+    // ===== LIQUIDATION IMBALANCE INDICATOR =====
+    // For each coin: compare total $ in long liqs vs short liqs
+    // Price tends to hunt the side with more liquidation $ (liquidity magnet)
+    html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Liquidation Imbalance — Where\'s the Liquidity?</div>';
+    html += '<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Price hunts liquidity. The side with more $ in liquidations acts as a magnet. Bigger imbalance = stronger pull.</div>';
+
+    Object.keys(coinGroups).forEach(coin => {
+      const g = coinGroups[coin];
+      const allCoinPos = data.filter(d => d.coin.replace('xyz:','') === coin);
+      const mark = allCoinPos.length > 0 ? allCoinPos[0].markPx : 0;
+      if (!mark) return;
+
+      // Long liqs are below price (get hit if price drops)
+      const longLiqTotal = g.longs.filter(d => d.liqPx > 0).reduce((s,d) => s + d.size, 0);
+      // Short liqs are above price (get hit if price rises)
+      const shortLiqTotal = g.shorts.filter(d => d.liqPx > 0).reduce((s,d) => s + d.size, 0);
+      const totalLiq = longLiqTotal + shortLiqTotal;
+      if (totalLiq === 0) return;
+
+      const longLiqPct = Math.round(longLiqTotal / totalLiq * 100);
+      const shortLiqPct = 100 - longLiqPct;
+
+      // Nearest big liquidation on each side
+      const nearestLongLiq = g.longs.filter(d => d.liqPx > 0).sort((a,b) => b.liqPx - a.liqPx)[0];
+      const nearestShortLiq = g.shorts.filter(d => d.liqPx > 0).sort((a,b) => a.liqPx - b.liqPx)[0];
+
+      // Determine edge
+      const imbalance = Math.abs(longLiqPct - 50);
+      let edgeText = '', edgeColor = 'var(--text3)';
+      if (imbalance >= 25) {
+        if (longLiqTotal > shortLiqTotal) { edgeText = 'Strong magnet BELOW — longs at risk, bias SHORT'; edgeColor = 'var(--red,#f87171)'; }
+        else { edgeText = 'Strong magnet ABOVE — shorts at risk, bias LONG'; edgeColor = 'var(--green,#4ade80)'; }
+      } else if (imbalance >= 10) {
+        if (longLiqTotal > shortLiqTotal) { edgeText = 'Mild pull BELOW — lean SHORT'; edgeColor = 'var(--red,#f87171)'; }
+        else { edgeText = 'Mild pull ABOVE — lean LONG'; edgeColor = 'var(--green,#4ade80)'; }
+      } else {
+        edgeText = 'Balanced — no clear liquidity edge'; edgeColor = 'var(--text3)';
+      }
+
+      html += '<div style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:8px;">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+      html += '<span style="font-weight:700;font-size:14px;">'+coin+'</span>';
+      html += '<span style="font-size:12px;font-weight:600;color:'+edgeColor+';">'+edgeText+'</span>';
+      html += '</div>';
+
+      // Imbalance bar: short liqs (above, left) vs long liqs (below, right)
+      html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;">';
+      html += '<span style="color:var(--red,#f87171);width:100px;text-align:right;">$'+hlFmt(shortLiqTotal)+'</span>';
+      html += '<span style="color:var(--text3);font-size:10px;">&#9650; ABOVE</span>';
+      html += '<div style="flex:1;display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--bg3);">';
+      html += '<div style="width:'+shortLiqPct+'%;background:var(--red,#f87171);opacity:0.7;"></div>';
+      html += '<div style="width:2px;background:var(--accent);"></div>';
+      html += '<div style="width:'+longLiqPct+'%;background:var(--green,#4ade80);opacity:0.7;"></div>';
+      html += '</div>';
+      html += '<span style="color:var(--text3);font-size:10px;">BELOW &#9660;</span>';
+      html += '<span style="color:var(--green,#4ade80);width:100px;">$'+hlFmt(longLiqTotal)+'</span>';
+      html += '</div>';
+
+      // Nearest liquidations
+      html += '<div style="display:flex;gap:24px;font-size:11px;color:var(--text3);">';
+      if (nearestShortLiq) {
+        const distUp = ((nearestShortLiq.liqPx - mark) / mark * 100).toFixed(1);
+        html += '<span>Nearest short liq: <b style="color:var(--red,#f87171);">$'+Number(nearestShortLiq.liqPx).toLocaleString(undefined,{maximumFractionDigits:2})+'</b> (+'+distUp+'%) — $'+hlFmt(nearestShortLiq.size)+' at '+nearestShortLiq.leverage+'x</span>';
+      }
+      if (nearestLongLiq) {
+        const distDown = ((nearestLongLiq.liqPx - mark) / mark * 100).toFixed(1);
+        html += '<span>Nearest long liq: <b style="color:var(--green,#4ade80);">$'+Number(nearestLongLiq.liqPx).toLocaleString(undefined,{maximumFractionDigits:2})+'</b> ('+distDown+'%) — $'+hlFmt(nearestLongLiq.size)+' at '+nearestLongLiq.leverage+'x</span>';
+      }
+      html += '</div>';
+
+      html += '</div>';
+    });
+
+    html += '</div>';
+    html += '</div>'; // end liq map card
+  }
 
   // Table
   html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:13px;border-collapse:collapse;">';
