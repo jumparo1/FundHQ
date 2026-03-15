@@ -60,6 +60,8 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-15: Fix login modal bug — was using CSS class `show` instead of `open`, modal never appeared
+- 2026-03-15: Oil research report posted to Firebase — 12-section commodity analysis, tactical short thesis, QA'd against live data
 - 2026-03-15: Commodity Research template — 12 sections for oil, gold, natgas (supply/demand, geopolitics, seasonality, futures curve, CFTC COT, trade setup)
 - 2026-03-15: Perp Positioning tab — aggregate OI, funding rates, volume, premium across 190 perps (Crypto + XYZ dex)
 - 2026-03-15: Hyperliquid page — on-chain whale tracker with 4 tabs (Wallet Scanner, Whale Discovery, Saved Wallets, Perp Positioning)
