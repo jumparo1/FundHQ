@@ -1914,7 +1914,7 @@ function showLoginModal() {
     </div>
   `;
   document.getElementById('modal-content').innerHTML = html;
-  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('login-user').focus();
   document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 }
