@@ -7915,6 +7915,7 @@ function hlFilterPerps() { hlRenderPerps(); }
 function hlRenderPerps() {
   const container = document.getElementById('hl-perp-result');
   const summary = document.getElementById('hl-perp-summary');
+  const status = document.getElementById('hl-perp-status');
   const sortBy = document.getElementById('hl-perp-sort').value;
   const filter = document.getElementById('hl-perp-filter').value.trim().toUpperCase();
 
@@ -7927,20 +7928,29 @@ function hlRenderPerps() {
   else if (sortBy === 'premium') data.sort((a,b) => Math.abs(b.premium) - Math.abs(a.premium));
   else data.sort((a,b) => b.oiUsd - a.oiUsd);
 
+  // Update status with filter info
+  if (filter) {
+    status.innerHTML = 'Showing <b>' + data.length + '</b> of <b>' + hlPerpsData.length + '</b> perps (filter: "' + filter.toLowerCase() + '")';
+  } else {
+    status.innerHTML = '<b>' + hlPerpsData.length + '</b> active perps loaded';
+  }
+
   if (!data.length) {
     container.innerHTML = '<div class="empty-state"><p style="color:var(--text3);">No perps found. Try a different filter.</p></div>';
     summary.innerHTML = '';
     return;
   }
 
-  // Summary cards
-  const totalOI = data.reduce((s,c) => s + c.oiUsd, 0);
-  const totalVol = data.reduce((s,c) => s + c.vol24h, 0);
-  const avgFunding = data.reduce((s,c) => s + c.funding, 0) / data.length;
+  // Summary cards — always use ALL data for aggregate stats
+  var all = hlPerpsData;
+  const totalOI = all.reduce((s,c) => s + c.oiUsd, 0);
+  const totalVol = all.reduce((s,c) => s + c.vol24h, 0);
+  const avgFunding = all.reduce((s,c) => s + c.funding, 0) / all.length;
   const avgFundingAnn = avgFunding * 24 * 365 * 100;
-  const highFunding = data.filter(c => c.funding > 0.0001).length;
-  const negFunding = data.filter(c => c.funding < -0.00005).length;
-  const topByOI = data.slice().sort((a,b) => b.oiUsd - a.oiUsd).slice(0,3).map(c => c.coin).join(', ');
+  const highFunding = all.filter(c => c.funding > 0.0001).length;
+  const negFunding = all.filter(c => c.funding < -0.00005).length;
+  const neutralFunding = all.length - highFunding - negFunding;
+  const topByOI = all.slice().sort((a,b) => b.oiUsd - a.oiUsd).slice(0,3).map(c => c.coin).join(', ');
 
   // Funding sentiment
   const fundingSentiment = avgFunding > 0.0001 ? 'Longs Paying' : avgFunding < -0.00005 ? 'Shorts Paying' : 'Neutral';
@@ -7954,18 +7964,21 @@ function hlRenderPerps() {
 
   html += '<div class="card" style="padding:14px 18px;"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">24h Volume</div>';
   html += '<div style="font-size:22px;font-weight:700;color:var(--text);">$' + hlFmt(totalVol) + '</div>';
-  html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">' + data.length + ' active markets</div></div>';
+  html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">' + all.length + ' active markets</div></div>';
 
   html += '<div class="card" style="padding:14px 18px;"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Avg Funding Rate</div>';
   html += '<div style="font-size:22px;font-weight:700;color:' + fundingColor + ';">' + (avgFunding * 100).toFixed(4) + '%</div>';
   html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">' + fundingSentiment + ' (' + avgFundingAnn.toFixed(1) + '% ann.)</div></div>';
 
   html += '<div class="card" style="padding:14px 18px;"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Funding Breakdown</div>';
-  html += '<div style="font-size:16px;font-weight:700;"><span style="color:var(--green,#4ade80);">' + highFunding + '</span> paying / <span style="color:var(--red,#f87171);">' + negFunding + '</span> earning</div>';
+  html += '<div style="font-size:16px;font-weight:700;"><span style="color:var(--green,#4ade80);">' + highFunding + '</span> paying / <span style="color:var(--text3);">' + neutralFunding + '</span> neutral / <span style="color:var(--red,#f87171);">' + negFunding + '</span> earning</div>';
   html += '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--bg3);margin-top:8px;">';
-  var payPct = data.length ? Math.round(highFunding / data.length * 100) : 50;
+  var payPct = all.length ? Math.round(highFunding / all.length * 100) : 0;
+  var neutPct = all.length ? Math.round(neutralFunding / all.length * 100) : 0;
+  var earnPct = 100 - payPct - neutPct;
   html += '<div style="width:' + payPct + '%;background:var(--green,#4ade80);"></div>';
-  html += '<div style="width:' + (100-payPct) + '%;background:var(--red,#f87171);"></div></div>';
+  html += '<div style="width:' + neutPct + '%;background:var(--text3,#666);opacity:0.4;"></div>';
+  html += '<div style="width:' + earnPct + '%;background:var(--red,#f87171);"></div></div>';
   html += '<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px;">Longs pay ' + payPct + '% of markets</div></div>';
 
   html += '</div>';
