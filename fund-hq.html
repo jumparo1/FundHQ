@@ -3659,14 +3659,33 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el => {
 
 // Hash routing — back button + bookmarkable URLs
 window.addEventListener('hashchange', () => {
-  const page = location.hash.slice(1);
-  if (page) showPage(page);
+  const hash = location.hash.slice(1);
+  if (hash.startsWith('report/')) {
+    var reportId = hash.slice(7);
+    showPage('reports');
+    setTimeout(function() { openModal('report', reportId); }, 300);
+  } else if (hash) {
+    showPage(hash);
+  }
 });
 
 // Navigate to hash on page load (or default to dashboard)
 (function() {
-  const hash = location.hash.slice(1);
-  if (hash && document.getElementById('page-' + hash)) {
+  var hash = location.hash.slice(1);
+  if (hash.startsWith('report/')) {
+    var reportId = hash.slice(7);
+    showPage('reports');
+    // Wait for Firebase data to load before opening report
+    var attempts = 0;
+    var tryOpen = setInterval(function() {
+      attempts++;
+      var r = DB.reports.find(function(x) { return x.id === reportId; });
+      if (r || attempts > 20) {
+        clearInterval(tryOpen);
+        if (r) openModal('report', reportId);
+      }
+    }, 250);
+  } else if (hash && document.getElementById('page-' + hash)) {
     showPage(hash);
   }
 })();
@@ -3955,10 +3974,13 @@ function openModal(type, id) {
     html = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h2 style="margin:0;">${r ? esc(r.title) : 'New Report'}</h2>
-        ${hasContent ? `<div class="rv-toggle">
-          <button class="${startInView ? 'active' : ''}" onclick="toggleReportView('view')">View</button>
-          <button class="${startInView ? '' : 'active'} admin-only" onclick="toggleReportView('edit')">Edit</button>
-        </div>` : ''}
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${r ? `<button class="btn btn-ghost btn-sm" onclick="copyReportLink('${r.id}')" title="Copy shareable link" style="font-size:12px;">&#128279; Share</button>` : ''}
+          ${hasContent ? `<div class="rv-toggle">
+            <button class="${startInView ? 'active' : ''}" onclick="toggleReportView('view')">View</button>
+            <button class="${startInView ? '' : 'active'} admin-only" onclick="toggleReportView('edit')">Edit</button>
+          </div>` : ''}
+        </div>
       </div>
       ${r ? `<div class="rv-meta">
         ${r.rating ? '<span class="rv-badge rv-badge-rating">' + esc(r.rating) + '</span>' : ''}
@@ -4048,11 +4070,15 @@ function openModal(type, id) {
   if (type === 'report') {
     const r = id ? DB.reports.find(x=>x.id===id) : null;
     initReportImages(r?.images);
+    // Deep link: update URL hash so this report is shareable
+    if (id) history.replaceState(null, '', '#report/' + id);
   }
 }
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
   document.getElementById('modal-content').classList.remove('modal-wide');
+  // If closing a report deep link, go back to reports page hash
+  if (location.hash.startsWith('#report/')) history.replaceState(null, '', '#reports');
 }
 function openDealDetail(id) { openModal('deal', id); }
 function editProject(id) { openModal('project', id); }
@@ -6071,6 +6097,19 @@ function openImageLightbox(url) {
   lb.onclick = () => lb.remove();
   lb.innerHTML = '<img src="' + url + '">';
   document.body.appendChild(lb);
+}
+
+// ===== SHARE REPORT LINK =====
+function copyReportLink(id) {
+  var url = location.origin + location.pathname + '#report/' + id;
+  navigator.clipboard.writeText(url).then(function() {
+    var btn = event.target.closest('button');
+    var orig = btn.innerHTML;
+    btn.innerHTML = '&#10003; Copied!';
+    setTimeout(function() { btn.innerHTML = orig; }, 2000);
+  }).catch(function() {
+    prompt('Copy this link:', url);
+  });
 }
 
 // ===== SAVE REPORT =====
