@@ -2407,65 +2407,90 @@ cd ~/deploy && git add . && git commit && git push
         <h3 style="font-size:15px;margin-bottom:12px;">Backup</h3>
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Download a local JSON backup of all fund data.</p>
         <button class="btn btn-ghost" onclick="exportBackup()">Download Backup</button>
-        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
-        <div class="admin-only">
-        <h3 style="font-size:15px;margin-bottom:12px;">API Keys</h3>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">Crypto data works immediately via CoinGecko (no key needed).</p>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Stock data requires a free key from <a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">Financial Modeling Prep</a> (250 req/day).</p>
-        <div style="max-width:400px;">
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">FMP API Key</label>
-          <input type="text" id="settings-fmp-key" autocomplete="off" data-1p-ignore placeholder="Enter your FMP API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn btn-primary btn-sm" onclick="saveFmpKey(document.getElementById('settings-fmp-key').value);document.getElementById('fmp-test-result').textContent='Saved!';document.getElementById('fmp-test-result').style.color='var(--green)';">Save Key</button>
-            <button class="btn btn-ghost btn-sm" onclick="testFmpKey()">Test Connection</button>
+      </div>
+      <!-- ===== API KEYS SECTION ===== -->
+      <div class="card admin-only" style="max-width:560px;margin-top:20px;">
+        <h3 style="font-size:15px;margin-bottom:4px;">API Keys</h3>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:16px;">Keys are stored locally in your browser. Never sent to our servers.</p>
+        <!-- Status overview -->
+        <div id="api-status-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;font-size:12px;"></div>
+        <!-- Free APIs (no key needed) -->
+        <div style="padding:12px 14px;background:rgba(16,185,129,0.06);border-radius:8px;border-left:3px solid var(--green);margin-bottom:20px;">
+          <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:4px;">Free — No Key Required</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6;">
+            <span style="margin-right:12px;">CoinGecko (crypto prices)</span>
+            <span style="margin-right:12px;">Hyperliquid (perps, wallets)</span>
+            <span>Dexscreener (DEX pairs)</span>
           </div>
-          <div id="fmp-test-result" style="font-size:12px;margin-top:4px;"></div>
         </div>
-        <div style="max-width:400px;margin-top:16px;">
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Anthropic API Key <span style="color:var(--accent);">(AI Research)</span></label>
-          <input type="text" id="settings-anthropic-key" autocomplete="off" data-1p-ignore placeholder="Enter your Anthropic API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn btn-primary btn-sm" onclick="saveAnthropicKey(document.getElementById('settings-anthropic-key').value);document.getElementById('anthropic-test-result').textContent='Saved!';document.getElementById('anthropic-test-result').style.color='var(--green)';">Save Key</button>
-            <button class="btn btn-ghost btn-sm" onclick="testAnthropicKey()">Test Connection</button>
+        <!-- AI -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">AI</div>
+          <div style="max-width:420px;">
+            <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px;">Anthropic <span style="font-size:10px;padding:1px 6px;background:rgba(99,102,241,0.1);color:var(--accent2);border-radius:3px;">Paid</span></label>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">AI research reports, Pamela agent. <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">console.anthropic.com</a></div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="settings-anthropic-key" autocomplete="off" data-1p-ignore placeholder="sk-ant-..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;outline:none;">
+              <button class="btn btn-primary btn-sm" onclick="saveAnthropicKey(document.getElementById('settings-anthropic-key').value);document.getElementById('anthropic-test-result').textContent='Saved!';document.getElementById('anthropic-test-result').style.color='var(--green)';refreshApiStatus();">Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="testAnthropicKey()">Test</button>
+            </div>
+            <div id="anthropic-test-result" style="font-size:11px;margin-top:3px;min-height:16px;"></div>
           </div>
-          <div id="anthropic-test-result" style="font-size:12px;margin-top:4px;"></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Powers "Research with AI" in reports. Get a key at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
         </div>
-        <div style="max-width:400px;margin-top:16px;">
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Moralis API Key <span style="color:var(--accent);">(On-Chain Holders)</span></label>
-          <input type="text" id="settings-moralis-key" autocomplete="off" data-1p-ignore placeholder="Enter your Moralis API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn btn-primary btn-sm" onclick="localStorage.setItem('moralisKey',document.getElementById('settings-moralis-key').value.trim());document.getElementById('moralis-test-result').textContent='Saved!';document.getElementById('moralis-test-result').style.color='var(--green)';">Save Key</button>
-            <button class="btn btn-ghost btn-sm" onclick="testMoralisKey()">Test Connection</button>
+        <!-- Research -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">Research</div>
+          <div style="max-width:420px;">
+            <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px;">Financial Modeling Prep <span style="font-size:10px;padding:1px 6px;background:rgba(16,185,129,0.1);color:var(--green);border-radius:3px;">Free</span></label>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Stock data, fundamentals, financials (250 req/day). <a href="https://site.financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent);">financialmodelingprep.com</a></div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="settings-fmp-key" autocomplete="off" data-1p-ignore placeholder="Enter FMP key..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;outline:none;">
+              <button class="btn btn-primary btn-sm" onclick="saveFmpKey(document.getElementById('settings-fmp-key').value);document.getElementById('fmp-test-result').textContent='Saved!';document.getElementById('fmp-test-result').style.color='var(--green)';refreshApiStatus();">Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="testFmpKey()">Test</button>
+            </div>
+            <div id="fmp-test-result" style="font-size:11px;margin-top:3px;min-height:16px;"></div>
           </div>
-          <div id="moralis-test-result" style="font-size:12px;margin-top:4px;"></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Token Intel: top holders, whale categories. Free at <a href="https://admin.moralis.com/register" target="_blank" style="color:var(--accent);">moralis.com</a> (40K CU/day)</p>
         </div>
-        <div style="max-width:400px;margin-top:16px;">
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Birdeye API Key <span style="color:var(--accent);">(Solana Top Traders)</span></label>
-          <input type="text" id="settings-birdeye-key" autocomplete="off" data-1p-ignore placeholder="Enter your Birdeye API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn btn-primary btn-sm" onclick="localStorage.setItem('birdeyeKey',document.getElementById('settings-birdeye-key').value.trim());document.getElementById('birdeye-test-result').textContent='Saved!';document.getElementById('birdeye-test-result').style.color='var(--green)';">Save Key</button>
-            <button class="btn btn-ghost btn-sm" onclick="testBirdeyeKey()">Test Connection</button>
+        <!-- On-Chain Intel -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">On-Chain Intelligence</div>
+          <div style="max-width:420px;margin-bottom:14px;">
+            <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px;">Moralis <span style="font-size:10px;padding:1px 6px;background:rgba(16,185,129,0.1);color:var(--green);border-radius:3px;">Free</span></label>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Token Intel: top holders, % supply, whale categories (40K CU/day). <a href="https://admin.moralis.com/register" target="_blank" style="color:var(--accent);">moralis.com</a></div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="settings-moralis-key" autocomplete="off" data-1p-ignore placeholder="Enter Moralis key..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;outline:none;">
+              <button class="btn btn-primary btn-sm" onclick="localStorage.setItem('moralisKey',document.getElementById('settings-moralis-key').value.trim());document.getElementById('moralis-test-result').textContent='Saved!';document.getElementById('moralis-test-result').style.color='var(--green)';refreshApiStatus();">Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="testMoralisKey()">Test</button>
+            </div>
+            <div id="moralis-test-result" style="font-size:11px;margin-top:3px;min-height:16px;"></div>
           </div>
-          <div id="birdeye-test-result" style="font-size:12px;margin-top:4px;"></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Token Intel: top traders on Solana DEXs. Free at <a href="https://bds.birdeye.so/user/signup" target="_blank" style="color:var(--accent);">birdeye.so</a></p>
-        </div>
-        <div style="max-width:400px;margin-top:16px;">
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">CoinGlass API Key <span style="color:var(--accent);">(Whale Tracker)</span></label>
-          <input type="text" id="settings-coinglass-key" autocomplete="off" data-1p-ignore placeholder="Enter your CoinGlass API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn btn-primary btn-sm" onclick="saveCoinglassKey(document.getElementById('settings-coinglass-key').value);document.getElementById('coinglass-test-result').textContent='Saved!';document.getElementById('coinglass-test-result').style.color='var(--green)';">Save Key</button>
-            <button class="btn btn-ghost btn-sm" onclick="testCoinglassKey()">Test Connection</button>
+          <div style="max-width:420px;margin-bottom:14px;">
+            <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px;">Birdeye <span style="font-size:10px;padding:1px 6px;background:rgba(16,185,129,0.1);color:var(--green);border-radius:3px;">Free</span></label>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Token Intel: top Solana DEX traders, buy/sell volume. <a href="https://bds.birdeye.so/user/signup" target="_blank" style="color:var(--accent);">birdeye.so</a></div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="settings-birdeye-key" autocomplete="off" data-1p-ignore placeholder="Enter Birdeye key..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;outline:none;">
+              <button class="btn btn-primary btn-sm" onclick="localStorage.setItem('birdeyeKey',document.getElementById('settings-birdeye-key').value.trim());document.getElementById('birdeye-test-result').textContent='Saved!';document.getElementById('birdeye-test-result').style.color='var(--green)';refreshApiStatus();">Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="testBirdeyeKey()">Test</button>
+            </div>
+            <div id="birdeye-test-result" style="font-size:11px;margin-top:3px;min-height:16px;"></div>
           </div>
-          <div id="coinglass-test-result" style="font-size:12px;margin-top:4px;"></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Powers Hyperliquid whale discovery. Get a free key at <a href="https://www.coinglass.com/pricing" target="_blank" style="color:var(--accent);">coinglass.com</a></p>
+          <div style="max-width:420px;">
+            <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px;">CoinGlass <span style="font-size:10px;padding:1px 6px;background:rgba(16,185,129,0.1);color:var(--green);border-radius:3px;">Free</span></label>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Whale tracker, liquidations, OI data. <a href="https://www.coinglass.com/pricing" target="_blank" style="color:var(--accent);">coinglass.com</a></div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="settings-coinglass-key" autocomplete="off" data-1p-ignore placeholder="Enter CoinGlass key..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;outline:none;">
+              <button class="btn btn-primary btn-sm" onclick="saveCoinglassKey(document.getElementById('settings-coinglass-key').value);document.getElementById('coinglass-test-result').textContent='Saved!';document.getElementById('coinglass-test-result').style.color='var(--green)';refreshApiStatus();">Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="testCoinglassKey()">Test</button>
+            </div>
+            <div id="coinglass-test-result" style="font-size:11px;margin-top:3px;min-height:16px;"></div>
+          </div>
         </div>
-        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+      </div>
+      <!-- ===== DANGER ZONE ===== -->
+      <div class="card admin-only" style="max-width:560px;margin-top:20px;">
         <h3 style="font-size:15px;margin-bottom:12px;color:var(--red);">Danger Zone</h3>
         <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">This deletes ALL data for BOTH users. Cannot be undone.</p>
         <button class="btn btn-danger btn-sm admin-only" onclick="resetAllData()">Reset All Data</button>
-        </div><!-- end admin-only -->
       </div>
     </div>
   </div>
@@ -2670,6 +2695,24 @@ function saveFmpKey(key) { localStorage.setItem('fundHQ_fmpApiKey', key.trim());
 function getCoinglassKey() { return localStorage.getItem('fundHQ_coinglassApiKey') || ''; }
 function saveCoinglassKey(key) { localStorage.setItem('fundHQ_coinglassApiKey', key.trim()); }
 
+function refreshApiStatus() {
+  var grid = document.getElementById('api-status-grid');
+  if (!grid) return;
+  var apis = [
+    { name: 'CoinGecko', status: 'active', note: 'No key needed' },
+    { name: 'Hyperliquid', status: 'active', note: 'No key needed' },
+    { name: 'Dexscreener', status: 'active', note: 'No key needed' },
+    { name: 'Anthropic', status: localStorage.getItem('anthropicKey') ? 'active' : 'missing', note: 'AI research' },
+    { name: 'FMP', status: localStorage.getItem('fmpKey') ? 'active' : 'missing', note: 'Stock data' },
+    { name: 'Moralis', status: localStorage.getItem('moralisKey') ? 'active' : 'missing', note: 'On-chain holders' },
+    { name: 'Birdeye', status: localStorage.getItem('birdeyeKey') ? 'active' : 'missing', note: 'Solana traders' },
+    { name: 'CoinGlass', status: localStorage.getItem('coinglassKey') ? 'active' : 'missing', note: 'Whale tracker' }
+  ];
+  grid.innerHTML = apis.map(function(a) {
+    var dot = a.status === 'active' ? '<span style="color:var(--green);">&#9679;</span>' : '<span style="color:var(--text3);">&#9675;</span>';
+    return '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px;">' + dot + ' <span style="font-weight:600;color:' + (a.status === 'active' ? 'var(--text)' : 'var(--text3)') + ';">' + a.name + '</span><span style="margin-left:auto;color:var(--text3);font-size:10px;">' + a.note + '</span></div>';
+  }).join('');
+}
 async function testMoralisKey() {
   var key = document.getElementById('settings-moralis-key')?.value?.trim();
   if (key) localStorage.setItem('moralisKey', key);
@@ -4349,6 +4392,15 @@ function showPage(pageName) {
   document.getElementById('sidebar-overlay').classList.remove('open');
   // Update URL hash
   if (location.hash !== '#' + pageName) history.pushState(null, '', '#' + pageName);
+  // Settings page — populate API key fields + status
+  if (pageName === 'settings') {
+    var kf = document.getElementById('settings-fmp-key'); if (kf && !kf.value) kf.value = localStorage.getItem('fmpKey') || '';
+    var ka = document.getElementById('settings-anthropic-key'); if (ka && !ka.value) ka.value = localStorage.getItem('anthropicKey') || '';
+    var km = document.getElementById('settings-moralis-key'); if (km && !km.value) km.value = localStorage.getItem('moralisKey') || '';
+    var kb = document.getElementById('settings-birdeye-key'); if (kb && !kb.value) kb.value = localStorage.getItem('birdeyeKey') || '';
+    var kc = document.getElementById('settings-coinglass-key'); if (kc && !kc.value) kc.value = localStorage.getItem('coinglassKey') || '';
+    if (typeof refreshApiStatus === 'function') refreshApiStatus();
+  }
   return true;
 }
 
