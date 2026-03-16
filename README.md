@@ -12,7 +12,7 @@ AI-powered institutional research operating system for crypto and equities. Thre
 
 ## Features
 
-- **Token Intel** — Enter any ticker, scan all sources for smart money activity: tracked entity positions, whale discovery, long/short clusters, on-chain top holders (Moralis), top DEX traders (Birdeye), HL perp data, DEX liquidity, Alpha Summary with automated insights
+- **Token Intel** — Enter any ticker, scan all sources for smart money activity: tracked entity positions, whale discovery with clickable wallet profiles (positions, PnL, win rate, trade history), long/short clusters, on-chain top holders (Moralis), HL perp data, DEX liquidity, Data Sources status bar, Alpha Summary with automated insights
 - **On-Chain Intel** — Hyperliquid (wallet scanner, whale discovery, saved wallets, perp positioning), Dexscreener (search, trending, new pairs), Entity Tracker (full CRUD, import from HL, live scanning), Flow Monitor, Signal Feed
 - **Portfolio** — Holdings tracker with allocation breakdown, P&L tracking, cash management, live pricing via CoinGecko (crypto) + FMP (stocks)
 - **Market Data** — Live search across crypto (CoinGecko) and stocks (FMP) with auto-scoring
@@ -24,26 +24,27 @@ AI-powered institutional research operating system for crypto and equities. Thre
 - **Scheduled Tasks** — Daily market scans, watchlist refresh, weekly deep dives via Claude Code cron
 - **Dashboard** — Fund overview with watchlist, reports, tasks, quick actions
 - **Operations** — Kanban tasks, milestone roadmap, daily progress log
+- **Settings** — API key management with status grid, organized by category (AI, Research, On-Chain), test connections
 
 ## Data Sources
 
 | Source | Type | Key Required | What It Provides |
 |--------|------|-------------|------------------|
-| Hyperliquid | Perp positions | No | Wallet positions, whale discovery, funding, OI, volume |
+| Hyperliquid | Perp positions | No | Wallet positions, whale discovery, funding, OI, volume, trade fills |
 | Dexscreener | DEX analytics | No | Token search, trending, new pairs, liquidity, price |
 | CoinGecko | Crypto prices | No | Live portfolio pricing, market data |
-| Moralis | On-chain holders | Free key | Top token holders, % supply, concentration analysis |
+| Moralis | On-chain holders | Free key | Top token holders on EVM chains, % supply, concentration analysis |
 | Birdeye | Solana traders | Free key | Top DEX traders, buy/sell volume, trader sentiment |
 | FMP | Stock data | Free key | Stock fundamentals, quotes, financial metrics |
 | Anthropic Claude | AI | Paid key | Research reports, Pamela agent, web search |
 
 ## Tech Stack
 
-- Single HTML file (~11K lines) — no build tools, no frameworks
+- Single HTML file (~12K lines) — no build tools, no frameworks
 - **Firebase Realtime Database** for cloud sync
 - **localStorage** fallback for offline use
 - **Anthropic Claude API** for AI research + Pamela agent
-- **Hyperliquid API** + **Dexscreener API** + **Moralis API** + **Birdeye API** for on-chain data
+- **Hyperliquid API** + **Dexscreener API** + **Moralis API** for on-chain data
 - **Python agents** — Sentinel (on-chain), Analyst (research), Quant (technical)
 - Vanilla JavaScript, CSS custom properties, dark theme
 

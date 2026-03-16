@@ -28,7 +28,7 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Watchlist | Pipeline | Tracked assets with scores, detail view, Firebase sync |
 | Alerts | Pipeline | Signals from scheduled scans + Pamela, severity levels, browser notifications |
 | Portfolio | Pipeline | Holdings tracker, allocation breakdown, P&L tracking, cash management |
-| On-Chain Intel | On-Chain | 5 tabs: Overview, Hyperliquid, Entity Tracker, Flow Monitor, Signal Feed |
+| On-Chain Intel | On-Chain | 7 tabs: Overview, Token Intel (multi-source scanner with wallet detail modals), Hyperliquid, Entity Tracker, Dexscreener, Flow Monitor, Signal Feed |
 | Market Data | Research | Live search/discovery, CoinGecko + FMP fundamentals |
 | Templates | Research | 4 templates (Crypto 16s, Stock 14s, Quick Thesis 5s, Commodity 12s), view/edit modes |
 | Reports | Research | AI-generated research reports, rating, conviction, Substack, Trash |
@@ -38,7 +38,7 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Roadmap | Operations | Tasks grouped by milestone with progress bars |
 | Progress | Operations | Daily work log, timeline, streak tracking |
 | Docs | Tools | GitBook-style documentation with changelog |
-| Settings | Tools | API keys, Firebase config |
+| Settings | Tools | API status grid, keys by category (AI/Research/On-Chain), Firebase sync, backup |
 
 ## Pamela (AI Agent)
 - **Model:** Claude Haiku 4.5 (fast + cheap, ~$0.005/query)
@@ -70,6 +70,12 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-17: **Wallet detail modal** — click any address in Token Intel to see full profile: account value, all positions, win rate, PnL, last 30 trades, + Track Entity button
+- 2026-03-17: **Clickable addresses** — HL whale addresses open wallet modal, Moralis holder addresses link to block explorer (Etherscan, Basescan, etc.)
+- 2026-03-17: **Settings API section** — reorganized into separate card with status grid (green/gray dots), grouped by category (AI, Research, On-Chain Intelligence), auto-populates saved keys
+- 2026-03-17: **Token Intel diagnostics** — Data Sources status bar shows which APIs returned data and which didn't, error tracking on all fetch calls
+- 2026-03-17: **Moralis integration** — top token holders on EVM chains (Ethereum, Base, BSC, Polygon), % supply, concentration analysis, whale categories
+- 2026-03-17: **Birdeye integration** — top Solana DEX traders (inactive — user focused on EVM for now)
 - 2026-03-16: **Dexscreener integration** — search tokens, trending, new pairs; 6th tab in On-Chain Intel, free API
 - 2026-03-16: **Auto-confluence scoring** — pulls entity grades, regime, setups, catalysts, reports to pre-fill sliders
 - 2026-03-16: **Conviction Report generator** — markdown report with breakdown bars, smart money, catalysts; copy/save to Reports
