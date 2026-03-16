@@ -69,7 +69,15 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 
 ## Recent Changes
 - 2026-03-16: **3-Division Architecture** — restructured entire platform into On-Chain Intel, Research, and Technical Analysis
-- 2026-03-16: **On-Chain Intel page** — Overview dashboard (regime, entities, signals, venues), Hyperliquid preserved as sub-module, Entity Tracker / Flow Monitor / Signal Feed placeholders
+- 2026-03-16: **Signal Feed** — functional on-chain signal aggregation with type/conviction filters, status tracking, win/loss outcome tracking
+- 2026-03-16: **Flow Monitor** — aggregate entity flow scanning via HL API, accumulation/distribution detection, net flow by asset, auto-signal generation for $100K+ positions
+- 2026-03-16: **Trade Log** — full CRUD trade logging with P&L, R:R calculation, playbook linkage, win rate stats, best playbook mining
+- 2026-03-16: **Catalyst Tracker** — event tracking with 8 types, impact/time filters, summary cards (This Week/Month/Positive/Negative), Firebase sync
+- 2026-03-16: **Confluence Scoring** — 4 weighted range sliders (On-Chain 25%, Fundamental 25%, TA 30%, Regime 20%), color-coded verdicts, position sizing
+- 2026-03-16: **Entity Tracker** — full CRUD entity management, import from HL Saved Wallets, live position scanning, grade/type filtering
+- 2026-03-16: **Setup Scanner** — trade setup cards with entry/stop/target, auto R:R, playbook linkage, status cycling (Watching/Active/Triggered/Closed)
+- 2026-03-16: **Agent scaffolding** — Sentinel, Analyst, Quant Python agents + ENTITY-INVESTIGATION.md, TRADE-PLAN.md skills
+- 2026-03-16: **On-Chain Intel page** — Overview dashboard (regime, entities, signals, venues), Hyperliquid preserved as sub-module
 - 2026-03-16: **Technical Analysis page** — Market Regime (risk-on/neutral/risk-off rules), Setup Scanner, Playbooks (3 strategies + Momo Short backlog), Confluence (4-factor scoring), Trade Log
 - 2026-03-16: **Sidebar restructured** — On-Chain Intel, Research, Technical, Operations sections (renamed from Management)
 - 2026-03-16: **Stock template upgraded** — expanded from 10 to 14 sections with institutional research rigor

@@ -1359,11 +1359,27 @@ tbody tr:hover { background: var(--bg3); }
           <span style="font-size:11px;color:var(--text3);">/</span>
           <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128200; Flow Monitor</span>
         </div>
-        <div class="card" style="padding:24px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">&#128200;</div>
-          <h3 style="margin:0 0 8px 0;color:var(--text1);">Flow Monitor</h3>
-          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Aggregate smart money flow detection — accumulation/distribution patterns, squeeze setups, venue flow comparisons.</p>
-          <p style="color:var(--text3);font-size:12px;">Phase 2 — Coming next sprint</p>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-primary admin-only" onclick="flowScanAll()">&#128260; Scan All Entities</button>
+          <select id="flow-timeframe" onchange="flowRender()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            <option value="24h">Last 24h</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
+        <!-- Flow summary cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Net Flow</div><div id="flow-net" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">$0</div><div style="font-size:11px;color:var(--text3);">Tracked entities</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Accumulating</div><div id="flow-acc" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">0</div><div style="font-size:11px;color:var(--text3);">Entities adding</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Distributing</div><div id="flow-dist" style="font-size:22px;font-weight:700;color:var(--red);margin-top:4px;">0</div><div style="font-size:11px;color:var(--text3);">Entities reducing</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Top Asset</div><div id="flow-top" style="font-size:22px;font-weight:700;color:var(--accent2);margin-top:4px;">--</div><div style="font-size:11px;color:var(--text3);">By net flow volume</div></div>
+        </div>
+        <!-- Flow table -->
+        <div class="card" style="padding:16px;">
+          <h3 style="font-size:14px;color:var(--text2);margin:0 0 12px 0;">Entity Flow Activity</h3>
+          <div id="flow-table-container">
+            <div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">Click "Scan All Entities" to detect smart money flows from tracked entities.</div>
+          </div>
         </div>
       </div>
 
@@ -1374,11 +1390,34 @@ tbody tr:hover { background: var(--bg3); }
           <span style="font-size:11px;color:var(--text3);">/</span>
           <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128276; Signal Feed</span>
         </div>
-        <div class="card" style="padding:24px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">&#128276;</div>
-          <h3 style="margin:0 0 8px 0;color:var(--text1);">Signal Feed</h3>
-          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">High-conviction on-chain signals — filtered by entity grade, regime alignment, and conviction level. Powered by Sentinel agent.</p>
-          <p style="color:var(--text3);font-size:12px;">Phase 2 — Coming next sprint</p>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-primary admin-only" onclick="sigShowAddModal()">+ New Signal</button>
+          <select id="sig-filter-type" onchange="sigRender()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            <option value="all">All Types</option>
+            <option value="whale_move">Whale Move</option>
+            <option value="accumulation">Accumulation</option>
+            <option value="distribution">Distribution</option>
+            <option value="new_position">New Position</option>
+            <option value="liquidation">Liquidation</option>
+            <option value="flow_anomaly">Flow Anomaly</option>
+          </select>
+          <select id="sig-filter-conviction" onchange="sigRender()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            <option value="all">All Conviction</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <!-- Signal stats -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Active Signals</div><div id="sig-count-active" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">0</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">High Conviction</div><div id="sig-count-high" style="font-size:22px;font-weight:700;color:var(--yellow);margin-top:4px;">0</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Acted On</div><div id="sig-count-acted" style="font-size:22px;font-weight:700;color:var(--accent2);margin-top:4px;">0</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Win Rate</div><div id="sig-count-wr" style="font-size:22px;font-weight:700;color:var(--text);margin-top:4px;">--</div></div>
+        </div>
+        <!-- Signal cards -->
+        <div id="sig-feed-container">
+          <div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No signals yet. Signals are generated from entity scans, alerts, and manual entries.</div>
         </div>
       </div>
 
@@ -1580,14 +1619,37 @@ tbody tr:hover { background: var(--bg3); }
 
       <!-- TRADE LOG -->
       <div id="ta-panel-tradelog" style="display:none;">
-        <div class="card" style="padding:24px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">&#128221;</div>
-          <h3 style="margin:0 0 8px 0;color:var(--text1);">Trade Log</h3>
-          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Post-trade execution reviews. Each trade linked to its signal, thesis, and trade plan. Pattern mining across playbooks and regimes.</p>
-          <div style="margin-top:8px;">
-            <a href="https://jumparo1.github.io/JumpTools/trading-journal.html" target="_blank" class="btn btn-sm btn-ghost">Open Trading Journal →</a>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-sm btn-primary admin-only" onclick="tradeShowAddModal()">+ Log Trade</button>
+          <select id="trade-filter-result" onchange="tradeRender()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            <option value="all">All Results</option>
+            <option value="win">Wins</option>
+            <option value="loss">Losses</option>
+            <option value="open">Open</option>
+          </select>
+          <select id="trade-filter-playbook" onchange="tradeRender()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            <option value="all">All Playbooks</option>
+            <option value="CRT + CISD">CRT + CISD</option>
+            <option value="Spike Exhaustion">Spike Exhaustion</option>
+            <option value="MR Long">MR Long</option>
+            <option value="Momo Short">Momo Short</option>
+            <option value="Discretionary">Discretionary</option>
+          </select>
+          <a href="https://jumparo1.github.io/JumpTools/trading-journal.html" target="_blank" class="btn btn-sm btn-ghost" style="margin-left:auto;">Open Trading Journal →</a>
+        </div>
+        <!-- Trade stats -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total Trades</div><div id="trade-stat-total" style="font-size:22px;font-weight:700;color:var(--text);margin-top:4px;">0</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Win Rate</div><div id="trade-stat-wr" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">--</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total P&L</div><div id="trade-stat-pnl" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">$0</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Avg R:R</div><div id="trade-stat-rr" style="font-size:22px;font-weight:700;color:var(--accent2);margin-top:4px;">--</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Best Playbook</div><div id="trade-stat-best" style="font-size:18px;font-weight:700;color:var(--yellow);margin-top:4px;">--</div></div>
+        </div>
+        <!-- Trade table -->
+        <div class="card" style="padding:16px;">
+          <div id="trade-log-container">
+            <div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No trades logged yet. Click "+ Log Trade" to record your first trade.</div>
           </div>
-          <p style="color:var(--text3);font-size:12px;margin-top:16px;">Phase 2 — Integration with Trading Journal app</p>
         </div>
       </div>
 
@@ -2149,6 +2211,14 @@ cd ~/deploy && git add . && git commit && git push
                   <li><strong>Hyperliquid Agent v2</strong> — rewritten with Market Regime detection, Pattern Detector, Copy-Trade Signals, enhanced wallet scoring</li>
                   <li><strong>Sidebar restructured</strong> — On-Chain Intel, Research, Technical, Operations sections</li>
                   <li><strong>Logo navigation</strong> — click logo returns to Dashboard</li>
+                  <li><strong>Entity Tracker</strong> — full CRUD entity management, import from HL Saved Wallets, live position scanning, grade/type filtering</li>
+                  <li><strong>Setup Scanner</strong> — trade setup cards with entry/stop/target, auto R:R, playbook linkage, status cycling</li>
+                  <li><strong>Catalyst Tracker</strong> — event tracking with 8 types, impact/time filters, summary cards, Firebase sync</li>
+                  <li><strong>Confluence Scoring</strong> — 4 weighted sliders (On-Chain 25%, Fundamental 25%, TA 30%, Regime 20%), position sizing recommendations</li>
+                  <li><strong>Signal Feed</strong> — on-chain signal aggregation with type/conviction filters, status tracking, outcome win/loss tracking</li>
+                  <li><strong>Flow Monitor</strong> — aggregate entity flow scanning, accumulation/distribution detection, net flow by asset</li>
+                  <li><strong>Trade Log</strong> — full trade logging with P&L, R:R, playbook linkage, win rate, best playbook stats</li>
+                  <li><strong>Agent scaffolding</strong> — Sentinel, Analyst, Quant Python agents + skills files (ENTITY-INVESTIGATION, TRADE-PLAN)</li>
                 </ul>
               </div>
 
@@ -8198,8 +8268,8 @@ function catDelete(id) {
   catSave(); catRender();
 }
 
-// Load entities + setups + catalysts from Firebase on init
-setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); catLoadFromFirebase(); catUpdateBadge(); }, 2000);
+// Load entities + setups + catalysts + signals + trades from Firebase on init
+setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); catLoadFromFirebase(); catUpdateBadge(); sigLoadFromFirebase(); tradeLoadFromFirebase(); }, 2000);
 
 // ===== CONFLUENCE SCORING =====
 function confCalc() {
@@ -8240,6 +8310,429 @@ function confCalc() {
   }
 }
 
+// ===== SIGNAL FEED =====
+var sigSignals = [];
+function sigLoadFromFirebase() {
+  if (typeof firebaseReady !== 'undefined' && firebaseReady && typeof firebase !== 'undefined') {
+    firebase.database().ref('signals').once('value').then(function(snap) {
+      var val = snap.val();
+      sigSignals = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+      sigRender();
+    }).catch(function() {});
+  } else {
+    try { sigSignals = JSON.parse(localStorage.getItem('fundHQ_signals') || '[]'); } catch(e) { sigSignals = []; }
+    sigRender();
+  }
+}
+function sigSave() {
+  try { localStorage.setItem('fundHQ_signals', JSON.stringify(sigSignals)); } catch(e) {}
+  if (typeof firebaseReady !== 'undefined' && firebaseReady && typeof firebase !== 'undefined') {
+    firebase.database().ref('signals').set(sigSignals).catch(function() {});
+  }
+}
+function sigRender() {
+  if (typeof sigSignals === 'undefined') sigSignals = [];
+  var typeF = document.getElementById('sig-filter-type')?.value || 'all';
+  var convF = document.getElementById('sig-filter-conviction')?.value || 'all';
+  var filtered = sigSignals.filter(function(s) {
+    if (typeF !== 'all' && s.type !== typeF) return false;
+    if (convF !== 'all' && s.conviction !== convF) return false;
+    return true;
+  });
+  filtered.sort(function(a,b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  // Stats
+  var active = sigSignals.filter(function(s) { return s.status !== 'expired' && s.status !== 'invalidated'; });
+  var high = sigSignals.filter(function(s) { return s.conviction === 'high'; });
+  var acted = sigSignals.filter(function(s) { return s.status === 'acted'; });
+  var wins = sigSignals.filter(function(s) { return s.outcome === 'win'; });
+  var losses = sigSignals.filter(function(s) { return s.outcome === 'loss'; });
+  var el;
+  el = document.getElementById('sig-count-active'); if (el) el.textContent = active.length;
+  el = document.getElementById('sig-count-high'); if (el) el.textContent = high.length;
+  el = document.getElementById('sig-count-acted'); if (el) el.textContent = acted.length;
+  el = document.getElementById('sig-count-wr');
+  if (el) { var total = wins.length + losses.length; el.textContent = total > 0 ? Math.round((wins.length/total)*100) + '%' : '--'; }
+  var container = document.getElementById('sig-feed-container');
+  if (!container) return;
+  if (!filtered.length) { container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No signals match current filters.</div>'; return; }
+  var html = '';
+  filtered.forEach(function(s) {
+    var typeColors = { whale_move: 'var(--blue)', accumulation: 'var(--green)', distribution: 'var(--red)', new_position: 'var(--accent2)', liquidation: 'var(--orange)', flow_anomaly: 'var(--yellow)' };
+    var convColors = { high: 'var(--yellow)', medium: 'var(--text2)', low: 'var(--text3)' };
+    var statusColors = { active: 'var(--green)', acted: 'var(--accent2)', expired: 'var(--text3)', invalidated: 'var(--red)' };
+    var tc = typeColors[s.type] || 'var(--text2)';
+    var ago = sigTimeAgo(s.createdAt);
+    html += '<div class="card" style="padding:14px;margin-bottom:10px;border-left:3px solid ' + tc + ';">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">';
+    html += '<div>';
+    html += '<span style="font-weight:700;font-size:15px;color:var(--text);">' + esc(s.asset || '') + '</span>';
+    html += ' <span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.12);color:' + tc + ';">' + esc((s.type||'').replace(/_/g,' ')) + '</span>';
+    html += ' <span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.05);color:' + (convColors[s.conviction] || 'var(--text3)') + ';">' + esc(s.conviction || 'medium') + '</span>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:6px;align-items:center;">';
+    html += '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.05);color:' + (statusColors[s.status] || 'var(--text3)') + ';">' + esc(s.status || 'active') + '</span>';
+    html += '<span style="font-size:11px;color:var(--text3);">' + ago + '</span>';
+    html += '</div></div>';
+    html += '<div style="font-size:13px;color:var(--text2);margin-top:8px;line-height:1.5;">' + esc(s.description || '') + '</div>';
+    if (s.entity) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;">Entity: ' + esc(s.entity) + '</div>';
+    html += '<div style="margin-top:8px;display:flex;gap:6px;" class="admin-only">';
+    if (s.status === 'active') {
+      html += '<button class="btn btn-sm btn-ghost" onclick="sigUpdateStatus(\'' + s.id + '\',\'acted\')" style="font-size:11px;padding:3px 8px;">&#10003; Acted</button>';
+      html += '<button class="btn btn-sm btn-ghost" onclick="sigUpdateStatus(\'' + s.id + '\',\'expired\')" style="font-size:11px;padding:3px 8px;">&#128337; Expired</button>';
+      html += '<button class="btn btn-sm btn-ghost" onclick="sigUpdateStatus(\'' + s.id + '\',\'invalidated\')" style="font-size:11px;padding:3px 8px;">&#10007; Invalid</button>';
+    }
+    if (s.status === 'acted' && !s.outcome) {
+      html += '<button class="btn btn-sm btn-ghost" onclick="sigSetOutcome(\'' + s.id + '\',\'win\')" style="font-size:11px;padding:3px 8px;color:var(--green);">&#127942; Win</button>';
+      html += '<button class="btn btn-sm btn-ghost" onclick="sigSetOutcome(\'' + s.id + '\',\'loss\')" style="font-size:11px;padding:3px 8px;color:var(--red);">&#10060; Loss</button>';
+    }
+    html += '<button class="btn btn-sm btn-ghost" onclick="sigDelete(\'' + s.id + '\')" style="font-size:11px;padding:3px 8px;color:var(--red);">Delete</button>';
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+  updateAdminUI();
+}
+function sigTimeAgo(dateStr) {
+  var diff = Date.now() - new Date(dateStr).getTime();
+  var mins = Math.floor(diff/60000);
+  if (mins < 60) return mins + 'm ago';
+  var hrs = Math.floor(mins/60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs/24) + 'd ago';
+}
+function sigShowAddModal() {
+  var html = '<h2 style="margin:0 0 16px 0;">New Signal</h2>';
+  html += '<div class="form-group"><label>Asset</label><input type="text" id="sig-add-asset" placeholder="BTC, ETH, SOL..."></div>';
+  html += '<div class="form-group"><label>Signal Type</label><select id="sig-add-type"><option value="whale_move">Whale Move</option><option value="accumulation">Accumulation</option><option value="distribution">Distribution</option><option value="new_position">New Position</option><option value="liquidation">Liquidation</option><option value="flow_anomaly">Flow Anomaly</option></select></div>';
+  html += '<div class="form-group"><label>Conviction</label><select id="sig-add-conviction"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div>';
+  html += '<div class="form-group"><label>Description</label><textarea id="sig-add-desc" rows="3" placeholder="What was observed? Size, direction, context..."></textarea></div>';
+  html += '<div class="form-group"><label>Entity (optional)</label><input type="text" id="sig-add-entity" placeholder="Entity name if tracked..."></div>';
+  html += '<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-primary" onclick="sigAdd()">Add Signal</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button></div>';
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+function sigAdd() {
+  var asset = (document.getElementById('sig-add-asset')?.value || '').trim().toUpperCase();
+  var desc = (document.getElementById('sig-add-desc')?.value || '').trim();
+  if (!asset || !desc) { alert('Asset and description required'); return; }
+  sigSignals.push({
+    id: 'sig_' + Date.now(), asset: asset,
+    type: document.getElementById('sig-add-type')?.value || 'whale_move',
+    conviction: document.getElementById('sig-add-conviction')?.value || 'medium',
+    description: desc, entity: (document.getElementById('sig-add-entity')?.value || '').trim(),
+    status: 'active', outcome: null, createdAt: new Date().toISOString()
+  });
+  sigSave(); sigRender(); closeModal();
+}
+function sigUpdateStatus(id, status) {
+  sigSignals.forEach(function(s) { if (s.id === id) s.status = status; });
+  sigSave(); sigRender();
+}
+function sigSetOutcome(id, outcome) {
+  sigSignals.forEach(function(s) { if (s.id === id) s.outcome = outcome; });
+  sigSave(); sigRender();
+}
+function sigDelete(id) {
+  if (!confirm('Delete this signal?')) return;
+  sigSignals = sigSignals.filter(function(s) { return s.id !== id; });
+  sigSave(); sigRender();
+}
+// Auto-generate signal from entity scan
+function sigAutoFromEntity(entityName, asset, type, description) {
+  sigSignals.push({
+    id: 'sig_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    asset: asset, type: type, conviction: 'medium',
+    description: description, entity: entityName,
+    status: 'active', outcome: null, createdAt: new Date().toISOString()
+  });
+  sigSave();
+}
+
+// ===== FLOW MONITOR =====
+var flowData = [];
+async function flowScanAll() {
+  if (typeof etEntities === 'undefined' || !etEntities.length) {
+    document.getElementById('flow-table-container').innerHTML = '<div class="card" style="padding:16px;text-align:center;color:var(--yellow);">No entities tracked. Add entities in Entity Tracker first.</div>';
+    return;
+  }
+  document.getElementById('flow-table-container').innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);">Scanning ' + etEntities.length + ' entities...</div>';
+  flowData = [];
+  for (var i = 0; i < etEntities.length; i++) {
+    var ent = etEntities[i];
+    if (!ent.address || !ent.address.startsWith('0x')) continue;
+    try {
+      var state = await hlPost({ type:'clearinghouseState', user: ent.address });
+      var positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
+      var acctVal = parseFloat((state.marginSummary || {}).accountValue || 0);
+      var totalNotional = 0;
+      positions.forEach(function(p) {
+        var notional = Math.abs(parseFloat(p.szi)) * parseFloat(p.entryPx || 0);
+        totalNotional += notional;
+        flowData.push({
+          entity: ent.name || ent.label || hlAddr(ent.address),
+          address: ent.address,
+          asset: p.coin,
+          side: parseFloat(p.szi) > 0 ? 'LONG' : 'SHORT',
+          size: parseFloat(p.szi),
+          notional: notional,
+          pnl: parseFloat(p.unrealizedPnl || 0),
+          entryPx: parseFloat(p.entryPx || 0),
+          leverage: parseFloat(p.leverage?.value || 0),
+          grade: ent.grade || 'C'
+        });
+      });
+      // Generate signals for large positions
+      positions.forEach(function(p) {
+        var notional = Math.abs(parseFloat(p.szi)) * parseFloat(p.entryPx || 0);
+        if (notional > 100000) {
+          var side = parseFloat(p.szi) > 0 ? 'LONG' : 'SHORT';
+          sigAutoFromEntity(ent.name || hlAddr(ent.address), p.coin, 'whale_move',
+            (ent.name || hlAddr(ent.address)) + ' has $' + hlFmt(notional) + ' ' + side + ' ' + p.coin + ' (entry: $' + parseFloat(p.entryPx).toFixed(2) + ')');
+        }
+      });
+    } catch(e) { /* skip failed entity */ }
+  }
+  flowRender();
+  sigRender();
+}
+function flowRender() {
+  if (typeof flowData === 'undefined') flowData = [];
+  if (!flowData.length) {
+    document.getElementById('flow-table-container').innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No flow data. Click "Scan All Entities" to detect flows.</div>';
+    return;
+  }
+  // Aggregate stats
+  var netFlow = 0, accCount = 0, distCount = 0;
+  var assetFlows = {};
+  var entitySides = {};
+  flowData.forEach(function(f) {
+    var val = f.side === 'LONG' ? f.notional : -f.notional;
+    netFlow += val;
+    if (!assetFlows[f.asset]) assetFlows[f.asset] = 0;
+    assetFlows[f.asset] += val;
+    if (!entitySides[f.entity]) entitySides[f.entity] = { long: 0, short: 0 };
+    if (f.side === 'LONG') entitySides[f.entity].long += f.notional;
+    else entitySides[f.entity].short += f.notional;
+  });
+  Object.keys(entitySides).forEach(function(e) {
+    if (entitySides[e].long > entitySides[e].short) accCount++;
+    else distCount++;
+  });
+  var topAsset = '--';
+  var topVal = 0;
+  Object.keys(assetFlows).forEach(function(a) {
+    if (Math.abs(assetFlows[a]) > topVal) { topVal = Math.abs(assetFlows[a]); topAsset = a; }
+  });
+  var el;
+  el = document.getElementById('flow-net'); if (el) { el.textContent = '$' + hlFmt(Math.abs(netFlow)); el.style.color = netFlow >= 0 ? 'var(--green)' : 'var(--red)'; }
+  el = document.getElementById('flow-acc'); if (el) el.textContent = accCount;
+  el = document.getElementById('flow-dist'); if (el) el.textContent = distCount;
+  el = document.getElementById('flow-top'); if (el) el.textContent = topAsset;
+  // Build table sorted by notional
+  var sorted = flowData.slice().sort(function(a,b) { return b.notional - a.notional; });
+  var html = '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+  html += '<tr style="border-bottom:1px solid var(--border);">';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Entity</th>';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Asset</th>';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Side</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Size</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Notional</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">PnL</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Leverage</th>';
+  html += '</tr>';
+  sorted.forEach(function(f) {
+    html += '<tr style="border-bottom:1px solid var(--border);">';
+    html += '<td style="padding:8px;color:var(--text);">' + esc(f.entity) + ' <span style="font-size:10px;color:var(--text3);">(' + f.grade + ')</span></td>';
+    html += '<td style="padding:8px;color:var(--accent2);font-weight:600;">' + esc(f.asset) + '</td>';
+    html += '<td style="padding:8px;"><span style="color:' + (f.side==='LONG'?'var(--green)':'var(--red)') + ';font-weight:600;">' + f.side + '</span></td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">' + f.size.toFixed(4) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">$' + hlFmt(f.notional) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:' + (f.pnl>=0?'var(--green)':'var(--red)') + ';">$' + hlFmt(f.pnl) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text3);">' + f.leverage.toFixed(1) + 'x</td>';
+    html += '</tr>';
+  });
+  html += '</table></div>';
+  document.getElementById('flow-table-container').innerHTML = html;
+}
+
+// ===== TRADE LOG =====
+var tradeLog = [];
+function tradeLoadFromFirebase() {
+  if (typeof firebaseReady !== 'undefined' && firebaseReady && typeof firebase !== 'undefined') {
+    firebase.database().ref('tradeLog').once('value').then(function(snap) {
+      var val = snap.val();
+      tradeLog = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+      tradeRender();
+    }).catch(function() {});
+  } else {
+    try { tradeLog = JSON.parse(localStorage.getItem('fundHQ_tradeLog') || '[]'); } catch(e) { tradeLog = []; }
+    tradeRender();
+  }
+}
+function tradeSave() {
+  try { localStorage.setItem('fundHQ_tradeLog', JSON.stringify(tradeLog)); } catch(e) {}
+  if (typeof firebaseReady !== 'undefined' && firebaseReady && typeof firebase !== 'undefined') {
+    firebase.database().ref('tradeLog').set(tradeLog).catch(function() {});
+  }
+}
+function tradeRender() {
+  if (typeof tradeLog === 'undefined') tradeLog = [];
+  var resultF = document.getElementById('trade-filter-result')?.value || 'all';
+  var pbF = document.getElementById('trade-filter-playbook')?.value || 'all';
+  var filtered = tradeLog.filter(function(t) {
+    if (resultF === 'win' && t.result !== 'win') return false;
+    if (resultF === 'loss' && t.result !== 'loss') return false;
+    if (resultF === 'open' && t.result) return false;
+    if (pbF !== 'all' && t.playbook !== pbF) return false;
+    return true;
+  });
+  filtered.sort(function(a,b) { return new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt); });
+  // Stats
+  var wins = tradeLog.filter(function(t) { return t.result === 'win'; });
+  var losses = tradeLog.filter(function(t) { return t.result === 'loss'; });
+  var totalPnl = 0; tradeLog.forEach(function(t) { totalPnl += parseFloat(t.pnl || 0); });
+  var avgRR = 0; var rrCount = 0;
+  tradeLog.forEach(function(t) { if (t.rr) { avgRR += parseFloat(t.rr); rrCount++; } });
+  // Best playbook
+  var pbStats = {};
+  tradeLog.forEach(function(t) {
+    if (!t.playbook) return;
+    if (!pbStats[t.playbook]) pbStats[t.playbook] = { wins: 0, total: 0 };
+    if (t.result === 'win') pbStats[t.playbook].wins++;
+    if (t.result) pbStats[t.playbook].total++;
+  });
+  var bestPB = '--'; var bestWR = 0;
+  Object.keys(pbStats).forEach(function(pb) {
+    if (pbStats[pb].total >= 2) {
+      var wr = pbStats[pb].wins / pbStats[pb].total;
+      if (wr > bestWR) { bestWR = wr; bestPB = pb; }
+    }
+  });
+  var el;
+  el = document.getElementById('trade-stat-total'); if (el) el.textContent = tradeLog.length;
+  el = document.getElementById('trade-stat-wr');
+  if (el) {
+    var total = wins.length + losses.length;
+    el.textContent = total > 0 ? Math.round((wins.length/total)*100) + '%' : '--';
+    el.style.color = total > 0 && (wins.length/total) >= 0.5 ? 'var(--green)' : 'var(--red)';
+  }
+  el = document.getElementById('trade-stat-pnl');
+  if (el) { el.textContent = '$' + totalPnl.toFixed(2); el.style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)'; }
+  el = document.getElementById('trade-stat-rr');
+  if (el) el.textContent = rrCount > 0 ? (avgRR/rrCount).toFixed(1) + 'R' : '--';
+  el = document.getElementById('trade-stat-best');
+  if (el) el.textContent = bestPB;
+  // Render table
+  var container = document.getElementById('trade-log-container');
+  if (!container) return;
+  if (!filtered.length) { container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No trades match current filters.</div>'; return; }
+  var html = '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+  html += '<tr style="border-bottom:1px solid var(--border);">';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Date</th>';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Asset</th>';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Side</th>';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Playbook</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Entry</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Exit</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">P&L</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">R:R</th>';
+  html += '<th style="padding:8px;text-align:center;color:var(--text3);">Result</th>';
+  html += '<th style="padding:8px;text-align:center;color:var(--text3);">Actions</th>';
+  html += '</tr>';
+  filtered.forEach(function(t) {
+    var resultColor = t.result === 'win' ? 'var(--green)' : t.result === 'loss' ? 'var(--red)' : 'var(--yellow)';
+    var resultLabel = t.result === 'win' ? '&#10003; Win' : t.result === 'loss' ? '&#10007; Loss' : '&#9679; Open';
+    html += '<tr style="border-bottom:1px solid var(--border);">';
+    html += '<td style="padding:8px;color:var(--text3);">' + esc(t.date || '') + '</td>';
+    html += '<td style="padding:8px;color:var(--accent2);font-weight:600;">' + esc(t.asset || '') + '</td>';
+    html += '<td style="padding:8px;"><span style="color:' + (t.side==='LONG'?'var(--green)':'var(--red)') + ';font-weight:600;">' + esc(t.side || '') + '</span></td>';
+    html += '<td style="padding:8px;color:var(--text2);">' + esc(t.playbook || '--') + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">$' + parseFloat(t.entry || 0).toFixed(2) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">' + (t.exit ? '$' + parseFloat(t.exit).toFixed(2) : '--') + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:' + (parseFloat(t.pnl||0)>=0?'var(--green)':'var(--red)') + ';font-weight:600;">' + (t.pnl ? '$' + parseFloat(t.pnl).toFixed(2) : '--') + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text2);">' + (t.rr ? t.rr + 'R' : '--') + '</td>';
+    html += '<td style="padding:8px;text-align:center;"><span style="color:' + resultColor + ';font-weight:600;font-size:11px;">' + resultLabel + '</span></td>';
+    html += '<td style="padding:8px;text-align:center;" class="admin-only">';
+    if (!t.result) {
+      html += '<button class="btn btn-sm btn-ghost" onclick="tradeClose(\'' + t.id + '\')" style="font-size:10px;padding:2px 6px;">Close</button> ';
+    }
+    html += '<button class="btn btn-sm btn-ghost" onclick="tradeDelete(\'' + t.id + '\')" style="font-size:10px;padding:2px 6px;color:var(--red);">&#128465;</button>';
+    html += '</td></tr>';
+  });
+  html += '</table></div>';
+  container.innerHTML = html;
+  updateAdminUI();
+}
+function tradeShowAddModal() {
+  var html = '<h2 style="margin:0 0 16px 0;">Log Trade</h2>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Asset</label><input type="text" id="trade-add-asset" placeholder="BTC, ETH, SOL..."></div>';
+  html += '<div class="form-group"><label>Date</label><input type="date" id="trade-add-date" value="' + new Date().toISOString().split('T')[0] + '"></div>';
+  html += '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Side</label><select id="trade-add-side"><option value="LONG">Long</option><option value="SHORT">Short</option></select></div>';
+  html += '<div class="form-group"><label>Playbook</label><select id="trade-add-pb"><option value="CRT + CISD">CRT + CISD</option><option value="Spike Exhaustion">Spike Exhaustion</option><option value="MR Long">MR Long</option><option value="Momo Short">Momo Short</option><option value="Discretionary">Discretionary</option></select></div>';
+  html += '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Entry ($)</label><input type="number" id="trade-add-entry" step="any" placeholder="0.00"></div>';
+  html += '<div class="form-group"><label>Stop ($)</label><input type="number" id="trade-add-stop" step="any" placeholder="0.00"></div>';
+  html += '<div class="form-group"><label>Target ($)</label><input type="number" id="trade-add-target" step="any" placeholder="0.00"></div>';
+  html += '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Size ($)</label><input type="number" id="trade-add-size" step="any" placeholder="Position size"></div>';
+  html += '<div class="form-group"><label>Confluence Score</label><input type="number" id="trade-add-conf" step="0.1" min="1" max="5" placeholder="1.0 - 5.0"></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label>Thesis / Notes</label><textarea id="trade-add-notes" rows="2" placeholder="Why this trade? Signal source, conviction..."></textarea></div>';
+  html += '<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-primary" onclick="tradeAdd()">Log Trade</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button></div>';
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+function tradeAdd() {
+  var asset = (document.getElementById('trade-add-asset')?.value || '').trim().toUpperCase();
+  var entry = document.getElementById('trade-add-entry')?.value;
+  if (!asset || !entry) { alert('Asset and entry price required'); return; }
+  var stop = parseFloat(document.getElementById('trade-add-stop')?.value || 0);
+  var target = parseFloat(document.getElementById('trade-add-target')?.value || 0);
+  var entryP = parseFloat(entry);
+  var rr = (stop && target && entryP) ? Math.abs((target - entryP) / (entryP - stop)).toFixed(1) : null;
+  tradeLog.push({
+    id: 'trade_' + Date.now(), asset: asset,
+    date: document.getElementById('trade-add-date')?.value || new Date().toISOString().split('T')[0],
+    side: document.getElementById('trade-add-side')?.value || 'LONG',
+    playbook: document.getElementById('trade-add-pb')?.value || 'Discretionary',
+    entry: entryP, stop: stop, target: target, exit: null,
+    size: parseFloat(document.getElementById('trade-add-size')?.value || 0),
+    confluence: parseFloat(document.getElementById('trade-add-conf')?.value || 0),
+    notes: (document.getElementById('trade-add-notes')?.value || '').trim(),
+    pnl: null, rr: rr, result: null,
+    createdAt: new Date().toISOString()
+  });
+  tradeSave(); tradeRender(); closeModal();
+}
+function tradeClose(id) {
+  var exitPrice = prompt('Exit price:');
+  if (!exitPrice) return;
+  var exit = parseFloat(exitPrice);
+  tradeLog.forEach(function(t) {
+    if (t.id === id) {
+      t.exit = exit;
+      var pnl = t.side === 'LONG' ? (exit - t.entry) : (t.entry - exit);
+      if (t.size) pnl = pnl * (t.size / t.entry);
+      t.pnl = parseFloat(pnl.toFixed(2));
+      t.result = pnl >= 0 ? 'win' : 'loss';
+      if (t.stop && t.entry) {
+        var risk = Math.abs(t.entry - t.stop);
+        t.rr = risk > 0 ? (Math.abs(exit - t.entry) / risk).toFixed(1) : null;
+      }
+    }
+  });
+  tradeSave(); tradeRender();
+}
+function tradeDelete(id) {
+  if (!confirm('Delete this trade?')) return;
+  tradeLog = tradeLog.filter(function(t) { return t.id !== id; });
+  tradeSave(); tradeRender();
+}
+
 // ===== TECHNICAL ANALYSIS TAB NAVIGATION =====
 function taShowTab(tab) {
   ['regime','setups','playbooks','confluence','tradelog'].forEach(function(t) {
@@ -8249,6 +8742,7 @@ function taShowTab(tab) {
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
   if (tab === 'setups') setupRender();
+  if (tab === 'tradelog') tradeRender();
 }
 
 // ===== ON-CHAIN INTEL DIVISION NAVIGATION =====
@@ -8265,9 +8759,20 @@ function ocShowDivision(div) {
   if (div === 'entities') {
     etRender();
   }
+  if (div === 'signals') {
+    sigRender();
+  }
+  if (div === 'flows') {
+    flowRender();
+  }
   if (div === 'overview') {
     var el = document.getElementById('oc-entity-count');
     if (el) el.textContent = (typeof etEntities !== 'undefined' && etEntities ? etEntities.length : 0);
+    var sigEl = document.getElementById('oc-signal-count');
+    if (sigEl) {
+      var activeCount = (typeof sigSignals !== 'undefined' && sigSignals) ? sigSignals.filter(function(s) { return s.status === 'active'; }).length : 0;
+      sigEl.textContent = activeCount;
+    }
   }
 }
 
