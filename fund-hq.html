@@ -7947,14 +7947,14 @@ function hlRenderPerps() {
   const totalVol = all.reduce((s,c) => s + c.vol24h, 0);
   const avgFunding = all.reduce((s,c) => s + c.funding, 0) / all.length;
   const avgFundingAnn = avgFunding * 24 * 365 * 100;
-  const highFunding = all.filter(c => c.funding > 0.0001).length;
-  const negFunding = all.filter(c => c.funding < -0.00005).length;
+  const highFunding = all.filter(c => c.funding > 0.000001).length;
+  const negFunding = all.filter(c => c.funding < -0.000001).length;
   const neutralFunding = all.length - highFunding - negFunding;
   const topByOI = all.slice().sort((a,b) => b.oiUsd - a.oiUsd).slice(0,3).map(c => c.coin).join(', ');
 
   // Funding sentiment
-  const fundingSentiment = avgFunding > 0.0001 ? 'Longs Paying' : avgFunding < -0.00005 ? 'Shorts Paying' : 'Neutral';
-  const fundingColor = avgFunding > 0.0001 ? 'var(--green,#4ade80)' : avgFunding < -0.00005 ? 'var(--red,#f87171)' : 'var(--text3)';
+  const fundingSentiment = avgFunding > 0.000001 ? 'Longs Paying' : avgFunding < -0.000001 ? 'Shorts Paying' : 'Neutral';
+  const fundingColor = avgFunding > 0.000001 ? 'var(--green,#4ade80)' : avgFunding < -0.000001 ? 'var(--red,#f87171)' : 'var(--text3)';
 
   let html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">';
 
