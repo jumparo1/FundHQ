@@ -1226,17 +1226,64 @@ tbody tr:hover { background: var(--bg3); }
           <span style="font-size:11px;color:var(--text3);">/</span>
           <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128373; Entity Tracker</span>
         </div>
-        <div class="card" style="padding:24px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">&#128373;</div>
-          <h3 style="margin:0 0 8px 0;color:var(--text1);">Entity Tracker</h3>
-          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Cross-venue wallet intelligence — track entities across Hyperliquid, Arkham, and Dexscreener. Monitor funds, market makers, whales, and insiders.</p>
-          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-            <span class="badge" style="background:var(--accent-bg);color:var(--accent2);padding:4px 10px;font-size:11px;">Hyperliquid</span>
-            <span class="badge" style="background:var(--bg3);color:var(--text3);padding:4px 10px;font-size:11px;">Arkham (coming)</span>
-            <span class="badge" style="background:var(--bg3);color:var(--text3);padding:4px 10px;font-size:11px;">Dexscreener (coming)</span>
+
+        <!-- Controls -->
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <div class="market-search" style="flex:1;min-width:240px;max-width:400px;position:relative;">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="et-search" placeholder="Search entities by name, address, type..." autocomplete="off" oninput="etRender()">
           </div>
-          <p style="color:var(--text3);font-size:12px;margin-top:16px;">Phase 2 — Coming next sprint</p>
+          <select id="et-filter-type" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="etRender()">
+            <option value="all">All Types</option>
+            <option value="whale">Whale</option>
+            <option value="fund">Fund / VC</option>
+            <option value="mm">Market Maker</option>
+            <option value="protocol">Protocol</option>
+            <option value="insider">Insider</option>
+            <option value="copyable">Copyable Trader</option>
+          </select>
+          <select id="et-filter-grade" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="etRender()">
+            <option value="all">All Grades</option>
+            <option value="A+">A+ only</option>
+            <option value="A">A+, A</option>
+            <option value="B+">B+ and above</option>
+          </select>
+          <button class="btn btn-primary admin-only" onclick="etShowAddModal()">+ Add Entity</button>
+          <button class="btn btn-sm btn-ghost" onclick="etScanAll()" title="Refresh all entity positions from Hyperliquid">&#128260; Scan All</button>
         </div>
+
+        <!-- Summary Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total Entities</div>
+            <div style="font-size:20px;font-weight:700;" id="et-total">0</div>
+          </div>
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Active Positions</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green);" id="et-active">0</div>
+          </div>
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total AUM Tracked</div>
+            <div style="font-size:20px;font-weight:700;" id="et-aum">$0</div>
+          </div>
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Venues</div>
+            <div style="font-size:14px;font-weight:600;margin-top:2px;"><span style="color:var(--accent2);">HL</span> <span style="color:var(--text3);font-size:11px;">Arkham soon</span></div>
+          </div>
+        </div>
+
+        <!-- Entity Table -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div id="et-table" style="overflow-x:auto;"></div>
+          <div id="et-empty" style="padding:40px;text-align:center;display:none;">
+            <div style="font-size:32px;margin-bottom:8px;">&#128373;</div>
+            <p style="color:var(--text3);font-size:13px;">No entities tracked yet. Add entities manually or import from Hyperliquid Saved Wallets.</p>
+            <button class="btn btn-sm btn-ghost" onclick="etImportFromHL()" style="margin-top:8px;">Import from HL Saved Wallets</button>
+          </div>
+        </div>
+
+        <!-- Entity Detail Panel (hidden by default) -->
+        <div id="et-detail" style="display:none;margin-top:20px;"></div>
       </div>
 
       <!-- FLOW MONITOR -->
@@ -1336,11 +1383,20 @@ tbody tr:hover { background: var(--bg3); }
 
       <!-- SETUP SCANNER -->
       <div id="ta-panel-setups" style="display:none;">
-        <div class="card" style="padding:24px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">&#127919;</div>
-          <h3 style="margin:0 0 8px 0;color:var(--text1);">Setup Scanner</h3>
-          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Active trade setups being monitored. Each setup links to a playbook, has entry/stop/target zones, and a confluence score.</p>
-          <p style="color:var(--text3);font-size:12px;">Phase 2 — Coming next sprint</p>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="btn btn-primary admin-only" onclick="setupShowAddModal()">+ New Setup</button>
+          <select id="setup-filter-status" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="setupRender()">
+            <option value="all">All Setups</option>
+            <option value="watching" selected>Watching</option>
+            <option value="triggered">Triggered</option>
+            <option value="expired">Expired</option>
+          </select>
+          <span id="setup-count" style="font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div id="setup-list"></div>
+        <div id="setup-empty" style="display:none;padding:40px;text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">&#127919;</div>
+          <p style="color:var(--text3);font-size:13px;">No active setups. Click <strong>+ New Setup</strong> to add a trade setup to watch.</p>
         </div>
       </div>
 
@@ -7418,6 +7474,450 @@ function docsShowTab(tab) {
   docsNav(map[tab] || tab);
 }
 
+// ===== ENTITY TRACKER =====
+var etEntities = [];
+try { etEntities = JSON.parse(localStorage.getItem('et_entities') || '[]'); } catch(e) { etEntities = []; }
+
+function etSave() {
+  localStorage.setItem('et_entities', JSON.stringify(etEntities));
+  if (hlIsFirebase()) {
+    var fbData = {};
+    etEntities.forEach(function(e) { fbData[e.id] = e; });
+    dbRef.child('entities').set(fbData);
+  }
+}
+
+function etLoadFromFirebase() {
+  if (hlIsFirebase()) {
+    dbRef.child('entities').once('value', function(snap) {
+      var data = snap.val();
+      if (data) {
+        var fbList = Object.values(data);
+        var idSet = new Set(etEntities.map(function(e) { return e.id; }));
+        fbList.forEach(function(e) {
+          if (e.id && !idSet.has(e.id)) { etEntities.push(e); idSet.add(e.id); }
+          else if (e.id && idSet.has(e.id)) {
+            var idx = etEntities.findIndex(function(x) { return x.id === e.id; });
+            if (idx >= 0) etEntities[idx] = e;
+          }
+        });
+        localStorage.setItem('et_entities', JSON.stringify(etEntities));
+      }
+    });
+  }
+}
+
+function etImportFromHL() {
+  hlEnsureVars();
+  var imported = 0;
+  var addrSet = new Set(etEntities.map(function(e) { return (e.address || '').toLowerCase(); }));
+  hlSavedWallets.forEach(function(w) {
+    if (!addrSet.has(w.address.toLowerCase())) {
+      etEntities.push({
+        id: 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        name: w.label || hlAddr(w.address),
+        address: w.address,
+        type: 'whale',
+        grade: 'B+',
+        venues: ['hyperliquid'],
+        notes: 'Imported from HL Saved Wallets',
+        addedAt: new Date().toISOString(),
+        lastScan: null,
+        accountValue: w.lastValue || 0,
+        positions: [],
+        positionCount: 0,
+        totalPnl: 0
+      });
+      addrSet.add(w.address.toLowerCase());
+      imported++;
+    }
+  });
+  if (imported > 0) { etSave(); etRender(); }
+  alert(imported > 0 ? 'Imported ' + imported + ' entities from HL Saved Wallets' : 'No new wallets to import (all already tracked)');
+}
+
+function etRender() {
+  var search = (document.getElementById('et-search')?.value || '').toLowerCase();
+  var filterType = document.getElementById('et-filter-type')?.value || 'all';
+  var filterGrade = document.getElementById('et-filter-grade')?.value || 'all';
+  var gradeRank = {'A+':1,'A':2,'B+':3,'B':4,'C':5};
+
+  var filtered = etEntities.filter(function(e) {
+    if (search && !(e.name||'').toLowerCase().includes(search) && !(e.address||'').toLowerCase().includes(search) && !(e.type||'').toLowerCase().includes(search) && !(e.notes||'').toLowerCase().includes(search)) return false;
+    if (filterType !== 'all' && e.type !== filterType) return false;
+    if (filterGrade !== 'all') {
+      var eRank = gradeRank[e.grade] || 99;
+      var fRank = gradeRank[filterGrade] || 99;
+      if (eRank > fRank) return false;
+    }
+    return true;
+  });
+
+  // Update summary cards
+  var totalEl = document.getElementById('et-total');
+  var activeEl = document.getElementById('et-active');
+  var aumEl = document.getElementById('et-aum');
+  if (totalEl) totalEl.textContent = etEntities.length;
+  var activeCount = etEntities.filter(function(e) { return (e.positionCount || 0) > 0; }).length;
+  if (activeEl) activeEl.textContent = activeCount;
+  var totalAum = etEntities.reduce(function(sum, e) { return sum + (e.accountValue || 0); }, 0);
+  if (aumEl) aumEl.textContent = '$' + hlFmt(totalAum);
+
+  var tableEl = document.getElementById('et-table');
+  var emptyEl = document.getElementById('et-empty');
+  if (!filtered.length) {
+    if (tableEl) tableEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = '';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  var typeColors = {whale:'var(--accent2)',fund:'var(--purple)',mm:'var(--yellow)',protocol:'var(--green)',insider:'var(--red)',copyable:'var(--blue, #60a5fa)'};
+  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable'};
+
+  var html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+  html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">';
+  html += '<th style="padding:10px 14px;">Entity</th><th>Type</th><th>Grade</th><th>Account Value</th><th>Positions</th><th>Venues</th><th>Last Scan</th><th style="padding:10px 14px;">Actions</th></tr>';
+
+  filtered.forEach(function(e) {
+    var typeColor = typeColors[e.type] || 'var(--text3)';
+    var gradeColor = (e.grade === 'A+' || e.grade === 'A') ? 'var(--green)' : (e.grade === 'B+') ? 'var(--yellow)' : 'var(--text3)';
+    var lastScan = e.lastScan ? new Date(e.lastScan).toLocaleDateString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Never';
+
+    html += '<tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="etShowDetail(\''+e.id+'\')">';
+    html += '<td style="padding:10px 14px;"><div style="font-weight:600;color:var(--text1);">'+esc(e.name)+'</div><div style="font-size:11px;color:var(--text3);font-family:monospace;">'+hlAddr(e.address)+'</div></td>';
+    html += '<td><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:color-mix(in srgb, '+typeColor+' 15%, transparent);color:'+typeColor+';">'+(typeLabels[e.type]||e.type)+'</span></td>';
+    html += '<td style="font-weight:700;color:'+gradeColor+';">'+(e.grade||'--')+'</td>';
+    html += '<td style="font-weight:600;">$'+hlFmt(e.accountValue||0)+'</td>';
+    html += '<td>'+(e.positionCount||0)+' open</td>';
+    html += '<td>'+(e.venues||[]).map(function(v){return '<span style="font-size:10px;padding:1px 5px;background:var(--bg3);border-radius:3px;margin-right:3px;">'+v.toUpperCase().slice(0,2)+'</span>';}).join('')+'</td>';
+    html += '<td style="font-size:11px;color:var(--text3);">'+lastScan+'</td>';
+    html += '<td style="padding:10px 14px;"><button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();etScanOne(\''+e.id+'\')" title="Scan positions">&#128260;</button>';
+    html += ' <button class="btn btn-sm btn-ghost admin-only" onclick="event.stopPropagation();etEdit(\''+e.id+'\')" title="Edit">&#9998;</button>';
+    html += ' <button class="btn btn-sm btn-ghost admin-only" onclick="event.stopPropagation();etDelete(\''+e.id+'\')" title="Remove" style="color:var(--red);">&#10005;</button></td>';
+    html += '</tr>';
+  });
+  html += '</table>';
+  if (tableEl) tableEl.innerHTML = html;
+}
+
+async function etScanOne(id) {
+  var entity = etEntities.find(function(e) { return e.id === id; });
+  if (!entity || !entity.address) return;
+  try {
+    var state = await hlPost({ type:'clearinghouseState', user: entity.address });
+    var mg = state.marginSummary || {};
+    entity.accountValue = parseFloat(mg.accountValue || 0);
+    entity.positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
+    entity.positionCount = entity.positions.length;
+    entity.totalPnl = parseFloat(mg.totalRawUsd || 0);
+    entity.lastScan = new Date().toISOString();
+    etSave();
+    etRender();
+  } catch(e) { alert('Scan failed: ' + e.message); }
+}
+
+async function etScanAll() {
+  var count = etEntities.length;
+  if (!count) { alert('No entities to scan'); return; }
+  var scanned = 0;
+  for (var i = 0; i < etEntities.length; i++) {
+    var entity = etEntities[i];
+    if (!entity.address) continue;
+    try {
+      var state = await hlPost({ type:'clearinghouseState', user: entity.address });
+      var mg = state.marginSummary || {};
+      entity.accountValue = parseFloat(mg.accountValue || 0);
+      entity.positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
+      entity.positionCount = entity.positions.length;
+      entity.totalPnl = parseFloat(mg.totalRawUsd || 0);
+      entity.lastScan = new Date().toISOString();
+      scanned++;
+    } catch(e) { /* skip failed */ }
+    // Rate limit: 200ms between requests
+    if (i < etEntities.length - 1) await new Promise(function(r) { setTimeout(r, 200); });
+  }
+  etSave();
+  etRender();
+  alert('Scanned ' + scanned + '/' + count + ' entities');
+}
+
+function etShowDetail(id) {
+  var entity = etEntities.find(function(e) { return e.id === id; });
+  if (!entity) return;
+  var detailEl = document.getElementById('et-detail');
+  if (!detailEl) return;
+  detailEl.style.display = '';
+
+  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable'};
+  var html = '<div class="card" style="padding:20px;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+  html += '<div><h3 style="margin:0;font-size:16px;">'+esc(entity.name)+'</h3>';
+  html += '<span style="font-family:monospace;font-size:12px;color:var(--text3);">'+entity.address+'</span>';
+  html += ' <a href="https://app.hyperliquid.xyz/explorer/address/'+entity.address+'" target="_blank" style="font-size:11px;color:var(--accent2);">Explorer &#8599;</a></div>';
+  html += '<button class="btn btn-sm btn-ghost" onclick="document.getElementById(\'et-detail\').style.display=\'none\'">&#10005; Close</button></div>';
+
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;">';
+  html += hlStatCard('Account Value', '$'+hlFmt(entity.accountValue||0), 'var(--accent2)');
+  html += hlStatCard('Type', typeLabels[entity.type]||entity.type, 'var(--text1)');
+  html += hlStatCard('Grade', entity.grade||'--', (entity.grade==='A+'||entity.grade==='A')?'var(--green)':'var(--yellow)');
+  html += hlStatCard('Open Positions', entity.positionCount||0, 'var(--text1)');
+  html += hlStatCard('Total PnL', '$'+hlFmt(entity.totalPnl||0), hlPnlColor(entity.totalPnl||0));
+  html += '</div>';
+
+  if (entity.notes) {
+    html += '<div style="padding:10px 14px;background:var(--bg2);border-radius:6px;font-size:12px;color:var(--text3);margin-bottom:16px;">'+esc(entity.notes)+'</div>';
+  }
+
+  // Positions table
+  if (entity.positions && entity.positions.length) {
+    html += '<h4 style="font-size:13px;color:var(--text2);margin:0 0 10px 0;">Open Positions</h4>';
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="color:var(--text3);border-bottom:1px solid var(--border);"><th style="padding:6px 8px;text-align:left;">Coin</th><th>Side</th><th>Size ($)</th><th>Entry</th><th>uPnL</th><th>Leverage</th></tr>';
+    entity.positions.forEach(function(p) {
+      var sz = parseFloat(p.szi);
+      var side = sz > 0 ? 'LONG' : 'SHORT';
+      var sideColor = sz > 0 ? 'var(--green)' : 'var(--red)';
+      var entry = parseFloat(p.entryPx || 0);
+      var notional = Math.abs(sz) * entry;
+      var upnl = parseFloat(p.unrealizedPnl || 0);
+      var lev = p.leverage ? (p.leverage.value || '-') : '-';
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:6px 8px;font-weight:600;">'+p.coin+'</td>';
+      html += '<td style="color:'+sideColor+';font-weight:600;">'+side+'</td>';
+      html += '<td>$'+hlFmt(notional)+'</td>';
+      html += '<td>$'+entry.toFixed(2)+'</td>';
+      html += '<td style="color:'+hlPnlColor(upnl)+';">$'+hlFmt(upnl)+'</td>';
+      html += '<td>'+lev+'x</td></tr>';
+    });
+    html += '</table></div>';
+  } else {
+    html += '<div style="font-size:12px;color:var(--text3);padding:12px 0;">No open positions. Click &#128260; to scan.</div>';
+  }
+  html += '</div>';
+  detailEl.innerHTML = html;
+  detailEl.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function etShowAddModal() {
+  var html = '<h2>Add Entity</h2>';
+  html += '<div class="form-group"><label>Name / Label</label><input type="text" id="et-add-name" placeholder="e.g. Wintermute, whale_42, JamesFund"></div>';
+  html += '<div class="form-group"><label>Wallet Address (0x...)</label><input type="text" id="et-add-address" placeholder="0x..." style="font-family:monospace;"></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Type</label><select id="et-add-type"><option value="whale">Whale</option><option value="fund">Fund / VC</option><option value="mm">Market Maker</option><option value="protocol">Protocol</option><option value="insider">Insider</option><option value="copyable">Copyable Trader</option></select></div>';
+  html += '<div class="form-group"><label>Grade</label><select id="et-add-grade"><option value="B+">B+</option><option value="A">A</option><option value="A+">A+</option><option value="B">B</option><option value="C">C</option></select></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label>Notes</label><textarea id="et-add-notes" rows="2" placeholder="Why are we tracking this entity?"></textarea></div>';
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">';
+  html += '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>';
+  html += '<button class="btn btn-primary" onclick="etAddEntity()">Add Entity</button></div>';
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+
+function etAddEntity() {
+  var name = (document.getElementById('et-add-name')?.value || '').trim();
+  var address = (document.getElementById('et-add-address')?.value || '').trim();
+  var type = document.getElementById('et-add-type')?.value || 'whale';
+  var grade = document.getElementById('et-add-grade')?.value || 'B+';
+  var notes = (document.getElementById('et-add-notes')?.value || '').trim();
+  if (!name || !address || !address.startsWith('0x')) { alert('Name and valid 0x address required'); return; }
+  var exists = etEntities.some(function(e) { return e.address.toLowerCase() === address.toLowerCase(); });
+  if (exists) { alert('Entity with this address already exists'); return; }
+  etEntities.push({
+    id: 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    name: name, address: address, type: type, grade: grade,
+    venues: ['hyperliquid'], notes: notes,
+    addedAt: new Date().toISOString(), lastScan: null,
+    accountValue: 0, positions: [], positionCount: 0, totalPnl: 0
+  });
+  etSave(); etRender(); closeModal();
+  // Auto-scan the new entity
+  etScanOne(etEntities[etEntities.length-1].id);
+}
+
+function etEdit(id) {
+  var entity = etEntities.find(function(e) { return e.id === id; });
+  if (!entity) return;
+  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable'};
+  var html = '<h2>Edit Entity</h2>';
+  html += '<div class="form-group"><label>Name / Label</label><input type="text" id="et-edit-name" value="'+esc(entity.name)+'"></div>';
+  html += '<div class="form-group"><label>Address</label><input type="text" value="'+entity.address+'" disabled style="font-family:monospace;opacity:0.6;"></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Type</label><select id="et-edit-type">';
+  ['whale','fund','mm','protocol','insider','copyable'].forEach(function(t) { html += '<option value="'+t+'"'+(entity.type===t?' selected':'')+'>'+typeLabels[t]+'</option>'; });
+  html += '</select></div>';
+  html += '<div class="form-group"><label>Grade</label><select id="et-edit-grade">';
+  ['A+','A','B+','B','C'].forEach(function(g) { html += '<option value="'+g+'"'+(entity.grade===g?' selected':'')+'>'+g+'</option>'; });
+  html += '</select></div></div>';
+  html += '<div class="form-group"><label>Notes</label><textarea id="et-edit-notes" rows="2">'+esc(entity.notes||'')+'</textarea></div>';
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">';
+  html += '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>';
+  html += '<button class="btn btn-primary" onclick="etSaveEdit(\''+id+'\')">Save</button></div>';
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+
+function etSaveEdit(id) {
+  var entity = etEntities.find(function(e) { return e.id === id; });
+  if (!entity) return;
+  entity.name = (document.getElementById('et-edit-name')?.value || '').trim() || entity.name;
+  entity.type = document.getElementById('et-edit-type')?.value || entity.type;
+  entity.grade = document.getElementById('et-edit-grade')?.value || entity.grade;
+  entity.notes = (document.getElementById('et-edit-notes')?.value || '').trim();
+  etSave(); etRender(); closeModal();
+}
+
+function etDelete(id) {
+  if (!confirm('Remove this entity from tracking?')) return;
+  etEntities = etEntities.filter(function(e) { return e.id !== id; });
+  etSave(); etRender();
+  document.getElementById('et-detail').style.display = 'none';
+}
+
+// ===== SETUP SCANNER =====
+var taSetups = [];
+try { taSetups = JSON.parse(localStorage.getItem('ta_setups') || '[]'); } catch(e) { taSetups = []; }
+
+function setupSave() {
+  localStorage.setItem('ta_setups', JSON.stringify(taSetups));
+  if (hlIsFirebase()) {
+    var fbData = {};
+    taSetups.forEach(function(s) { fbData[s.id] = s; });
+    dbRef.child('setups').set(fbData);
+  }
+}
+
+function setupLoadFromFirebase() {
+  if (hlIsFirebase()) {
+    dbRef.child('setups').once('value', function(snap) {
+      var data = snap.val();
+      if (data) {
+        var fbList = Object.values(data);
+        var idSet = new Set(taSetups.map(function(s) { return s.id; }));
+        fbList.forEach(function(s) {
+          if (s.id && !idSet.has(s.id)) { taSetups.push(s); idSet.add(s.id); }
+          else if (s.id && idSet.has(s.id)) {
+            var idx = taSetups.findIndex(function(x) { return x.id === s.id; });
+            if (idx >= 0) taSetups[idx] = s;
+          }
+        });
+        localStorage.setItem('ta_setups', JSON.stringify(taSetups));
+      }
+    });
+  }
+}
+
+function setupRender() {
+  var filter = document.getElementById('setup-filter-status')?.value || 'all';
+  var filtered = taSetups.filter(function(s) { return filter === 'all' || s.status === filter; });
+  var countEl = document.getElementById('setup-count');
+  if (countEl) countEl.textContent = filtered.length + ' setup' + (filtered.length !== 1 ? 's' : '');
+
+  var listEl = document.getElementById('setup-list');
+  var emptyEl = document.getElementById('setup-empty');
+  if (!filtered.length) {
+    if (listEl) listEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = '';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  var statusColors = {watching:'var(--yellow)',triggered:'var(--green)',expired:'var(--text3)'};
+  var statusIcons = {watching:'&#128065;',triggered:'&#9889;',expired:'&#128337;'};
+
+  var html = '<div style="display:grid;gap:12px;">';
+  filtered.forEach(function(s) {
+    var sColor = statusColors[s.status] || 'var(--text3)';
+    var rr = s.target && s.stop && s.entry ? ((s.target - s.entry) / (s.entry - s.stop)).toFixed(1) : '--';
+    html += '<div class="card" style="padding:16px 20px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;">';
+    html += '<span style="font-size:18px;font-weight:700;color:var(--text1);">'+esc(s.asset)+'</span>';
+    html += '<span style="font-size:12px;font-weight:600;color:'+(s.direction==='long'?'var(--green)':'var(--red)')+';">'+s.direction.toUpperCase()+'</span>';
+    html += '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:color-mix(in srgb, '+sColor+' 15%, transparent);color:'+sColor+';">'+s.status+'</span>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<button class="btn btn-sm btn-ghost admin-only" onclick="setupUpdateStatus(\''+s.id+'\')" title="Change status">&#9998;</button>';
+    html += '<button class="btn btn-sm btn-ghost admin-only" onclick="setupDelete(\''+s.id+'\')" title="Delete" style="color:var(--red);">&#10005;</button>';
+    html += '</div></div>';
+
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:10px;font-size:12px;">';
+    html += '<div><span style="color:var(--text3);">Entry</span><br><strong>$'+(s.entry||'--')+'</strong></div>';
+    html += '<div><span style="color:var(--text3);">Stop</span><br><strong style="color:var(--red);">$'+(s.stop||'--')+'</strong></div>';
+    html += '<div><span style="color:var(--text3);">Target</span><br><strong style="color:var(--green);">$'+(s.target||'--')+'</strong></div>';
+    html += '<div><span style="color:var(--text3);">R:R</span><br><strong>'+rr+'</strong></div>';
+    html += '<div><span style="color:var(--text3);">Playbook</span><br><strong>'+esc(s.playbook||'--')+'</strong></div>';
+    html += '<div><span style="color:var(--text3);">Timeframe</span><br><strong>'+esc(s.timeframe||'--')+'</strong></div>';
+    html += '</div>';
+
+    if (s.thesis) html += '<div style="font-size:12px;color:var(--text3);padding:8px 0;border-top:1px solid var(--border);">'+esc(s.thesis)+'</div>';
+    html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Created '+new Date(s.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  if (listEl) listEl.innerHTML = html;
+}
+
+function setupShowAddModal() {
+  var html = '<h2>New Trade Setup</h2>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Asset</label><input type="text" id="setup-asset" placeholder="BTC, ETH, SOL..."></div>';
+  html += '<div class="form-group"><label>Direction</label><select id="setup-dir"><option value="long">Long</option><option value="short">Short</option></select></div>';
+  html += '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Entry ($)</label><input type="number" id="setup-entry" step="any" placeholder="0.00"></div>';
+  html += '<div class="form-group"><label>Stop ($)</label><input type="number" id="setup-stop" step="any" placeholder="0.00"></div>';
+  html += '<div class="form-group"><label>Target ($)</label><input type="number" id="setup-target" step="any" placeholder="0.00"></div>';
+  html += '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Playbook</label><select id="setup-playbook"><option value="">-- Select --</option><option value="CRT + CISD">CRT + CISD</option><option value="Spike Exhaustion">Spike Exhaustion</option><option value="MR Long">MR Long (Journal Edge)</option><option value="Momo Short">Momo Short</option><option value="Discretionary">Discretionary</option></select></div>';
+  html += '<div class="form-group"><label>Timeframe</label><select id="setup-tf"><option value="Daily">Daily</option><option value="4H">4H</option><option value="1H">1H</option><option value="Weekly">Weekly</option></select></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label>Thesis / Notes</label><textarea id="setup-thesis" rows="2" placeholder="Why this setup? What\'s the edge?"></textarea></div>';
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">';
+  html += '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>';
+  html += '<button class="btn btn-primary" onclick="setupAdd()">Add Setup</button></div>';
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+
+function setupAdd() {
+  var asset = (document.getElementById('setup-asset')?.value || '').trim().toUpperCase();
+  if (!asset) { alert('Asset is required'); return; }
+  taSetups.push({
+    id: 'setup_' + Date.now(),
+    asset: asset,
+    direction: document.getElementById('setup-dir')?.value || 'long',
+    entry: parseFloat(document.getElementById('setup-entry')?.value) || null,
+    stop: parseFloat(document.getElementById('setup-stop')?.value) || null,
+    target: parseFloat(document.getElementById('setup-target')?.value) || null,
+    playbook: document.getElementById('setup-playbook')?.value || '',
+    timeframe: document.getElementById('setup-tf')?.value || 'Daily',
+    thesis: (document.getElementById('setup-thesis')?.value || '').trim(),
+    status: 'watching',
+    createdAt: new Date().toISOString()
+  });
+  setupSave(); setupRender(); closeModal();
+}
+
+function setupUpdateStatus(id) {
+  var setup = taSetups.find(function(s) { return s.id === id; });
+  if (!setup) return;
+  var next = {watching:'triggered',triggered:'expired',expired:'watching'};
+  setup.status = next[setup.status] || 'watching';
+  setupSave(); setupRender();
+}
+
+function setupDelete(id) {
+  if (!confirm('Delete this setup?')) return;
+  taSetups = taSetups.filter(function(s) { return s.id !== id; });
+  setupSave(); setupRender();
+}
+
+// Load entities + setups from Firebase on init
+setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); }, 2000);
+
 // ===== TECHNICAL ANALYSIS TAB NAVIGATION =====
 function taShowTab(tab) {
   ['regime','setups','playbooks','confluence','tradelog'].forEach(function(t) {
@@ -7426,6 +7926,7 @@ function taShowTab(tab) {
     var tabBtn = document.getElementById('ta-tab-' + t);
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  if (tab === 'setups') setupRender();
 }
 
 // ===== ON-CHAIN INTEL DIVISION NAVIGATION =====
@@ -7436,15 +7937,15 @@ function ocShowDivision(div) {
     var tab = document.getElementById('oc-div-' + d);
     if (tab) tab.classList.toggle('active', d === div);
   });
-  // Auto-load HL saved wallets count when entering HL
   if (div === 'hyperliquid') {
     hlShowTab('scanner');
   }
-  // Update entity count on overview
+  if (div === 'entities') {
+    etRender();
+  }
   if (div === 'overview') {
-    var saved = JSON.parse(localStorage.getItem('hl_saved_wallets') || '[]');
     var el = document.getElementById('oc-entity-count');
-    if (el) el.textContent = saved.length;
+    if (el) el.textContent = etEntities.length;
   }
 }
 
