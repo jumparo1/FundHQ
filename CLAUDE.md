@@ -70,6 +70,13 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-16: **Dexscreener integration** — search tokens, trending, new pairs; 6th tab in On-Chain Intel, free API
+- 2026-03-16: **Auto-confluence scoring** — pulls entity grades, regime, setups, catalysts, reports to pre-fill sliders
+- 2026-03-16: **Conviction Report generator** — markdown report with breakdown bars, smart money, catalysts; copy/save to Reports
+- 2026-03-16: **Link Setup to Confluence** — pick active setup, auto-fill asset + run auto-score
+- 2026-03-16: **Portfolio live pricing** — CoinGecko (60+ crypto symbol mappings) + FMP (stocks) refresh button
+- 2026-03-16: **Auto-signal generation** — entity scans + catalyst proximity auto-create Signal Feed entries
+- 2026-03-16: **Cross-division intelligence** — entities → signals, catalysts → confluence, setups → reports
 - 2026-03-16: **3-Division Architecture** — restructured entire platform into On-Chain Intel, Research, and Technical Analysis
 - 2026-03-16: **Portfolio page** — holdings tracker with allocation breakdown, P&L, cash management, visual allocation bar chart
 - 2026-03-16: **Signal Feed** — functional on-chain signal aggregation with type/conviction filters, status tracking, win/loss outcome tracking
