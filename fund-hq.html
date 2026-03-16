@@ -10384,7 +10384,7 @@ function tiRender(r, whales) {
     r.entities.forEach(function(e) {
       var gradeColors = {'A+':'var(--green)','A':'var(--green)','B+':'var(--yellow)','B':'var(--text2)','C':'var(--text3)','?':'var(--text3)'};
       html += '<tr style="border-bottom:1px solid var(--border);">';
-      html += '<td style="padding:8px;font-weight:700;color:var(--text);">' + esc(e.name) + '</td>';
+      html += '<td style="padding:8px;font-weight:700;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(e.address) + '\')" style="color:var(--text);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + esc(e.name) + '</a></td>';
       html += '<td style="padding:8px;"><span style="font-weight:700;color:' + (gradeColors[e.grade]||'var(--text3)') + ';">' + esc(e.grade || '?') + '</span></td>';
       html += '<td style="padding:8px;color:var(--text3);font-size:11px;">' + esc(e.type || '') + '</td>';
       html += '<td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + (e.side==='LONG'?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)') + ';color:' + (e.side==='LONG'?'var(--green)':'var(--red)') + ';">' + e.side + '</span></td>';
@@ -10427,7 +10427,7 @@ function tiRender(r, whales) {
     html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">Address</th><th style="padding:8px;text-align:center;color:var(--text3);">Side</th><th style="padding:8px;text-align:right;color:var(--text3);">Size</th><th style="padding:8px;text-align:right;color:var(--text3);">Entry</th><th style="padding:8px;text-align:right;color:var(--text3);">Lev</th><th style="padding:8px;text-align:right;color:var(--text3);">uPnL</th><th style="padding:8px;text-align:right;color:var(--text3);">Acct Value</th><th style="padding:8px;text-align:center;color:var(--text3);">Action</th></tr>';
     newWhales.forEach(function(w) {
       html += '<tr style="border-bottom:1px solid var(--border);">';
-      html += '<td style="padding:8px;font-family:monospace;font-size:11px;color:var(--accent2);">' + hlAddr(w.address) + '</td>';
+      html += '<td style="padding:8px;font-family:monospace;font-size:11px;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(w.address) + '\')" style="color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + hlAddr(w.address) + '</a></td>';
       html += '<td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + (w.side==='LONG'?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)') + ';color:' + (w.side==='LONG'?'var(--green)':'var(--red)') + ';">' + w.side + '</span></td>';
       html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">$' + dexFmt(w.notional) + '</td>';
       html += '<td style="padding:8px;text-align:right;color:var(--text);font-family:monospace;">$' + w.entryPx.toFixed(2) + '</td>';
@@ -10456,7 +10456,9 @@ function tiRender(r, whales) {
       var isEntity = typeof etEntities !== 'undefined' && etEntities.find(function(e) { return e.address && e.address.toLowerCase() === (h.owner_address || '').toLowerCase(); });
       html += '<tr style="border-bottom:1px solid var(--border);' + (isEntity ? 'background:rgba(99,102,241,0.06);' : '') + '">';
       html += '<td style="padding:8px;color:var(--text3);">' + (idx+1) + '</td>';
-      html += '<td style="padding:8px;font-family:monospace;font-size:11px;color:var(--accent2);">' + hlAddr(h.owner_address || '') + '</td>';
+      var morExplorerMap = { ethereum: 'https://etherscan.io/address/', base: 'https://basescan.org/address/', bsc: 'https://bscscan.com/address/', polygon: 'https://polygonscan.com/address/', arbitrum: 'https://arbiscan.io/address/' };
+      var morExplorer = morExplorerMap[r._tokenChain] || 'https://etherscan.io/address/';
+      html += '<td style="padding:8px;font-family:monospace;font-size:11px;"><a href="' + morExplorer + esc(h.owner_address || '') + '" target="_blank" style="color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + hlAddr(h.owner_address || '') + '</a></td>';
       html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">' + (h._balanceFormatted > 1e9 ? dexFmt(h._balanceFormatted) : h._balanceFormatted.toLocaleString(undefined, {maximumFractionDigits:2})) + '</td>';
       html += '<td style="padding:8px;text-align:right;color:' + (h._pctOfSupply > 5 ? 'var(--yellow)' : 'var(--text2)') + ';font-weight:600;">' + h._pctOfSupply.toFixed(2) + '%</td>';
       html += '<td style="padding:8px;text-align:right;color:var(--text);">' + (h._usdValue > 0 ? '$' + dexFmt(h._usdValue) : '--') + '</td>';
@@ -10701,6 +10703,122 @@ function tiAddEntity(address, acctVal) {
   });
   etSave();
   alert(label + ' added to Entity Tracker!');
+}
+
+async function tiOpenWallet(addr) {
+  var modal = document.getElementById('modal-content');
+  var overlay = document.getElementById('modal-overlay');
+  modal.classList.add('modal-wide');
+  modal.innerHTML = '<div style="padding:40px;text-align:center;"><div style="font-size:28px;margin-bottom:8px;">&#9889;</div><div style="font-size:14px;color:var(--text3);">Loading wallet <span style="font-family:monospace;color:var(--accent2);">' + esc(addr.slice(0,8)) + '...' + esc(addr.slice(-6)) + '</span></div><div id="wallet-load-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div></div>';
+  overlay.classList.add('open');
+
+  try {
+    document.getElementById('wallet-load-status').textContent = 'Fetching positions...';
+    var state = await hlPost({ type:'clearinghouseState', user: addr });
+    document.getElementById('wallet-load-status').textContent = 'Fetching trade history...';
+    var fills = await hlPost({ type:'userFills', user: addr });
+
+    var mg = state.marginSummary || {};
+    var acctVal = parseFloat(mg.accountValue || 0);
+    var positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
+
+    // Fill stats
+    var totalClosed = 0, wins = 0, losses = 0;
+    (fills || []).forEach(function(f) { var pnl = parseFloat(f.closedPnl || 0); if (pnl > 0) wins++; else if (pnl < 0) losses++; totalClosed += pnl; });
+    var wr = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : 'N/A';
+
+    var isSaved = typeof hlSavedWallets !== 'undefined' && hlSavedWallets.some(function(w) { return w.address.toLowerCase() === addr.toLowerCase(); });
+    var isTracked = typeof etEntities !== 'undefined' && etEntities.find(function(e) { return e.address && e.address.toLowerCase() === addr.toLowerCase(); });
+
+    var html = '';
+    // Header
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px;">';
+    html += '<div>';
+    html += '<div style="font-family:monospace;font-size:14px;color:var(--accent2);margin-bottom:4px;">' + esc(addr) + '</div>';
+    html += '<a href="https://app.hyperliquid.xyz/explorer/address/' + esc(addr) + '" target="_blank" style="font-size:11px;color:var(--text3);">View on Hyperliquid Explorer &#8599;</a>';
+    if (isTracked) html += ' <span style="font-size:10px;padding:2px 6px;background:rgba(99,102,241,0.12);color:var(--accent2);border-radius:4px;margin-left:6px;">TRACKED: ' + esc(isTracked.name) + '</span>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<button class="btn btn-sm btn-ghost" onclick="navigator.clipboard.writeText(\'' + esc(addr) + '\');this.textContent=\'Copied!\';">Copy Address</button>';
+    if (!isTracked) html += '<button class="btn btn-sm btn-primary admin-only" onclick="closeModal();tiAddEntity(\'' + esc(addr) + '\',' + acctVal + ')">+ Track Entity</button>';
+    html += '</div></div>';
+
+    // Stats grid
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px;">';
+    var stats = [
+      ['Account Value', '$' + dexFmt(acctVal), 'var(--accent2)'],
+      ['Open Positions', positions.length, 'var(--text)'],
+      ['Closed PnL', (totalClosed >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(totalClosed)), totalClosed >= 0 ? 'var(--green)' : 'var(--red)'],
+      ['Win Rate', wr === 'N/A' ? wr : wr + '%', parseFloat(wr) >= 50 ? 'var(--green)' : 'var(--red)'],
+      ['Wins / Losses', wins + ' / ' + losses, 'var(--text2)'],
+      ['Total Fills', (fills || []).length, 'var(--text2)']
+    ];
+    stats.forEach(function(s) {
+      html += '<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;text-align:center;">';
+      html += '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-bottom:3px;">' + s[0] + '</div>';
+      html += '<div style="font-size:16px;font-weight:700;color:' + s[2] + ';">' + s[1] + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // Open Positions
+    if (positions.length > 0) {
+      html += '<div style="margin-bottom:20px;">';
+      html += '<h3 style="font-size:13px;color:var(--text2);margin-bottom:10px;">Open Positions (' + positions.length + ')</h3>';
+      html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+      html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:6px 8px;text-align:left;color:var(--text3);">Coin</th><th style="padding:6px;text-align:center;color:var(--text3);">Side</th><th style="padding:6px;text-align:right;color:var(--text3);">Size</th><th style="padding:6px;text-align:right;color:var(--text3);">Entry</th><th style="padding:6px;text-align:right;color:var(--text3);">Leverage</th><th style="padding:6px;text-align:right;color:var(--text3);">uPnL</th><th style="padding:6px;text-align:right;color:var(--text3);">Liq Price</th></tr>';
+      positions.sort(function(a, b) { return Math.abs(parseFloat(b.szi) * parseFloat(b.entryPx || 0)) - Math.abs(parseFloat(a.szi) * parseFloat(a.entryPx || 0)); });
+      positions.forEach(function(p) {
+        var sz = parseFloat(p.szi);
+        var side = sz > 0 ? 'LONG' : 'SHORT';
+        var entry = parseFloat(p.entryPx || 0);
+        var notional = Math.abs(sz) * entry;
+        var upnl = parseFloat(p.unrealizedPnl || 0);
+        var lev = p.leverage ? (p.leverage.value || p.leverage || '-') : '-';
+        var liq = parseFloat(p.liquidationPx || 0);
+        html += '<tr style="border-bottom:1px solid var(--border);">';
+        html += '<td style="padding:6px 8px;font-weight:700;color:var(--text);">' + esc(p.coin) + '</td>';
+        html += '<td style="padding:6px;text-align:center;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + (side === 'LONG' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)') + ';color:' + (side === 'LONG' ? 'var(--green)' : 'var(--red)') + ';">' + side + '</span></td>';
+        html += '<td style="padding:6px;text-align:right;font-weight:600;">$' + dexFmt(notional) + '</td>';
+        html += '<td style="padding:6px;text-align:right;font-family:monospace;">$' + (entry < 1 ? entry.toFixed(6) : entry.toFixed(2)) + '</td>';
+        html += '<td style="padding:6px;text-align:right;">' + lev + 'x</td>';
+        html += '<td style="padding:6px;text-align:right;font-weight:600;color:' + (upnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (upnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(upnl)) + '</td>';
+        html += '<td style="padding:6px;text-align:right;font-family:monospace;color:var(--text3);">' + (liq > 0 ? '$' + (liq < 1 ? liq.toFixed(6) : liq.toFixed(2)) : '--') + '</td>';
+        html += '</tr>';
+      });
+      html += '</table></div></div>';
+    }
+
+    // Recent Trades
+    if (fills && fills.length > 0) {
+      var recent = fills.slice(0, 30);
+      html += '<div>';
+      html += '<h3 style="font-size:13px;color:var(--text2);margin-bottom:10px;">Recent Trades (' + fills.length + ' total, showing last 30)</h3>';
+      html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:11px;border-collapse:collapse;">';
+      html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:5px 8px;text-align:left;color:var(--text3);">Time</th><th style="padding:5px;text-align:left;color:var(--text3);">Coin</th><th style="padding:5px;text-align:center;color:var(--text3);">Side</th><th style="padding:5px;text-align:right;color:var(--text3);">Price</th><th style="padding:5px;text-align:right;color:var(--text3);">Size</th><th style="padding:5px;text-align:right;color:var(--text3);">Closed PnL</th></tr>';
+      recent.forEach(function(f) {
+        var t = new Date(f.time);
+        var timeStr = t.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' ' + t.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+        var cpnl = parseFloat(f.closedPnl || 0);
+        var dir = f.dir || f.side || '';
+        var isBuy = dir.includes('Long') || dir.includes('Buy') || f.side === 'B';
+        html += '<tr style="border-bottom:1px solid var(--border);">';
+        html += '<td style="padding:5px 8px;color:var(--text3);font-size:10px;">' + timeStr + '</td>';
+        html += '<td style="padding:5px;font-weight:600;color:var(--text);">' + esc(f.coin) + '</td>';
+        html += '<td style="padding:5px;text-align:center;color:' + (isBuy ? 'var(--green)' : 'var(--red)') + ';font-weight:600;font-size:10px;">' + esc(dir) + '</td>';
+        html += '<td style="padding:5px;text-align:right;font-family:monospace;">$' + parseFloat(f.px).toLocaleString() + '</td>';
+        html += '<td style="padding:5px;text-align:right;">' + parseFloat(f.sz).toLocaleString() + '</td>';
+        html += '<td style="padding:5px;text-align:right;font-weight:' + (cpnl !== 0 ? '600' : '400') + ';color:' + (cpnl > 0 ? 'var(--green)' : cpnl < 0 ? 'var(--red)' : 'var(--text3)') + ';">' + (cpnl !== 0 ? (cpnl > 0 ? '+' : '') + '$' + dexFmt(Math.abs(cpnl)) : '--') + '</td>';
+        html += '</tr>';
+      });
+      html += '</table></div></div>';
+    }
+
+    modal.innerHTML = html;
+    updateAdminUI();
+  } catch(e) {
+    modal.innerHTML = '<div style="padding:30px;text-align:center;"><div style="color:var(--red);font-size:14px;margin-bottom:8px;">Failed to load wallet</div><div style="color:var(--text3);font-size:12px;">' + esc(e.message) + '</div><div style="margin-top:16px;"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div></div>';
+  }
 }
 
 // ===== DEXSCREENER INTEGRATION =====
