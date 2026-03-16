@@ -725,9 +725,12 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-section">Research</div>
     <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
     <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
-    <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
+    <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Memos <span class="badge" id="badge-reports">0</span></div>
 
-    <div class="nav-section">Management</div>
+    <div class="nav-section">Technical</div>
+    <div class="nav-item" data-page="technical"><span class="icon">&#128202;</span> Technical</div>
+
+    <div class="nav-section">Operations</div>
     <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
     <div class="nav-item" data-page="roadmap"><span class="icon">&#128506;</span> Roadmap</div>
     <div class="nav-item" data-page="progress"><span class="icon">&#128197;</span> Progress</div>
@@ -984,8 +987,8 @@ tbody tr:hover { background: var(--bg3); }
     <!-- ===== REPORTS ===== -->
     <div id="page-reports" class="page hidden">
       <div class="page-header">
-        <h1>Reports</h1>
-        <p>All research reports created from templates</p>
+        <h1>Research Memos</h1>
+        <p>Investment memos, research reports &amp; published analysis</p>
       </div>
       <div class="tabs" id="reports-tabs">
         <button class="tab active" onclick="switchReportTab('research')">Research</button>
@@ -1268,6 +1271,151 @@ tbody tr:hover { background: var(--bg3); }
 
     </div><!-- /page-onchain -->
 
+    <!-- ===== TECHNICAL ANALYSIS ===== -->
+    <div id="page-technical" class="page hidden">
+      <div class="page-header">
+        <h1>&#128202; Technical Analysis</h1>
+        <p>Market structure, trade setups, playbooks &amp; confluence scoring</p>
+      </div>
+
+      <!-- Division Tabs -->
+      <div class="market-tabs" style="margin-bottom:20px;">
+        <button class="market-tab active" onclick="taShowTab('regime')" id="ta-tab-regime">Market Regime</button>
+        <button class="market-tab" onclick="taShowTab('setups')" id="ta-tab-setups">Setup Scanner</button>
+        <button class="market-tab" onclick="taShowTab('playbooks')" id="ta-tab-playbooks">Playbooks</button>
+        <button class="market-tab" onclick="taShowTab('confluence')" id="ta-tab-confluence">Confluence</button>
+        <button class="market-tab" onclick="taShowTab('tradelog')" id="ta-tab-tradelog">Trade Log</button>
+      </div>
+
+      <!-- MARKET REGIME -->
+      <div id="ta-panel-regime">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">BTC Regime</div>
+            <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="ta-btc-regime">--</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Based on funding + OI + dominance</div>
+          </div>
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Active Playbooks</div>
+            <div style="font-size:22px;font-weight:700;" id="ta-active-playbooks">--</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Filtered by current regime</div>
+          </div>
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Open Setups</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green);" id="ta-open-setups">0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Watching for entry</div>
+          </div>
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Avg Confluence</div>
+            <div style="font-size:22px;font-weight:700;" id="ta-avg-confluence">--</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Across active setups</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:20px;">
+          <h3 style="margin:0 0 12px 0;font-size:14px;color:var(--text2);">Regime Rules</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:13px;">
+            <div style="padding:12px;background:var(--bg2);border-radius:8px;border-left:3px solid var(--green);">
+              <div style="font-weight:700;color:var(--green);margin-bottom:4px;">Risk-On</div>
+              <div style="color:var(--text3);font-size:12px;">BTC funding positive, OI rising, dominance stable. Momentum + breakout playbooks active.</div>
+            </div>
+            <div style="padding:12px;background:var(--bg2);border-radius:8px;border-left:3px solid var(--yellow);">
+              <div style="font-weight:700;color:var(--yellow);margin-bottom:4px;">Neutral</div>
+              <div style="color:var(--text3);font-size:12px;">Mixed signals. Mean reversion playbooks active. Reduced sizing.</div>
+            </div>
+            <div style="padding:12px;background:var(--bg2);border-radius:8px;border-left:3px solid var(--red);">
+              <div style="font-weight:700;color:var(--red);margin-bottom:4px;">Risk-Off</div>
+              <div style="color:var(--text3);font-size:12px;">BTC funding negative, OI declining. Defensive only — shorts + hedges.</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:10px 14px;background:var(--bg1);border-radius:6px;font-size:12px;color:var(--text3);">
+            <strong style="color:var(--text2);">Senpi Rule:</strong> Mean reversion fails on perps without regime filter. Always check regime before activating a playbook.
+          </div>
+        </div>
+      </div>
+
+      <!-- SETUP SCANNER -->
+      <div id="ta-panel-setups" style="display:none;">
+        <div class="card" style="padding:24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">&#127919;</div>
+          <h3 style="margin:0 0 8px 0;color:var(--text1);">Setup Scanner</h3>
+          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Active trade setups being monitored. Each setup links to a playbook, has entry/stop/target zones, and a confluence score.</p>
+          <p style="color:var(--text3);font-size:12px;">Phase 2 — Coming next sprint</p>
+        </div>
+      </div>
+
+      <!-- PLAYBOOKS -->
+      <div id="ta-panel-playbooks" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+          <div class="card" style="padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-weight:700;color:var(--text1);">CRT + CISD</span>
+              <span style="font-size:11px;padding:3px 8px;background:var(--green-bg);color:var(--green);border-radius:4px;">Mean Reversion</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Candle Range Theory + Change in State of Delivery. Liquidity sweep reversal pattern.</div>
+            <div style="font-size:11px;color:var(--text3);">Regime: Neutral/Range | Timeframe: Daily | From: Backtesting Engine</div>
+          </div>
+          <div class="card" style="padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-weight:700;color:var(--text1);">Spike Exhaustion</span>
+              <span style="font-size:11px;padding:3px 8px;background:var(--green-bg);color:var(--green);border-radius:4px;">Mean Reversion</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Fade parabolic moves with scored 2-of-4 confirmation (RSI + StochRSI + Momentum + Volume).</div>
+            <div style="font-size:11px;color:var(--text3);">Regime: Neutral/Range | Timeframe: Daily | ~7 trades/yr on BTC</div>
+          </div>
+          <div class="card" style="padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-weight:700;color:var(--text1);">MR Long (Journal Edge)</span>
+              <span style="font-size:11px;padding:3px 8px;background:var(--accent-bg);color:var(--accent2);border-radius:4px;">Journal-Mined</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">EMA 21 pullback + RSI &lt; 40 + hammer + green close + BB touch. 100% WR from journal (8 trades).</div>
+            <div style="font-size:11px;color:var(--text3);">Regime: Risk-On pullback | Timeframe: Daily | From: Trading Journal</div>
+          </div>
+          <div class="card" style="padding:18px;border:1px dashed var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-weight:700;color:var(--text3);">Momo Short</span>
+              <span style="font-size:11px;padding:3px 8px;background:var(--red-bg);color:var(--red);border-radius:4px;">Momentum</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Momentum breakdown shorts. 100% WR from journal (7 trades). Not yet implemented in engine.</div>
+            <div style="font-size:11px;color:var(--text3);">Regime: Risk-Off | Timeframe: Daily | Status: Backlog</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px 16px;background:var(--bg2);border-radius:8px;font-size:12px;color:var(--text3);">
+          <strong style="color:var(--text2);">Backtesting:</strong> Run strategies at <a href="https://jumparo1.github.io/JumpTools/backtesting.html" target="_blank" style="color:var(--accent2);">JumpAlpha Backtesting</a> or locally at localhost:8877
+        </div>
+      </div>
+
+      <!-- CONFLUENCE -->
+      <div id="ta-panel-confluence" style="display:none;">
+        <div class="card" style="padding:24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">&#128200;</div>
+          <h3 style="margin:0 0 8px 0;color:var(--text1);">Confluence Scoring</h3>
+          <p style="color:var(--text3);font-size:13px;max-width:520px;margin:0 auto 16px;">Multi-factor scoring across all 3 divisions. On-Chain signal (25%) + Fundamental thesis (25%) + TA setup (30%) + Regime alignment (20%). Minimum 3.5 to act.</p>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:480px;margin:0 auto;">
+            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">On-Chain</div><div style="font-size:16px;font-weight:700;">25%</div></div>
+            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">Fundamental</div><div style="font-size:16px;font-weight:700;">25%</div></div>
+            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">Technical</div><div style="font-size:16px;font-weight:700;">30%</div></div>
+            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">Regime</div><div style="font-size:16px;font-weight:700;">20%</div></div>
+          </div>
+          <p style="color:var(--text3);font-size:12px;margin-top:16px;">Phase 2 — Coming next sprint</p>
+        </div>
+      </div>
+
+      <!-- TRADE LOG -->
+      <div id="ta-panel-tradelog" style="display:none;">
+        <div class="card" style="padding:24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">&#128221;</div>
+          <h3 style="margin:0 0 8px 0;color:var(--text1);">Trade Log</h3>
+          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Post-trade execution reviews. Each trade linked to its signal, thesis, and trade plan. Pattern mining across playbooks and regimes.</p>
+          <div style="margin-top:8px;">
+            <a href="https://jumparo1.github.io/JumpTools/trading-journal.html" target="_blank" class="btn btn-sm btn-ghost">Open Trading Journal →</a>
+          </div>
+          <p style="color:var(--text3);font-size:12px;margin-top:16px;">Phase 2 — Integration with Trading Journal app</p>
+        </div>
+      </div>
+
+    </div><!-- /page-technical -->
+
     <!-- ===== DOCS (GitBook-style) ===== -->
     <div id="page-help" class="page hidden">
       <div class="docs-layout">
@@ -1378,10 +1526,11 @@ tbody tr:hover { background: var(--bg3); }
                   <tr><td><strong>Project Dump</strong></td><td>Pipeline</td><td>Quick capture for project ideas</td></tr>
                   <tr><td><strong>Watchlist</strong></td><td>Pipeline</td><td>Tracked assets with scores, detail view, Firebase sync</td></tr>
                   <tr><td><strong>Alerts</strong></td><td>Pipeline</td><td>Signals from scheduled scans + Pamela</td></tr>
-                  <tr><td><strong>Templates</strong></td><td>Research</td><td>Crypto (18s), Stock (14s), Quick Thesis (5s)</td></tr>
-                  <tr><td><strong>Reports</strong></td><td>Research</td><td>AI-generated reports with rating and conviction</td></tr>
                   <tr><td><strong>On-Chain Intel</strong></td><td>On-Chain</td><td>Smart money tracking — Hyperliquid, Entity Tracker, Flow Monitor, Signals</td></tr>
                   <tr><td><strong>Market Data</strong></td><td>Research</td><td>Live search, CoinGecko + FMP fundamentals</td></tr>
+                  <tr><td><strong>Templates</strong></td><td>Research</td><td>Crypto (18s), Stock (14s), Quick Thesis (5s)</td></tr>
+                  <tr><td><strong>Memos</strong></td><td>Research</td><td>Investment memos, research reports, Substack drafts</td></tr>
+                  <tr><td><strong>Technical</strong></td><td>Technical</td><td>Market regime, setups, playbooks, confluence scoring, trade log</td></tr>
                   <tr><td><strong>Tasks</strong></td><td>Management</td><td>Kanban board with milestones, priority, assignee</td></tr>
                   <tr><td><strong>Roadmap</strong></td><td>Management</td><td>Tasks grouped by milestone with progress bars</td></tr>
                   <tr><td><strong>Progress</strong></td><td>Management</td><td>Daily work log, timeline, streak tracking</td></tr>
@@ -6621,13 +6770,14 @@ const PAGE_ALIASES = {
   about: 'about', mission: 'about', bitfunded: 'about',
   help: 'help', docs: 'help', documentation: 'help', guide: 'help',
   hyperliquid: 'onchain', hl: 'onchain', whales: 'onchain', 'whale tracker': 'onchain',
-  'on-chain': 'onchain', 'on chain': 'onchain', onchain: 'onchain', 'smart money': 'onchain', sentinel: 'onchain', 'entity tracker': 'onchain', flows: 'onchain'
+  'on-chain': 'onchain', 'on chain': 'onchain', onchain: 'onchain', 'smart money': 'onchain', sentinel: 'onchain', 'entity tracker': 'onchain', flows: 'onchain',
+  technical: 'technical', ta: 'technical', 'technical analysis': 'technical', setups: 'technical', playbooks: 'technical', confluence: 'technical', 'trade log': 'technical', regime: 'technical', quant: 'technical'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel'
+  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel', technical: 'Technical Analysis'
 };
 
 function toggleChat() {
@@ -7251,6 +7401,16 @@ function docsNav(page) {
 function docsShowTab(tab) {
   const map = {overview:'overview', agents:'pamela', data:'apis', changelog:'changelog'};
   docsNav(map[tab] || tab);
+}
+
+// ===== TECHNICAL ANALYSIS TAB NAVIGATION =====
+function taShowTab(tab) {
+  ['regime','setups','playbooks','confluence','tradelog'].forEach(function(t) {
+    var panel = document.getElementById('ta-panel-' + t);
+    if (panel) panel.style.display = t === tab ? '' : 'none';
+    var tabBtn = document.getElementById('ta-tab-' + t);
+    if (tabBtn) tabBtn.classList.toggle('active', t === tab);
+  });
 }
 
 // ===== ON-CHAIN INTEL DIVISION NAVIGATION =====
