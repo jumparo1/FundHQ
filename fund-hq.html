@@ -989,6 +989,7 @@ tbody tr:hover { background: var(--bg3); }
       <div class="tabs" id="reports-tabs">
         <button class="tab active" onclick="switchReportTab('research')">Research</button>
         <button class="tab" onclick="switchReportTab('substack')">Substack</button>
+        <button class="tab" onclick="switchReportTab('trash')">&#128465; Trash <span id="trash-count" style="font-size:11px;color:var(--text3);"></span></button>
       </div>
       <div class="search-bar">
         <span class="search-icon">&#128269;</span>
@@ -5557,8 +5558,56 @@ function switchReportTab(tab) {
 function renderReports(filter = '') {
   const f = (filter || '').toLowerCase();
   const isSubstack = currentReportTab === 'substack';
+  const isTrash = currentReportTab === 'trash';
+
+  // Update trash count badge
+  const trashCount = DB.reports.filter(r => r.deletedAt).length;
+  const trashBadge = document.getElementById('trash-count');
+  if (trashBadge) trashBadge.textContent = trashCount ? '(' + trashCount + ')' : '';
+
+  if (isTrash) {
+    const trashed = [...DB.reports]
+      .filter(r => r.deletedAt && (!f || r.title.toLowerCase().includes(f)))
+      .sort((a,b) => (b.deletedAt||'').localeCompare(a.deletedAt||''));
+
+    let html = '';
+    if (trashed.length) {
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+      html += '<div style="font-size:13px;color:var(--text3);">Reports in Trash are automatically deleted after 30 days.</div>';
+      html += '<button class="btn btn-ghost btn-sm admin-only" style="color:var(--red);" onclick="emptyTrash()">Empty Trash</button>';
+      html += '</div>';
+      html += trashed.map(r => {
+        const deletedDate = new Date(r.deletedAt);
+        const expiresDate = new Date(deletedDate.getTime() + 30*24*60*60*1000);
+        const daysLeft = Math.max(0, Math.ceil((expiresDate - Date.now()) / (24*60*60*1000)));
+        const typeLabel = r.type === 'stock' ? 'STOCK' : r.type === 'substack' ? 'SUBSTACK' : r.type === 'commodity' ? 'COMMODITY' : 'CRYPTO';
+        const typeClass = r.type === 'stock' ? 'template-type-stock' : r.type === 'substack' ? '' : r.type === 'commodity' ? 'template-type-commodity' : 'template-type-crypto';
+        const typeStyle = r.type === 'substack' ? 'style="background:rgba(255,140,0,0.15);color:#ff8c00;"' : '';
+        return `<div class="report-card" style="opacity:0.7;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <span class="template-type ${typeClass}" ${typeStyle}>${typeLabel}</span>
+              <h3 style="margin-top:6px;">${esc(r.title)}</h3>
+              <div class="report-meta">Deleted ${fmtDate(r.deletedAt)} &middot; ${daysLeft} days left</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm admin-only" onclick="event.stopPropagation();restoreReport('${r.id}')">Restore</button>
+              <button class="btn btn-ghost btn-sm admin-only" style="color:var(--red);" onclick="event.stopPropagation();permanentDeleteReport('${r.id}')">Delete</button>
+            </div>
+          </div>
+          <div class="report-preview">${esc((r.content||'').substring(0,200))}</div>
+        </div>`;
+      }).join('');
+    } else {
+      html = '<div class="empty-state"><div class="icon">&#128465;</div><p>Trash is empty.</p></div>';
+    }
+    document.getElementById('reports-list').innerHTML = html;
+    return;
+  }
+
   const filtered = [...DB.reports]
     .filter(r => {
+      if (r.deletedAt) return false;
       if (isSubstack) { if (r.type !== 'substack') return false; }
       else { if (r.type === 'substack') return false; }
       return !f || r.title.toLowerCase().includes(f) || (r.type||'').toLowerCase().includes(f);
@@ -5914,10 +5963,52 @@ function saveReport(existingId) {
 }
 
 function deleteReport(id) {
-  if (!confirm('Delete this report?')) return;
-  if (dbRef) { dbRef.child('reports').child(id).remove(); }
-  else { DB.reports=DB.reports.filter(r=>r.id!==id); localStorage.setItem('fundHQ', JSON.stringify(DB)); renderAll(); }
+  if (!confirm('Move this report to Trash?')) return;
+  const report = DB.reports.find(r => r.id === id);
+  if (report) {
+    report.deletedAt = new Date().toISOString();
+    if (dbRef) { dbRef.child('reports').child(id).update({ deletedAt: report.deletedAt }); }
+    else { localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+    renderReports();
+  }
   closeModal();
+}
+
+function restoreReport(id) {
+  const report = DB.reports.find(r => r.id === id);
+  if (report) {
+    delete report.deletedAt;
+    if (dbRef) { dbRef.child('reports').child(id).child('deletedAt').remove(); }
+    else { localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+    renderReports();
+  }
+}
+
+function permanentDeleteReport(id) {
+  if (!confirm('Permanently delete this report? This cannot be undone.')) return;
+  if (dbRef) { dbRef.child('reports').child(id).remove(); }
+  else { DB.reports = DB.reports.filter(r => r.id !== id); localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+  renderReports();
+}
+
+function emptyTrash() {
+  const trashed = DB.reports.filter(r => r.deletedAt);
+  if (!trashed.length) return;
+  if (!confirm('Permanently delete ' + trashed.length + ' report(s) from Trash?')) return;
+  trashed.forEach(r => {
+    if (dbRef) { dbRef.child('reports').child(r.id).remove(); }
+  });
+  if (!dbRef) { DB.reports = DB.reports.filter(r => !r.deletedAt); localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+  renderReports();
+}
+
+function purgeExpiredTrash() {
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const expired = DB.reports.filter(r => r.deletedAt && r.deletedAt < cutoff);
+  expired.forEach(r => {
+    if (dbRef) { dbRef.child('reports').child(r.id).remove(); }
+  });
+  if (!dbRef && expired.length) { DB.reports = DB.reports.filter(r => !r.deletedAt || r.deletedAt >= cutoff); localStorage.setItem('fundHQ', JSON.stringify(DB)); }
 }
 
 // ===== TASK CONSTANTS =====
@@ -7775,6 +7866,7 @@ function hlRenderPerps() {
 function renderHyperliquid() { hlEnsureVars(); hlUpdateBadge(); hlLoadFromFirebase(); }
 
 function renderAll() {
+  purgeExpiredTrash();
   renderDashboard();
   renderPipeline();
   renderProjects();
