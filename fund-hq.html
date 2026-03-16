@@ -1587,9 +1587,9 @@ tbody tr:hover { background: var(--bg3); }
                   <tr><td><strong>Templates</strong></td><td>Research</td><td>Crypto (18s), Stock (14s), Quick Thesis (5s)</td></tr>
                   <tr><td><strong>Reports</strong></td><td>Research</td><td>Investment memos, research reports, Substack drafts</td></tr>
                   <tr><td><strong>Technical</strong></td><td>Technical</td><td>Market regime, setups, playbooks, confluence scoring, trade log</td></tr>
-                  <tr><td><strong>Tasks</strong></td><td>Management</td><td>Kanban board with milestones, priority, assignee</td></tr>
-                  <tr><td><strong>Roadmap</strong></td><td>Management</td><td>Tasks grouped by milestone with progress bars</td></tr>
-                  <tr><td><strong>Progress</strong></td><td>Management</td><td>Daily work log, timeline, streak tracking</td></tr>
+                  <tr><td><strong>Tasks</strong></td><td>Operations</td><td>Kanban board with milestones, priority, assignee</td></tr>
+                  <tr><td><strong>Roadmap</strong></td><td>Operations</td><td>Tasks grouped by milestone with progress bars</td></tr>
+                  <tr><td><strong>Progress</strong></td><td>Operations</td><td>Daily work log, timeline, streak tracking</td></tr>
                 </tbody>
               </table>
             </div>
@@ -7537,6 +7537,7 @@ function etImportFromHL() {
 }
 
 function etRender() {
+  if (typeof etEntities === 'undefined' || !etEntities) etEntities = [];
   var search = (document.getElementById('et-search')?.value || '').toLowerCase();
   var filterType = document.getElementById('et-filter-type')?.value || 'all';
   var filterGrade = document.getElementById('et-filter-grade')?.value || 'all';
@@ -7809,6 +7810,7 @@ function setupLoadFromFirebase() {
 }
 
 function setupRender() {
+  if (typeof taSetups === 'undefined' || !taSetups) taSetups = [];
   var filter = document.getElementById('setup-filter-status')?.value || 'all';
   var filtered = taSetups.filter(function(s) { return filter === 'all' || s.status === filter; });
   var countEl = document.getElementById('setup-count');
@@ -7945,7 +7947,7 @@ function ocShowDivision(div) {
   }
   if (div === 'overview') {
     var el = document.getElementById('oc-entity-count');
-    if (el) el.textContent = etEntities.length;
+    if (el) el.textContent = (typeof etEntities !== 'undefined' && etEntities ? etEntities.length : 0);
   }
 }
 
