@@ -1148,6 +1148,7 @@ tbody tr:hover { background: var(--bg3); }
           <h3 style="font-size:14px;color:var(--text2);margin:0;">Holdings</h3>
           <div style="display:flex;gap:8px;" class="admin-only">
             <button class="btn btn-sm btn-primary" onclick="pfShowAddModal()">+ Add Position</button>
+            <button class="btn btn-sm btn-ghost" onclick="pfRefreshPrices()" id="pf-refresh-btn">&#128260; Live Prices</button>
             <button class="btn btn-sm btn-ghost" onclick="pfSetCash()">&#128178; Set Cash</button>
           </div>
         </div>
@@ -1176,6 +1177,7 @@ tbody tr:hover { background: var(--bg3); }
         <button class="market-tab active" onclick="ocShowDivision('overview')" id="oc-div-overview">Overview</button>
         <button class="market-tab" onclick="ocShowDivision('hyperliquid')" id="oc-div-hyperliquid">Hyperliquid</button>
         <button class="market-tab" onclick="ocShowDivision('entities')" id="oc-div-entities">Entity Tracker</button>
+        <button class="market-tab" onclick="ocShowDivision('dexscreener')" id="oc-div-dexscreener">Dexscreener</button>
         <button class="market-tab" onclick="ocShowDivision('flows')" id="oc-div-flows">Flow Monitor</button>
         <button class="market-tab" onclick="ocShowDivision('signals')" id="oc-div-signals">Signal Feed</button>
       </div>
@@ -1200,8 +1202,8 @@ tbody tr:hover { background: var(--bg3); }
           </div>
           <div class="card" style="padding:16px 20px;">
             <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Venues Connected</div>
-            <div style="font-size:22px;font-weight:700;">1</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Hyperliquid (Arkham, Dexscreener soon)</div>
+            <div style="font-size:22px;font-weight:700;">2</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Hyperliquid + Dexscreener (Arkham soon)</div>
           </div>
         </div>
 
@@ -1211,6 +1213,7 @@ tbody tr:hover { background: var(--bg3); }
             <div style="display:flex;flex-direction:column;gap:8px;">
               <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('hyperliquid')" style="justify-content:flex-start;text-align:left;">&#128011; Hyperliquid — Wallet Scanner, Whales, Perps</button>
               <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('entities')" style="justify-content:flex-start;text-align:left;">&#128373; Entity Tracker — Cross-venue wallet intelligence</button>
+              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('dexscreener')" style="justify-content:flex-start;text-align:left;">&#128142; Dexscreener — DEX token discovery &amp; trending</button>
               <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('flows')" style="justify-content:flex-start;text-align:left;">&#128200; Flow Monitor — Smart money flow detection</button>
               <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('signals')" style="justify-content:flex-start;text-align:left;">&#128276; Signal Feed — High-conviction on-chain signals</button>
             </div>
@@ -1371,7 +1374,7 @@ tbody tr:hover { background: var(--bg3); }
           </div>
           <div class="card" style="padding:12px 16px;">
             <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Venues</div>
-            <div style="font-size:14px;font-weight:600;margin-top:2px;"><span style="color:var(--accent2);">HL</span> <span style="color:var(--text3);font-size:11px;">Arkham soon</span></div>
+            <div style="font-size:14px;font-weight:600;margin-top:2px;"><span style="color:var(--accent2);">HL</span> <span style="color:var(--green);">DEX</span> <span style="color:var(--text3);font-size:11px;">Arkham soon</span></div>
           </div>
         </div>
 
@@ -1387,6 +1390,38 @@ tbody tr:hover { background: var(--bg3); }
 
         <!-- Entity Detail Panel (hidden by default) -->
         <div id="et-detail" style="display:none;margin-top:20px;"></div>
+      </div>
+
+      <!-- DEXSCREENER -->
+      <div id="oc-panel-dexscreener" style="display:none;">
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="ocShowDivision('overview')">On-Chain</span>
+          <span style="font-size:11px;color:var(--text3);">/</span>
+          <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128142; Dexscreener</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <div class="market-search" style="flex:1;min-width:240px;max-width:400px;position:relative;">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="dex-search" placeholder="Search token by name, symbol, or address..." autocomplete="off" onkeydown="if(event.key==='Enter')dexSearch()">
+          </div>
+          <button class="btn btn-primary" onclick="dexSearch()">Search</button>
+          <button class="btn btn-ghost" onclick="dexLoadTrending()">&#128293; Trending</button>
+          <button class="btn btn-ghost" onclick="dexLoadNewPairs()">&#10024; New Pairs</button>
+        </div>
+        <!-- Dex Summary Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;" id="dex-summary-cards">
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Data Source</div><div style="font-size:18px;font-weight:700;color:var(--accent2);margin-top:4px;">Dexscreener</div><div style="font-size:11px;color:var(--text3);">DEX token analytics</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Chains</div><div style="font-size:18px;font-weight:700;margin-top:4px;">50+</div><div style="font-size:11px;color:var(--text3);">All major L1/L2s</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Coverage</div><div style="font-size:18px;font-weight:700;margin-top:4px;">DEX Pairs</div><div style="font-size:11px;color:var(--text3);">Liquidity, volume, price</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Use Case</div><div style="font-size:18px;font-weight:700;color:var(--yellow);margin-top:4px;">Early Alpha</div><div style="font-size:11px;color:var(--text3);">New listings, trending</div></div>
+        </div>
+        <!-- Results container -->
+        <div id="dex-results">
+          <div class="card" style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">
+            Search for any token, or click <strong>Trending</strong> / <strong>New Pairs</strong> to discover opportunities.<br>
+            <span style="font-size:11px;margin-top:4px;display:block;">Powered by Dexscreener free API — no key required</span>
+          </div>
+        </div>
       </div>
 
       <!-- FLOW MONITOR -->
@@ -1588,6 +1623,11 @@ tbody tr:hover { background: var(--bg3); }
         <div class="card" style="padding:20px;margin-bottom:16px;">
           <h3 style="margin:0 0 4px 0;font-size:14px;color:var(--text2);">Confluence Scorer</h3>
           <p style="font-size:12px;color:var(--text3);margin:0 0 16px;">Rate each factor 1-5. Weighted score determines position sizing. Minimum 3.5 to act.</p>
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <button class="btn btn-sm btn-ghost" onclick="confAutoScore()" title="Auto-populate from entity tracker, regime, and active setups">&#9889; Auto-Score</button>
+            <button class="btn btn-sm btn-ghost" onclick="confGenerateReport()" title="Generate a conviction report from current scoring">&#128203; Generate Report</button>
+            <button class="btn btn-sm btn-ghost" onclick="confLinkSetup()" title="Link to an active setup">&#128279; Link Setup</button>
+          </div>
 
           <div class="form-group" style="margin-bottom:12px;">
             <label style="font-size:12px;">Asset</label>
@@ -1652,6 +1692,8 @@ tbody tr:hover { background: var(--bg3); }
             <div style="padding:8px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--accent2);"><strong>Min 3.5:</strong> Required to act. 4.5+ = max conviction (rare)</div>
           </div>
         </div>
+        <!-- Conviction Report Output -->
+        <div id="conf-report-container" style="display:none;margin-top:16px;"></div>
       </div>
 
       <!-- TRADE LOG -->
@@ -7870,7 +7912,10 @@ async function etScanAll() {
   }
   etSave();
   etRender();
-  alert('Scanned ' + scanned + '/' + count + ' entities');
+  // Auto-generate signals from scan results
+  var newSigs = 0;
+  if (typeof autoGenerateSignals === 'function') newSigs = autoGenerateSignals() || 0;
+  alert('Scanned ' + scanned + '/' + count + ' entities' + (newSigs > 0 ? ', generated ' + newSigs + ' new signals' : ''));
 }
 
 function etShowDetail(id) {
@@ -8955,7 +9000,7 @@ function taShowTab(tab) {
 
 // ===== ON-CHAIN INTEL DIVISION NAVIGATION =====
 function ocShowDivision(div) {
-  ['overview','hyperliquid','entities','flows','signals'].forEach(d => {
+  ['overview','hyperliquid','entities','dexscreener','flows','signals'].forEach(d => {
     var panel = document.getElementById('oc-panel-' + d);
     if (panel) panel.style.display = d === div ? '' : 'none';
     var tab = document.getElementById('oc-div-' + d);
@@ -9922,6 +9967,534 @@ function renderAll() {
   const cgInput = document.getElementById('settings-coinglass-key');
   if (cgInput && !cgInput.value) cgInput.value = getCoinglassKey();
 }
+
+// ===== DEXSCREENER INTEGRATION =====
+var DEX_API = 'https://api.dexscreener.com';
+
+async function dexSearch() {
+  var q = (document.getElementById('dex-search')?.value || '').trim();
+  if (!q) return;
+  var container = document.getElementById('dex-results');
+  container.innerHTML = '<div class="card" style="padding:40px;text-align:center;color:var(--text3);">Searching Dexscreener for "' + esc(q) + '"...</div>';
+  try {
+    var resp = await fetch(DEX_API + '/latest/dex/search?q=' + encodeURIComponent(q));
+    var data = await resp.json();
+    var pairs = (data.pairs || []).slice(0, 30);
+    if (!pairs.length) { container.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--text3);">No results found for "' + esc(q) + '"</div>'; return; }
+    dexRenderPairs(pairs, 'Search: ' + q);
+  } catch(e) { container.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--red);">Error: ' + esc(e.message) + '</div>'; }
+}
+
+async function dexLoadTrending() {
+  var container = document.getElementById('dex-results');
+  container.innerHTML = '<div class="card" style="padding:40px;text-align:center;color:var(--text3);">Loading trending tokens...</div>';
+  try {
+    var resp = await fetch(DEX_API + '/token-boosts/top/v1');
+    var tokens = await resp.json();
+    if (!tokens || !tokens.length) { container.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--text3);">No trending tokens available right now.</div>'; return; }
+    // Fetch pair data for top trending tokens
+    var addresses = tokens.slice(0, 20).map(function(t) { return t.tokenAddress; }).filter(Boolean);
+    if (!addresses.length) { container.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--text3);">No token addresses in trending data.</div>'; return; }
+    // Batch fetch — Dexscreener supports comma-separated addresses (up to 30)
+    var pairs = [];
+    for (var i = 0; i < addresses.length; i += 10) {
+      var batch = addresses.slice(i, i + 10);
+      try {
+        var r2 = await fetch(DEX_API + '/tokens/v1/' + batch.join(','));
+        var d2 = await r2.json();
+        if (Array.isArray(d2)) pairs = pairs.concat(d2);
+      } catch(e2) {}
+    }
+    if (!pairs.length) {
+      // Fallback: render trending tokens directly without pair data
+      var html = '<div class="card" style="padding:18px;"><h3 style="margin:0 0 14px;font-size:14px;color:var(--text2);">&#128293; Trending Tokens (' + tokens.length + ')</h3>';
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">';
+      tokens.slice(0, 20).forEach(function(t) {
+        html += '<div style="padding:12px;background:var(--bg2);border-radius:8px;border-left:3px solid var(--yellow);">';
+        html += '<div style="font-weight:700;color:var(--text);">' + esc(t.description || t.tokenAddress || 'Unknown') + '</div>';
+        html += '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + esc(t.chainId || '') + ' | Boosted ' + (t.totalAmount || 0) + 'x</div>';
+        if (t.url) html += '<a href="' + esc(t.url) + '" target="_blank" style="font-size:11px;color:var(--accent2);">View on Dexscreener</a>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+      container.innerHTML = html;
+      return;
+    }
+    pairs.sort(function(a, b) { return (parseFloat(b.volume?.h24) || 0) - (parseFloat(a.volume?.h24) || 0); });
+    dexRenderPairs(pairs.slice(0, 30), 'Trending Tokens');
+  } catch(e) { container.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--red);">Error: ' + esc(e.message) + '</div>'; }
+}
+
+async function dexLoadNewPairs() {
+  var container = document.getElementById('dex-results');
+  container.innerHTML = '<div class="card" style="padding:40px;text-align:center;color:var(--text3);">Loading latest token profiles...</div>';
+  try {
+    var resp = await fetch(DEX_API + '/token-profiles/latest/v1');
+    var profiles = await resp.json();
+    if (!profiles || !profiles.length) { container.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--text3);">No new profiles available.</div>'; return; }
+    var html = '<div class="card" style="padding:18px;"><h3 style="margin:0 0 14px;font-size:14px;color:var(--text2);">&#10024; Latest Token Profiles (' + profiles.length + ')</h3>';
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">Token</th><th style="padding:8px;text-align:left;color:var(--text3);">Chain</th><th style="padding:8px;text-align:left;color:var(--text3);">Description</th><th style="padding:8px;text-align:center;color:var(--text3);">Links</th></tr>';
+    profiles.slice(0, 30).forEach(function(p) {
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:8px;"><div style="display:flex;align-items:center;gap:8px;">';
+      if (p.icon) html += '<img src="' + esc(p.icon) + '" style="width:24px;height:24px;border-radius:50%;" onerror="this.style.display=\'none\'">';
+      html += '<span style="font-weight:700;color:var(--accent2);cursor:pointer;" onclick="document.getElementById(\'dex-search\').value=\'' + esc(p.tokenAddress || '') + '\';dexSearch();">' + esc(p.description || p.tokenAddress?.slice(0,10) || '?') + '</span></div></td>';
+      html += '<td style="padding:8px;color:var(--text3);">' + esc(p.chainId || '') + '</td>';
+      html += '<td style="padding:8px;color:var(--text2);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(p.description || '--') + '</td>';
+      html += '<td style="padding:8px;text-align:center;">';
+      if (p.url) html += '<a href="' + esc(p.url) + '" target="_blank" style="color:var(--accent2);font-size:11px;margin-right:6px;">DEX</a>';
+      var links = p.links || [];
+      links.forEach(function(l) {
+        if (l.type === 'twitter') html += '<a href="' + esc(l.url) + '" target="_blank" style="color:var(--accent2);font-size:11px;margin-right:6px;">X</a>';
+        if (l.type === 'telegram') html += '<a href="' + esc(l.url) + '" target="_blank" style="color:var(--accent2);font-size:11px;margin-right:6px;">TG</a>';
+        if (l.type === 'website') html += '<a href="' + esc(l.url) + '" target="_blank" style="color:var(--accent2);font-size:11px;margin-right:6px;">Web</a>';
+      });
+      html += '</td></tr>';
+    });
+    html += '</table></div></div>';
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--red);">Error: ' + esc(e.message) + '</div>'; }
+}
+
+function dexRenderPairs(pairs, title) {
+  var container = document.getElementById('dex-results');
+  var html = '<div class="card" style="padding:18px;"><h3 style="margin:0 0 14px;font-size:14px;color:var(--text2);">' + esc(title) + ' (' + pairs.length + ' pairs)</h3>';
+  html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+  html += '<tr style="border-bottom:1px solid var(--border);">';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Token</th>';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Chain / DEX</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Price</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">24h %</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">24h Vol</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Liquidity</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">FDV</th>';
+  html += '<th style="padding:8px;text-align:center;color:var(--text3);">Actions</th>';
+  html += '</tr>';
+  pairs.forEach(function(p) {
+    var bt = p.baseToken || {};
+    var price = parseFloat(p.priceUsd || 0);
+    var chg = parseFloat(p.priceChange?.h24 || 0);
+    var vol = parseFloat(p.volume?.h24 || 0);
+    var liq = parseFloat(p.liquidity?.usd || 0);
+    var fdv = parseFloat(p.fdv || 0);
+    html += '<tr style="border-bottom:1px solid var(--border);">';
+    html += '<td style="padding:8px;"><span style="font-weight:700;color:var(--accent2);">' + esc(bt.symbol || '?') + '</span> <span style="font-size:10px;color:var(--text3);">' + esc(bt.name || '') + '</span></td>';
+    html += '<td style="padding:8px;color:var(--text3);font-size:11px;">' + esc(p.chainId || '') + ' / ' + esc(p.dexId || '') + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);font-family:monospace;">$' + (price < 0.01 ? price.toExponential(2) : price.toFixed(price < 1 ? 4 : 2)) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:' + (chg >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:600;">' + (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">$' + dexFmt(vol) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">$' + dexFmt(liq) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text2);">' + (fdv > 0 ? '$' + dexFmt(fdv) : '--') + '</td>';
+    html += '<td style="padding:8px;text-align:center;">';
+    if (p.url) html += '<a href="' + esc(p.url) + '" target="_blank" style="color:var(--accent2);font-size:11px;">Chart</a> ';
+    html += '<button class="btn btn-sm btn-ghost admin-only" onclick="dexToWatchlist(\'' + esc(bt.symbol || '') + '\',\'' + esc(bt.name || '') + '\',' + price + ')" style="font-size:10px;padding:2px 6px;">+ Watch</button>';
+    html += '</td></tr>';
+  });
+  html += '</table></div></div>';
+  container.innerHTML = html;
+  updateAdminUI();
+}
+
+function dexFmt(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toFixed(0);
+}
+
+function dexToWatchlist(symbol, name, price) {
+  if (typeof DB === 'undefined' || !DB.watchlist) { alert('Watchlist not loaded'); return; }
+  var exists = DB.watchlist.find(function(w) { return w.symbol && w.symbol.toUpperCase() === symbol.toUpperCase(); });
+  if (exists) { alert(symbol + ' already on watchlist'); return; }
+  DB.watchlist.push({
+    id: 'w_' + Date.now(), symbol: symbol.toUpperCase(), name: name,
+    price: price, type: 'crypto', source: 'dexscreener',
+    addedAt: new Date().toISOString(), notes: 'Added from Dexscreener'
+  });
+  saveToDB(); renderAll();
+  alert(symbol + ' added to watchlist!');
+}
+
+// ===== AUTO-CONFLUENCE SCORING =====
+function confAutoScore() {
+  var asset = (document.getElementById('conf-asset')?.value || '').trim().toUpperCase();
+  if (!asset) { alert('Enter an asset first (e.g. BTC, ETH, SOL)'); return; }
+
+  // 1. On-Chain score: check entity tracker for relevant positions
+  var ocScore = 3; // neutral default
+  if (typeof etEntities !== 'undefined' && etEntities.length > 0) {
+    var entityPositions = [];
+    etEntities.forEach(function(e) {
+      if (!e.positions) return;
+      e.positions.forEach(function(p) {
+        if (p.coin && p.coin.toUpperCase() === asset) {
+          entityPositions.push({ grade: e.grade, szi: parseFloat(p.szi || 0), entity: e.name });
+        }
+      });
+    });
+    if (entityPositions.length > 0) {
+      var gradeScores = { 'A+': 5, 'A': 4.5, 'B+': 4, 'B': 3.5, 'C': 2.5, '?': 3 };
+      var totalWeight = 0, weightedSum = 0;
+      entityPositions.forEach(function(ep) {
+        var gs = gradeScores[ep.grade] || 3;
+        var w = Math.abs(ep.szi);
+        weightedSum += gs * w;
+        totalWeight += w;
+      });
+      ocScore = totalWeight > 0 ? Math.min(5, Math.max(1, weightedSum / totalWeight)) : 3;
+      // Boost if multiple high-grade entities agree
+      var highGradeCount = entityPositions.filter(function(ep) { return ep.grade === 'A+' || ep.grade === 'A'; }).length;
+      if (highGradeCount >= 2) ocScore = Math.min(5, ocScore + 0.5);
+    }
+  }
+
+  // 2. Fundamental score: check reports and watchlist
+  var fuScore = 3;
+  if (typeof DB !== 'undefined' && DB.reports) {
+    var relevantReports = DB.reports.filter(function(r) {
+      return r.title && r.title.toUpperCase().includes(asset) && !r.deleted;
+    });
+    if (relevantReports.length > 0) {
+      var latestReport = relevantReports.sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); })[0];
+      if (latestReport.rating === 'strong-buy' || latestReport.conviction === 'high') fuScore = 5;
+      else if (latestReport.rating === 'buy') fuScore = 4;
+      else if (latestReport.rating === 'hold') fuScore = 3;
+      else if (latestReport.rating === 'sell') fuScore = 2;
+      else fuScore = 3.5; // has report = at least some thesis
+    }
+  }
+  // Check upcoming catalysts
+  if (typeof catEvents !== 'undefined') {
+    var now = new Date();
+    var upcoming = catEvents.filter(function(c) {
+      return c.asset && c.asset.toUpperCase() === asset && new Date(c.date) > now && c.impact === 'positive';
+    });
+    if (upcoming.length > 0) fuScore = Math.min(5, fuScore + 0.5);
+  }
+
+  // 3. Technical score: check active setups
+  var taScore = 3;
+  if (typeof taSetups !== 'undefined') {
+    var activeSetups = taSetups.filter(function(s) {
+      return s.asset && s.asset.toUpperCase() === asset && s.status !== 'expired';
+    });
+    if (activeSetups.length > 0) {
+      var setup = activeSetups[0];
+      var rr = 0;
+      if (setup.stop && setup.entry && setup.target) {
+        var risk = Math.abs(setup.entry - setup.stop);
+        var reward = Math.abs(setup.target - setup.entry);
+        rr = risk > 0 ? reward / risk : 0;
+      }
+      if (rr >= 3) taScore = 5;
+      else if (rr >= 2) taScore = 4;
+      else if (rr >= 1.5) taScore = 3.5;
+      else taScore = 3;
+      // Bonus for triggered status
+      if (setup.status === 'triggered') taScore = Math.min(5, taScore + 0.5);
+    }
+  }
+
+  // 4. Regime score: pull from current regime display
+  var reScore = 3;
+  var regimeEl = document.getElementById('ta-btc-regime');
+  if (regimeEl) {
+    var regimeText = regimeEl.textContent.toLowerCase();
+    if (regimeText.includes('risk-on')) reScore = 4.5;
+    else if (regimeText.includes('neutral')) reScore = 3;
+    else if (regimeText.includes('risk-off')) reScore = 2;
+  }
+
+  // Apply scores to sliders with animation
+  var sliders = [
+    { id: 'conf-onchain', score: Math.round(ocScore * 2) / 2 },
+    { id: 'conf-fundamental', score: Math.round(fuScore * 2) / 2 },
+    { id: 'conf-technical', score: Math.round(taScore * 2) / 2 },
+    { id: 'conf-regime', score: Math.round(reScore * 2) / 2 }
+  ];
+  sliders.forEach(function(s) {
+    var el = document.getElementById(s.id);
+    if (el) { el.value = s.score; }
+  });
+  confCalc();
+}
+
+function confLinkSetup() {
+  if (typeof taSetups === 'undefined' || !taSetups.length) { alert('No setups available. Create a setup first.'); return; }
+  var watching = taSetups.filter(function(s) { return s.status !== 'expired'; });
+  if (!watching.length) { alert('No active setups to link.'); return; }
+  var html = '<h2 style="margin:0 0 16px;">Link Setup to Confluence</h2>';
+  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+  watching.forEach(function(s) {
+    var rr = s.stop && s.entry && s.target ? (Math.abs(s.target - s.entry) / Math.abs(s.entry - s.stop)).toFixed(1) : '?';
+    html += '<button class="btn btn-ghost" onclick="confApplySetup(\'' + s.id + '\')" style="text-align:left;justify-content:flex-start;">';
+    html += '<span style="font-weight:700;">' + esc(s.asset) + '</span> ';
+    html += '<span style="color:' + (s.direction === 'long' ? 'var(--green)' : 'var(--red)') + ';">' + s.direction.toUpperCase() + '</span> ';
+    html += '<span style="color:var(--text3);">R:R ' + rr + ' | ' + esc(s.playbook || '') + ' | ' + esc(s.status) + '</span>';
+    html += '</button>';
+  });
+  html += '</div><button class="btn btn-ghost" onclick="closeModal()" style="margin-top:12px;">Cancel</button>';
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+
+function confApplySetup(setupId) {
+  closeModal();
+  var setup = taSetups.find(function(s) { return s.id === setupId; });
+  if (!setup) return;
+  var assetEl = document.getElementById('conf-asset');
+  if (assetEl) assetEl.value = setup.asset;
+  confAutoScore();
+}
+
+function confGenerateReport() {
+  var asset = (document.getElementById('conf-asset')?.value || '').trim().toUpperCase();
+  if (!asset) { alert('Enter an asset first'); return; }
+  var oc = parseFloat(document.getElementById('conf-onchain')?.value || 3);
+  var fu = parseFloat(document.getElementById('conf-fundamental')?.value || 3);
+  var ta = parseFloat(document.getElementById('conf-technical')?.value || 3);
+  var re = parseFloat(document.getElementById('conf-regime')?.value || 3);
+  var score = (oc * 0.25) + (fu * 0.25) + (ta * 0.30) + (re * 0.20);
+
+  var verdict = 'WAIT';
+  var sizing = 'No position';
+  if (score >= 4.5) { verdict = 'MAXIMUM CONVICTION'; sizing = '3% risk'; }
+  else if (score >= 4.0) { verdict = 'STRONG CONVICTION'; sizing = '2% risk'; }
+  else if (score >= 3.5) { verdict = 'ACTIONABLE'; sizing = '1% risk'; }
+
+  // Gather linked data
+  var setupInfo = '';
+  if (typeof taSetups !== 'undefined') {
+    var linked = taSetups.filter(function(s) { return s.asset && s.asset.toUpperCase() === asset && s.status !== 'expired'; });
+    if (linked.length > 0) {
+      var s = linked[0];
+      var rr = s.stop && s.entry && s.target ? (Math.abs(s.target - s.entry) / Math.abs(s.entry - s.stop)).toFixed(1) : '?';
+      setupInfo = s.direction.toUpperCase() + ' | Entry: $' + s.entry + ' | Stop: $' + s.stop + ' | Target: $' + s.target + ' | R:R: ' + rr + ' | Playbook: ' + (s.playbook || 'Discretionary');
+      if (s.thesis) setupInfo += '\nThesis: ' + s.thesis;
+    }
+  }
+  var catalystInfo = '';
+  if (typeof catEvents !== 'undefined') {
+    var now = new Date();
+    var cats = catEvents.filter(function(c) { return c.asset && c.asset.toUpperCase() === asset && new Date(c.date) > now; });
+    if (cats.length > 0) {
+      catalystInfo = cats.map(function(c) { return c.title + ' (' + c.date + ', ' + c.impact + ')'; }).join('; ');
+    }
+  }
+  var entityInfo = '';
+  if (typeof etEntities !== 'undefined') {
+    var relevant = [];
+    etEntities.forEach(function(e) {
+      if (!e.positions) return;
+      e.positions.forEach(function(p) {
+        if (p.coin && p.coin.toUpperCase() === asset) {
+          relevant.push(e.name + ' (' + e.grade + '): ' + (parseFloat(p.szi) > 0 ? 'LONG' : 'SHORT') + ' ' + Math.abs(parseFloat(p.szi)).toFixed(2));
+        }
+      });
+    });
+    if (relevant.length > 0) entityInfo = relevant.join('; ');
+  }
+
+  var regimeEl = document.getElementById('ta-btc-regime');
+  var regime = regimeEl ? regimeEl.textContent : '--';
+
+  var report = '# CONVICTION REPORT: ' + asset + '\n';
+  report += 'Generated: ' + new Date().toISOString().split('T')[0] + '\n\n';
+  report += '## VERDICT: ' + verdict + ' (' + score.toFixed(2) + '/5.00)\n';
+  report += 'Position Sizing: ' + sizing + '\n\n';
+  report += '## CONFLUENCE BREAKDOWN\n';
+  report += '| Factor | Score | Weight | Weighted |\n';
+  report += '|--------|-------|--------|----------|\n';
+  report += '| On-Chain Signal | ' + oc.toFixed(1) + '/5 | 25% | ' + (oc*0.25).toFixed(2) + ' |\n';
+  report += '| Fundamental Thesis | ' + fu.toFixed(1) + '/5 | 25% | ' + (fu*0.25).toFixed(2) + ' |\n';
+  report += '| Technical Setup | ' + ta.toFixed(1) + '/5 | 30% | ' + (ta*0.30).toFixed(2) + ' |\n';
+  report += '| Regime Alignment | ' + re.toFixed(1) + '/5 | 20% | ' + (re*0.20).toFixed(2) + ' |\n';
+  report += '| **TOTAL** | | | **' + score.toFixed(2) + '** |\n\n';
+  report += '## MARKET REGIME: ' + regime + '\n\n';
+  if (setupInfo) report += '## SETUP\n' + setupInfo + '\n\n';
+  if (entityInfo) report += '## SMART MONEY\n' + entityInfo + '\n\n';
+  if (catalystInfo) report += '## UPCOMING CATALYSTS\n' + catalystInfo + '\n\n';
+
+  // Render
+  var container = document.getElementById('conf-report-container');
+  container.style.display = '';
+  var reportHtml = '<div class="card" style="padding:20px;border-left:3px solid ' + (score >= 4.5 ? 'var(--green)' : score >= 4.0 ? 'var(--green)' : score >= 3.5 ? 'var(--yellow)' : 'var(--red)') + ';">';
+  reportHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+  reportHtml += '<h3 style="margin:0;font-size:16px;">Conviction Report: ' + esc(asset) + '</h3>';
+  reportHtml += '<div style="display:flex;gap:6px;">';
+  reportHtml += '<button class="btn btn-sm btn-ghost" onclick="confCopyReport()">&#128203; Copy</button>';
+  reportHtml += '<button class="btn btn-sm btn-ghost" onclick="confSaveReport(\'' + esc(asset) + '\',' + score.toFixed(2) + ',\'' + esc(verdict) + '\')">&#128190; Save</button>';
+  reportHtml += '</div></div>';
+  reportHtml += '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">';
+  reportHtml += '<div style="font-size:32px;font-weight:800;color:' + (score >= 3.5 ? 'var(--green)' : 'var(--red)') + ';">' + score.toFixed(2) + '</div>';
+  reportHtml += '<div><div style="font-size:14px;font-weight:700;color:' + (score >= 3.5 ? 'var(--green)' : 'var(--red)') + ';">' + verdict + '</div>';
+  reportHtml += '<div style="font-size:12px;color:var(--text3);">' + sizing + '</div></div></div>';
+  // Breakdown bars
+  var factors = [
+    { label: 'On-Chain', val: oc, color: 'var(--accent2)' },
+    { label: 'Fundamental', val: fu, color: 'var(--green)' },
+    { label: 'Technical', val: ta, color: 'var(--yellow)' },
+    { label: 'Regime', val: re, color: 'var(--blue)' }
+  ];
+  factors.forEach(function(f) {
+    reportHtml += '<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;"><span style="color:var(--text2);">' + f.label + '</span><span style="font-weight:700;">' + f.val.toFixed(1) + '/5</span></div>';
+    reportHtml += '<div style="background:var(--bg2);border-radius:4px;height:8px;overflow:hidden;"><div style="width:' + (f.val/5*100) + '%;height:100%;background:' + f.color + ';border-radius:4px;"></div></div></div>';
+  });
+  if (setupInfo) { reportHtml += '<div style="margin-top:14px;padding:10px;background:var(--bg2);border-radius:6px;font-size:12px;color:var(--text2);"><strong>Setup:</strong> ' + esc(setupInfo.split('\n')[0]) + '</div>'; }
+  if (entityInfo) { reportHtml += '<div style="margin-top:8px;padding:10px;background:var(--bg2);border-radius:6px;font-size:12px;color:var(--text2);"><strong>Smart Money:</strong> ' + esc(entityInfo) + '</div>'; }
+  if (catalystInfo) { reportHtml += '<div style="margin-top:8px;padding:10px;background:var(--bg2);border-radius:6px;font-size:12px;color:var(--text2);"><strong>Catalysts:</strong> ' + esc(catalystInfo) + '</div>'; }
+  reportHtml += '</div>';
+  container.innerHTML = reportHtml;
+
+  // Store for copy
+  window._lastConvictionReport = report;
+}
+
+function confCopyReport() {
+  if (window._lastConvictionReport) {
+    navigator.clipboard.writeText(window._lastConvictionReport).then(function() { alert('Report copied to clipboard!'); });
+  }
+}
+
+function confSaveReport(asset, score, verdict) {
+  if (typeof DB === 'undefined') return;
+  var report = {
+    id: 'conv_' + Date.now(), title: 'Conviction: ' + asset + ' — ' + verdict + ' (' + score + ')',
+    type: 'conviction', subtype: 'crypto', rating: score >= 4.0 ? 'strong-buy' : score >= 3.5 ? 'buy' : 'hold',
+    conviction: score >= 4.5 ? 'max' : score >= 4.0 ? 'high' : score >= 3.5 ? 'medium' : 'low',
+    content: window._lastConvictionReport || '', createdAt: new Date().toISOString()
+  };
+  if (!DB.reports) DB.reports = [];
+  DB.reports.unshift(report);
+  saveToDB();
+  alert('Conviction report saved to Reports!');
+}
+
+// ===== PORTFOLIO LIVE PRICING =====
+async function pfRefreshPrices() {
+  if (!pfHoldings.length) { alert('No positions to refresh'); return; }
+  var btn = document.getElementById('pf-refresh-btn');
+  if (btn) btn.textContent = 'Loading...';
+  try {
+    // Separate crypto and stock holdings
+    var cryptos = pfHoldings.filter(function(h) { return h.type === 'crypto' || !h.type; });
+    var stocks = pfHoldings.filter(function(h) { return h.type === 'stock'; });
+
+    // Fetch crypto prices from CoinGecko
+    if (cryptos.length > 0) {
+      var symbols = cryptos.map(function(h) { return h.asset.toLowerCase(); });
+      // Map common symbols to CoinGecko IDs
+      var cgMap = { btc:'bitcoin', eth:'ethereum', sol:'solana', bnb:'binancecoin', xrp:'ripple', ada:'cardano', avax:'avalanche-2', dot:'polkadot', link:'chainlink', matic:'matic-network', atom:'cosmos', uni:'uniswap', near:'near', apt:'aptos', arb:'arbitrum', op:'optimism', sui:'sui', sei:'sei-network', inj:'injective-protocol', tia:'celestia', jup:'jupiter-exchange-solana', wif:'dogwifcoin', pepe:'pepe', doge:'dogecoin', shib:'shiba-inu', hbar:'hedera-hashgraph', fil:'filecoin', ton:'the-open-network', ftm:'fantom', ltc:'litecoin', bch:'bitcoin-cash', etc:'ethereum-classic', stx:'blockstack', render:'render-token', fet:'fetch-ai', ar:'arweave', grt:'the-graph', aave:'aave', mkr:'maker', snx:'synthetix-network-token', crv:'curve-dao-token', pendle:'pendle', ena:'ethena', ondo:'ondo-finance', ray:'raydium', jto:'jito-governance-token', pyth:'pyth-network', w:'wormhole', strk:'starknet', zro:'layerzero', io:'io-net' };
+      var ids = symbols.map(function(s) { return cgMap[s] || s; });
+      try {
+        var cgResp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + ids.join(',') + '&vs_currencies=usd');
+        var cgData = await cgResp.json();
+        cryptos.forEach(function(h) {
+          var id = cgMap[h.asset.toLowerCase()] || h.asset.toLowerCase();
+          if (cgData[id] && cgData[id].usd) {
+            h.currentPrice = cgData[id].usd;
+            h.lastPriceUpdate = new Date().toISOString();
+          }
+        });
+      } catch(e) { console.warn('CoinGecko fetch failed:', e); }
+    }
+
+    // Fetch stock prices from FMP
+    if (stocks.length > 0) {
+      var fmpKey = localStorage.getItem('fmpKey') || '';
+      if (fmpKey) {
+        var tickers = stocks.map(function(h) { return h.asset; }).join(',');
+        try {
+          var fmpResp = await fetch('https://financialmodelingprep.com/stable/batch-quote-short?symbols=' + tickers + '&apikey=' + fmpKey);
+          var fmpData = await fmpResp.json();
+          if (Array.isArray(fmpData)) {
+            fmpData.forEach(function(q) {
+              var h = stocks.find(function(s) { return s.asset === q.symbol; });
+              if (h && q.price) { h.currentPrice = q.price; h.lastPriceUpdate = new Date().toISOString(); }
+            });
+          }
+        } catch(e) { console.warn('FMP fetch failed:', e); }
+      }
+    }
+
+    pfSave(); pfRender();
+    if (btn) btn.textContent = '\u{1F504} Updated!';
+    setTimeout(function() { if (btn) btn.textContent = '\u{1F504} Live Prices'; }, 2000);
+  } catch(e) {
+    if (btn) btn.textContent = '\u{1F504} Live Prices';
+    alert('Error refreshing prices: ' + e.message);
+  }
+}
+
+// ===== AUTO-SIGNAL GENERATION =====
+function autoGenerateSignals() {
+  if (typeof etEntities === 'undefined' || typeof sigSignals === 'undefined') return;
+  var generated = 0;
+  var now = new Date().toISOString();
+
+  // 1. Whale position signals from entity scans
+  etEntities.forEach(function(e) {
+    if (!e.positions || !e.positions.length) return;
+    if (e.grade !== 'A+' && e.grade !== 'A') return; // only high-grade entities
+    e.positions.forEach(function(p) {
+      var notional = Math.abs(parseFloat(p.szi || 0)) * parseFloat(p.entryPx || 0);
+      if (notional < 100000) return; // only $100K+ positions
+      // Check if signal already exists for this entity+coin combo (within 24h)
+      var exists = sigSignals.find(function(s) {
+        return s.entity === e.name && s.asset === p.coin && (new Date() - new Date(s.createdAt)) < 86400000;
+      });
+      if (exists) return;
+      sigSignals.push({
+        id: 'sig_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        asset: p.coin, type: parseFloat(p.szi) > 0 ? 'accumulation' : 'distribution',
+        conviction: e.grade === 'A+' ? 'high' : 'medium',
+        status: 'active', entity: e.name, entityGrade: e.grade,
+        size: notional, direction: parseFloat(p.szi) > 0 ? 'LONG' : 'SHORT',
+        createdAt: now, source: 'auto-entity-scan'
+      });
+      generated++;
+    });
+  });
+
+  // 2. Catalyst proximity signals
+  if (typeof catEvents !== 'undefined') {
+    var today = new Date();
+    catEvents.forEach(function(c) {
+      var catDate = new Date(c.date);
+      var daysUntil = Math.ceil((catDate - today) / 86400000);
+      if (daysUntil <= 0 || daysUntil > 7) return; // only upcoming within 7 days
+      if (c.impact !== 'positive') return;
+      var exists = sigSignals.find(function(s) {
+        return s.catalystId === c.id && (new Date() - new Date(s.createdAt)) < 86400000;
+      });
+      if (exists) return;
+      sigSignals.push({
+        id: 'sig_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        asset: c.asset || c.title, type: 'whale_move',
+        conviction: daysUntil <= 2 ? 'high' : 'medium',
+        status: 'active', catalystId: c.id,
+        notes: 'Catalyst in ' + daysUntil + 'd: ' + c.title,
+        createdAt: now, source: 'auto-catalyst'
+      });
+      generated++;
+    });
+  }
+
+  if (generated > 0) {
+    sigSave(); sigRender();
+    // Update badge
+    var badge = document.getElementById('oc-signal-count');
+    if (badge) {
+      var active = sigSignals.filter(function(s) { return s.status === 'active'; });
+      badge.textContent = active.length;
+    }
+  }
+  return generated;
+}
+
+// Hook auto-signal generation into entity scan completion
+var _origEtScanAll = typeof etScanAll === 'function' ? etScanAll : null;
 
 // ===== LOAD CUSTOM TEMPLATES =====
 try {
