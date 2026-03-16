@@ -1,29 +1,47 @@
 # Fund HQ
 
-Central dashboard for fund management, tracking, and operations.
+AI-powered institutional research operating system for crypto and equities. Three research divisions — On-Chain Intelligence, Fundamental Research, and Technical Analysis — working together to surface asymmetric opportunities.
+
+## Architecture
+
+| Division | Purpose | Agent |
+|----------|---------|-------|
+| **On-Chain Intel** | Smart money tracking, flow analysis, venue intelligence | Sentinel |
+| **Research** | Fundamental deep dives, tokenomics, catalysts, valuation | Analyst |
+| **Technical** | Market regime, trade setups, playbooks, confluence scoring | Quant |
 
 ## Features
 
-- **Deal Flow** — Pipeline management for investment deals with stage tracking
-- **Project Dump** — Project tracking and repository
-- **Research Notes** — Deep research documentation with structured templates (equity & crypto analysis)
-- **Reports** — Generated reports and outputs
-- **Tasks & Roadmap** — Milestone-based project management with strategic planning
-- **AI Assistant** — "Pamela" chatbot for navigation and data management
-- **Dashboard** — Overview with stats and status badges across all sections
+- **On-Chain Intel** — Hyperliquid whale tracker (wallet scanner, whale discovery, saved wallets, perp positioning), Entity Tracker, Flow Monitor, Signal Feed
+- **Market Data** — Live search across crypto (CoinGecko) and stocks (FMP) with auto-scoring
+- **Research Templates** — Crypto (16s), Stock (14s), Commodity (12s), Quick Thesis (5s) with AI-powered section analysis
+- **Reports** — AI-generated research reports with rating, conviction, Substack publishing, soft-delete trash
+- **Technical Analysis** — Market regime detection, setup scanner, strategy playbooks, 4-factor confluence scoring, trade log
+- **AI Assistant** — "Pamela" Claude-powered agent with 20 tools, multi-turn reasoning, web search
+- **Scheduled Tasks** — Daily market scans, watchlist refresh, weekly deep dives via Claude Code cron
+- **Dashboard** — Fund overview with watchlist, reports, tasks, quick actions
+- **Operations** — Kanban tasks, milestone roadmap, daily progress log
 
 ## Tech Stack
 
 - Single HTML file — no build tools, no frameworks
-- **Firebase Realtime Database** for cloud sync across devices
+- **Firebase Realtime Database** for cloud sync
 - **localStorage** fallback for offline use
-- CSS custom properties with dark theme
-- Vanilla JavaScript
+- **Anthropic Claude API** for AI research + Pamela agent
+- **Hyperliquid API** for on-chain data
+- **Python agent** for persistent monitoring + WebSocket alerts
+- Vanilla JavaScript, CSS custom properties, dark theme
 
 ## Live
 
-Hosted on Netlify: `jumptrading.netlify.app/fund-hq.html`
+**https://jumparo1.github.io/JumpTools/fund-hq.html**
 
 ## Run Locally
 
-Open `fund-hq.html` in any browser. Firebase syncs automatically when online.
+```bash
+cd FundHQ
+python3 -m http.server 8080
+# Open http://localhost:8080/fund-hq.html
+```
+
+Firebase syncs automatically when online. API keys stored in browser localStorage (Settings page).
