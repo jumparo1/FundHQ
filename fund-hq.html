@@ -1266,7 +1266,7 @@ tbody tr:hover { background: var(--bg3); }
                   <tr><td><strong>Project Dump</strong></td><td>Pipeline</td><td>Quick capture for project ideas</td></tr>
                   <tr><td><strong>Watchlist</strong></td><td>Pipeline</td><td>Tracked assets with scores, detail view, Firebase sync</td></tr>
                   <tr><td><strong>Alerts</strong></td><td>Pipeline</td><td>Signals from scheduled scans + Pamela</td></tr>
-                  <tr><td><strong>Templates</strong></td><td>Research</td><td>Crypto (18s), Stock (10s), Quick Thesis (5s)</td></tr>
+                  <tr><td><strong>Templates</strong></td><td>Research</td><td>Crypto (18s), Stock (14s), Quick Thesis (5s)</td></tr>
                   <tr><td><strong>Reports</strong></td><td>Research</td><td>AI-generated reports with rating and conviction</td></tr>
                   <tr><td><strong>Market Data</strong></td><td>Market</td><td>Live search, CoinGecko + FMP fundamentals</td></tr>
                   <tr><td><strong>Hyperliquid</strong></td><td>Market</td><td>Whale tracker — wallet scanner, discovery, saved wallets</td></tr>
@@ -1328,7 +1328,7 @@ tbody tr:hover { background: var(--bg3); }
                 <p>Pick a template in <strong>Templates</strong>:</p>
                 <ul>
                   <li><strong style="color:var(--purple);">Crypto Research</strong> — 18 sections (tokenomics, team, moats, whales, etc.)</li>
-                  <li><strong style="color:var(--blue);">Stock Research</strong> — 10 sections (financials, valuation, DCF, etc.)</li>
+                  <li><strong style="color:var(--blue);">Stock Research</strong> — 14 sections (business model, industry TAM, financials, capital allocation, valuation with DCF sensitivity, ownership, ESG, etc.)</li>
                   <li><strong style="color:var(--purple);">Quick Thesis</strong> — 5 sections for fast screening</li>
                 </ul>
                 <p>Fill manually or click <strong style="color:var(--accent2);">AI</strong> to let Claude research it. Options: "Run All with AI" or "Fill Empty Only".</p>
@@ -4169,11 +4169,19 @@ const STOCK_TEMPLATE = `RATING: [BUY / SELL / HOLD / WATCH] | CONVICTION: [High 
 ═══════════════════════════════════════════════════
 1. EXECUTIVE SUMMARY
 ═══════════════════════════════════════════════════
-[Company name, ticker, exchange. Current price, market cap, 52-week range. One-paragraph overview of the business and primary investment recommendation.]
+[Company name, ticker, exchange. Current price, market cap, enterprise value, 52-week range. One-paragraph overview of the business and primary investment recommendation. Include price target and expected return.]
+
+KEY METRICS SNAPSHOT:
+Price: [$] | Mkt Cap: [$B] | EV: [$B] | 52W: [$]-[$] | Div Yield: [%]
+P/E (Fwd): [x] | EV/EBITDA: [x] | FCF Yield: [%] | Rev Growth: [%]
+Target Price: [$] | Upside: [%] | Conviction: [H/M/L]
 
 ═══════════════════════════════════════════════════
 2. INVESTMENT THESIS
 ═══════════════════════════════════════════════════
+CORE THESIS (1-2 sentences):
+[The single most important reason to own/avoid this stock.]
+
 BULL CASE:
 * [Key bull argument #1 - growth catalyst, TAM expansion, new product]
 * [Key bull argument #2 - margin improvement, pricing power, scale]
@@ -4184,95 +4192,218 @@ BEAR CASE:
 * [Key bear argument #2 - regulatory risk, execution risk]
 * [Key bear argument #3 - valuation concern, macro headwinds]
 
+VARIANT PERCEPTION:
+[What does the market get wrong? What is the consensus view and where do you disagree? This is where alpha lives.]
+
 BASE CASE SCENARIO:
 [Most likely outcome over 12-18 months. Expected price target, probability-weighted return, key assumptions.]
 
 ═══════════════════════════════════════════════════
-3. FINANCIAL ANALYSIS
+3. BUSINESS MODEL & REVENUE SEGMENTS
 ═══════════════════════════════════════════════════
-INCOME STATEMENT:
-Revenue: [$B] | Revenue Growth: [%] | Gross Margin: [%] | Operating Margin: [%] | Net Income: [$B] | EPS: [$] | FCF: [$B]
+BUSINESS OVERVIEW:
+[How does the company make money? Describe the core revenue model, pricing structure, and customer base.]
+
+REVENUE BREAKDOWN:
+Segment 1: [Name] | Revenue: [$B] ([%] of total) | Growth: [%] | Margin: [%]
+Segment 2: [Name] | Revenue: [$B] ([%] of total) | Growth: [%] | Margin: [%]
+Segment 3: [Name] | Revenue: [$B] ([%] of total) | Growth: [%] | Margin: [%]
+
+GEOGRAPHIC MIX:
+North America: [%] | Europe: [%] | Asia-Pacific: [%] | Other: [%]
+
+CUSTOMER CONCENTRATION:
+Top Customer: [%] of revenue | Top 10: [%] | Contract Type: [Recurring/One-time/Mixed]
+Revenue Visibility: [High/Medium/Low] | Recurring Revenue: [%]
+
+═══════════════════════════════════════════════════
+4. INDUSTRY & TAM
+═══════════════════════════════════════════════════
+MARKET SIZE:
+TAM: [$B] | SAM: [$B] | SOM: [$B] | Market Share: [%]
+Industry Growth Rate: [%] CAGR through [Year]
+
+PORTER'S FIVE FORCES:
+Threat of New Entrants:    [1-5] | [Why]
+Supplier Power:            [1-5] | [Why]
+Buyer Power:               [1-5] | [Why]
+Threat of Substitutes:     [1-5] | [Why]
+Competitive Rivalry:       [1-5] | [Why]
+
+INDUSTRY DYNAMICS:
+* [Key trend 1 - regulatory shift, technology disruption, consolidation]
+* [Key trend 2 - secular tailwind/headwind, demographic shift]
+* [Industry cycle position: early/mid/late/downturn]
+
+═══════════════════════════════════════════════════
+5. FINANCIAL ANALYSIS
+═══════════════════════════════════════════════════
+INCOME STATEMENT (3-YEAR TREND + FORWARD ESTIMATES):
+              | FY-2    | FY-1    | FY 0    | FY+1E   | FY+2E
+Revenue ($B)  | [    ]  | [    ]  | [    ]  | [    ]  | [    ]
+Rev Growth(%) | [    ]  | [    ]  | [    ]  | [    ]  | [    ]
+Gross Margin  | [    ]  | [    ]  | [    ]  | [    ]  | [    ]
+Op Margin     | [    ]  | [    ]  | [    ]  | [    ]  | [    ]
+Net Income    | [    ]  | [    ]  | [    ]  | [    ]  | [    ]
+EPS           | [    ]  | [    ]  | [    ]  | [    ]  | [    ]
 
 BALANCE SHEET:
-Total Assets: [$B] | Total Debt: [$B] | Cash: [$B] | Debt/Equity: [x] | Current Ratio: [x] | Book Value/Share: [$]
+Total Assets: [$B] | Total Debt: [$B] | Net Debt: [$B] | Cash: [$B]
+Debt/Equity: [x] | Net Debt/EBITDA: [x] | Current Ratio: [x] | Interest Coverage: [x]
+Book Value/Share: [$] | Tangible BV/Share: [$]
 
 CASH FLOW:
 Operating CF: [$B] | CapEx: [$B] | FCF: [$B] | FCF Margin: [%] | FCF Yield: [%]
+CapEx/Revenue: [%] | FCF Conversion (FCF/Net Income): [%]
 
-KEY RATIOS:
-ROE: [%] | ROA: [%] | ROIC: [%] | Debt/EBITDA: [x] | Interest Coverage: [x]
+KEY RETURNS:
+ROE: [%] | ROA: [%] | ROIC: [%] | ROCE: [%]
+
+EARNINGS QUALITY FLAGS:
+Accruals Ratio: [%] (>10% = warning) | Revenue vs Cash Collection: [Growing/Stable/Diverging]
+One-Time Items: [None / Describe] | Accounting Changes: [None / Describe]
+Days Sales Outstanding Trend: [Improving/Stable/Deteriorating]
 
 ═══════════════════════════════════════════════════
-4. VALUATION
+6. CAPITAL ALLOCATION
+═══════════════════════════════════════════════════
+SHAREHOLDER RETURNS:
+Dividend: [$] per share | Yield: [%] | Payout Ratio: [%] | Growth: [% CAGR 5yr]
+Buyback: [$B] last 12mo | Shares Outstanding Trend: [Declining/Stable/Diluting]
+Total Shareholder Yield (Div + Buyback): [%]
+
+M&A TRACK RECORD:
+Recent Acquisitions: [Deal, size, strategic rationale]
+M&A Success Rate: [Strong/Mixed/Poor] | Integration Track Record: [Notes]
+
+REINVESTMENT:
+R&D Spend: [$B] ([%] of revenue) | CapEx: [$B] ([%] of revenue)
+Capital Allocation Priority: [1. Growth / 2. Dividends / 3. Buybacks / 4. Debt Reduction]
+
+═══════════════════════════════════════════════════
+7. VALUATION
 ═══════════════════════════════════════════════════
 RELATIVE VALUATION:
-P/E (TTM): [x] vs Sector [x] | P/E (Fwd): [x] | EV/EBITDA: [x] vs Sector [x] | P/S: [x] | PEG: [x] | P/FCF: [x]
+               | Company | Sector  | 5yr Avg | Premium/Discount
+P/E (Fwd)     | [x]     | [x]     | [x]     | [%]
+EV/EBITDA      | [x]     | [x]     | [x]     | [%]
+P/S            | [x]     | [x]     | [x]     | [%]
+P/FCF          | [x]     | [x]     | [x]     | [%]
+PEG            | [x]     | [x]     | [x]     | [%]
 
 DCF SUMMARY:
-WACC: [%] | Terminal Growth: [%] | Implied Price: [$] | Current: [$] | Upside/Downside: [%]
+WACC: [%] | Terminal Growth: [%] | Implied Price: [$] | Upside/Downside: [%]
+
+SENSITIVITY TABLE:
+               | WACC -1% | WACC Base | WACC +1%
+Growth -1%     | [$]      | [$]       | [$]
+Growth Base    | [$]      | [$]       | [$]
+Growth +1%     | [$]      | [$]       | [$]
+
+SUM-OF-PARTS (if applicable):
+Segment 1: [$B] @ [x] EV/EBITDA = [$B] | Segment 2: [$B] @ [x] = [$B]
+Net Debt: -[$B] | Equity Value: [$B] | Per Share: [$]
 
 SCENARIO ANALYSIS:
-Bear: [$] @ [%] prob = [$] | Base: [$] @ [%] prob = [$] | Bull: [$] @ [%] prob = [$]
+Bear: [$] @ [%] prob | Base: [$] @ [%] prob | Bull: [$] @ [%] prob
 Probability-Weighted Target: [$] | Expected Return: [%]
 
 ═══════════════════════════════════════════════════
-5. CATALYSTS & GROWTH DRIVERS
+8. COMPETITIVE LANDSCAPE
+═══════════════════════════════════════════════════
+PEER COMPARISON:
+               | Mkt Cap | P/E  | EV/EBITDA | Rev Growth | Op Margin | ROE
+[Company]      | [$B]    | [x]  | [x]       | [%]        | [%]       | [%]
+Peer 1         | [$B]    | [x]  | [x]       | [%]        | [%]       | [%]
+Peer 2         | [$B]    | [x]  | [x]       | [%]        | [%]       | [%]
+Peer 3         | [$B]    | [x]  | [x]       | [%]        | [%]       | [%]
+
+MOAT ASSESSMENT:
+Moat Type: [None / Narrow / Wide] | Trend: [Stable / Expanding / Eroding]
+Brand Power:      [1-5] | [Why]
+Switching Costs:  [1-5] | [Why]
+Network Effects:  [1-5] | [Why]
+Cost Advantage:   [1-5] | [Why]
+IP / Patents:     [1-5] | [Why]
+Moat Score:       [/25]
+
+═══════════════════════════════════════════════════
+9. OWNERSHIP & SHORT INTEREST
+═══════════════════════════════════════════════════
+INSTITUTIONAL OWNERSHIP:
+Top Holder 1: [Name] | [%] | Change: [Increased/Decreased/New] | Shares: [M]
+Top Holder 2: [Name] | [%] | Change: [Increased/Decreased/New] | Shares: [M]
+Top Holder 3: [Name] | [%] | Change: [Increased/Decreased/New] | Shares: [M]
+Total Institutional: [%] | Hedge Fund Ownership: [%]
+
+INSIDER ACTIVITY (Last 12 Months):
+Insider Buys: [Count] | Total: [$M] | Insider Sells: [Count] | Total: [$M]
+Net Insider Sentiment: [Buying / Selling / Neutral]
+Notable Transaction: [Name, Title, Action, Amount, Date]
+
+SHORT INTEREST:
+Short Interest: [%] of float | Days to Cover: [x] | Short Interest Trend: [Rising/Falling]
+Short Squeeze Risk: [High/Medium/Low]
+
+═══════════════════════════════════════════════════
+10. CATALYSTS & GROWTH DRIVERS
 ═══════════════════════════════════════════════════
 NEAR-TERM (0-6 months):
-* [Catalyst 1 - earnings, product launch, regulatory decision. Expected date. Impact estimate.]
-* [Catalyst 2]
+* [Catalyst 1 - earnings, product launch, regulatory decision. Expected date. Impact on price: +/- $X]
+* [Catalyst 2 - date, impact estimate]
 
 MEDIUM-TERM (6-18 months):
-* [Growth driver 1 - market expansion, margin opportunity, new segment]
+* [Growth driver 1 - market expansion, margin opportunity, new segment. Quantified impact.]
 * [Growth driver 2]
 
 LONG-TERM (18+ months):
 * [Secular trend 1 - industry tailwind, technology disruption, demographic shift]
 * [Secular trend 2]
 
+KEY DATES:
+Next Earnings: [Date] | Ex-Dividend: [Date] | Analyst Day: [Date] | Product Launch: [Date]
+
 ═══════════════════════════════════════════════════
-6. RISK ASSESSMENT
+11. RISK ASSESSMENT
 ═══════════════════════════════════════════════════
 COMPANY RISKS:
-* [Risk 1] | Impact: [H/M/L] | Probability: [H/M/L] | Mitigation: [Strategy]
-* [Risk 2] | Impact: [H/M/L] | Probability: [H/M/L] | Mitigation: [Strategy]
+* [Risk 1] | Impact: [H/M/L] | Prob: [H/M/L] | Valuation Impact: [-$X / -X%] | Mitigation: [Strategy]
+* [Risk 2] | Impact: [H/M/L] | Prob: [H/M/L] | Valuation Impact: [-$X / -X%] | Mitigation: [Strategy]
 
 MACRO / SECTOR RISKS:
-* [Risk 1 - rates, recession, regulation] | Impact: [H/M/L] | Probability: [H/M/L]
-* [Risk 2 - competition, disruption] | Impact: [H/M/L] | Probability: [H/M/L]
+* [Risk 1 - rates, recession, regulation] | Impact: [H/M/L] | Prob: [H/M/L] | Valuation Impact: [-$X]
+* [Risk 2 - competition, disruption] | Impact: [H/M/L] | Prob: [H/M/L] | Valuation Impact: [-$X]
 
 TAIL RISKS:
-* [Black swan scenario - low probability, catastrophic impact]
+* [Black swan scenario - low probability, catastrophic impact. How to hedge.]
+
+ESG RISKS:
+Environmental: [Score 1-5] | [Key issue - carbon, water, waste]
+Social: [Score 1-5] | [Key issue - labor, diversity, data privacy]
+Governance: [Score 1-5] | [Key issue - board structure, compensation, related-party]
+ESG Composite: [/15] | Trend: [Improving / Stable / Deteriorating]
 
 ═══════════════════════════════════════════════════
-7. COMPETITIVE LANDSCAPE
+12. TECHNICAL ANALYSIS
 ═══════════════════════════════════════════════════
-PEER COMPARISON:
-Peer 1: [Name] | Mkt Cap: [$B] | P/E: [x] | Rev Growth: [%] | Margin: [%]
-Peer 2: [Name] | Mkt Cap: [$B] | P/E: [x] | Rev Growth: [%] | Margin: [%]
-Peer 3: [Name] | Mkt Cap: [$B] | P/E: [x] | Rev Growth: [%] | Margin: [%]
-
-MOAT ASSESSMENT:
-Moat Type: [None / Narrow / Wide] | Trend: [Stable / Expanding / Eroding]
-Brand: [1-5] | Switching Costs: [1-5] | Network Effects: [1-5] | Cost Advantage: [1-5] | IP: [1-5]
-
-═══════════════════════════════════════════════════
-8. TECHNICAL ANALYSIS
-═══════════════════════════════════════════════════
-Price: [$] | 52W High: [$] | 52W Low: [$] | Support: [$, $] | Resistance: [$, $]
-50-Day MA: [$] | 200-Day MA: [$] | RSI: [value] | MACD: [Signal] | Volume: [avg]
+Price: [$] | 52W High: [$] | 52W Low: [$] | % from ATH: [%]
+Support: [$, $] | Resistance: [$, $]
+50-Day MA: [$] | 200-Day MA: [$] | Golden/Death Cross: [Yes/No]
+RSI: [value] | MACD: [Signal] | Volume: [avg] vs 20D avg: [above/below]
 Trend: [Strong Uptrend / Uptrend / Sideways / Downtrend / Strong Downtrend]
+Key Level: [$] — [Why this level matters]
 
 ═══════════════════════════════════════════════════
-9. MANAGEMENT & GOVERNANCE
+13. MANAGEMENT & GOVERNANCE
 ═══════════════════════════════════════════════════
 CEO: [Name] | Tenure: [Yrs] | Track Record: [1-5] | Alignment: [Strong/Moderate/Weak]
 CFO: [Name] | Capital Allocation: [1-5]
 Board Independence: [%] | Insider Ownership: [%] | Institutional: [%]
-ESG: [Score] | Compensation: [Aligned/Misaligned] | Red Flags: [None / Describe]
+Compensation: [Aligned/Misaligned] | Say-on-Pay Approval: [%]
+Red Flags: [None / Describe — related-party transactions, excessive dilution, accounting restatements]
 
 ═══════════════════════════════════════════════════
-10. RECOMMENDATION & ACTION PLAN
+14. RECOMMENDATION & ACTION PLAN
 ═══════════════════════════════════════════════════
 FINAL RATING: [STRONG BUY / BUY / HOLD / SELL / STRONG SELL] | Conviction: [H/M/L] | R/R Score: [1-10]
 
@@ -4282,8 +4413,12 @@ Scale-in: [$, $, $] | Stop Loss: [$] ([%]) | Take Profit: [$] ([%]) | R/R Ratio:
 
 MONITORING TRIGGERS:
 RE-EVALUATE IF:
-* [Trigger 1 - price level, earnings threshold, news event]
-* [Trigger 2 - competitive shift, regulatory change]
+* [Trigger 1 - price level, earnings miss/beat threshold, guidance change]
+* [Trigger 2 - competitive shift, regulatory change, insider selling]
+EXIT IF:
+* [Hard stop - fundamental thesis break, not just price movement]
+
+NEXT REVIEW: [Date] | FREQUENCY: [After earnings / Monthly / Quarterly]
 EXIT IF:
 * [Thesis broken - fundamental deterioration beyond recovery]
 * [Stop loss hit or better opportunity identified]
@@ -4727,18 +4862,22 @@ const TEMPLATE_DEFS = {
   },
   stock: {
     id: 'stock', label: 'Stock Research', badge: 'STOCK / EQUITY', badgeClass: 'template-type-stock',
-    desc: 'Comprehensive equity analysis framework with 10 structured sections covering fundamentals, valuation, catalysts, risks, and trade setup.',
+    desc: 'Institutional-grade equity analysis with 14 sections — business model, industry TAM, financials with trends, capital allocation, DCF sensitivity, ownership, ESG, and trade setup.',
     sections: [
-      { id: 'summary', title: 'Executive Summary', prompt: 'Provide company overview: name, ticker, exchange, current price, market cap, 52-week range. One paragraph on the business and primary recommendation.', bullets: ['Company name, ticker, exchange', 'Current price, market cap, 52-week range', 'Business overview (1 paragraph)', 'Primary investment recommendation'] },
-      { id: 'thesis', title: 'Investment Thesis', prompt: 'Present the bull case (3 arguments), bear case (3 arguments), and base case scenario with expected price target and probability-weighted return.', bullets: ['Bull case: 3 key arguments (growth, margins, moat)', 'Bear case: 3 key arguments (competition, regulation, valuation)', 'Base case: most likely 12-18 month outcome', 'Probability-weighted expected return'] },
-      { id: 'financials', title: 'Financial Analysis', prompt: 'Analyze income statement (revenue, margins, EPS, FCF), balance sheet (assets, debt, cash, ratios), cash flow, and key ratios (ROE, ROA, ROIC).', bullets: ['Revenue, growth, gross/operating/net margins', 'EPS, FCF, FCF margin/yield', 'Total debt, cash, D/E, current ratio', 'Operating CF, CapEx, FCF', 'ROE, ROA, ROIC, interest coverage'] },
-      { id: 'valuation', title: 'Valuation', prompt: 'Perform relative valuation (P/E, EV/EBITDA, P/S, PEG vs sector), DCF summary (WACC, terminal growth, implied price), and scenario analysis (bear/base/bull).', bullets: ['P/E (TTM & Forward) vs sector', 'EV/EBITDA, P/S, PEG, P/FCF', 'DCF: WACC, terminal growth, implied price', 'Scenario analysis: bear/base/bull with probabilities', 'Probability-weighted target & expected return'] },
-      { id: 'catalysts', title: 'Catalysts & Growth Drivers', prompt: 'Identify catalysts by timeframe: near-term (0-6mo), medium-term (6-18mo), and long-term (18mo+) growth drivers.', bullets: ['Near-term: earnings, product launch, regulatory', 'Medium-term: market expansion, margin opportunity', 'Long-term: secular trends, tech disruption, demographics'] },
-      { id: 'risks', title: 'Risk Assessment', prompt: 'Assess company risks, macro/sector risks, and tail risks. For each: impact level, probability, and mitigation strategy.', bullets: ['Company risks (execution, competition) with impact/probability', 'Macro/sector risks (rates, recession, regulation)', 'Tail risks (black swan scenarios)', 'Mitigation strategies for key risks'] },
-      { id: 'competitive', title: 'Competitive Landscape', prompt: 'Compare with 3 peers (name, mkt cap, P/E, rev growth, margin). Assess moat type, trend, and score brand/switching costs/network effects/cost advantage/IP.', bullets: ['3 peer comparisons (mkt cap, P/E, growth, margin)', 'Moat type (none/narrow/wide) & trend', 'Brand, switching costs, network effects (1-5)', 'Cost advantage, IP strength (1-5)'] },
-      { id: 'technical', title: 'Technical Analysis', prompt: 'Analyze price action: 52W high/low, support/resistance, moving averages (50/200 DMA), RSI, MACD, volume, and overall trend direction.', bullets: ['52-week high/low, support/resistance levels', '50-Day & 200-Day moving averages', 'RSI, MACD signal, volume profile', 'Trend direction & strength'] },
-      { id: 'management', title: 'Management & Governance', prompt: 'Evaluate CEO/CFO track record, board independence, insider/institutional ownership, ESG, compensation alignment, and red flags.', bullets: ['CEO: tenure, track record, alignment', 'CFO: capital allocation quality', 'Board independence %, insider/institutional ownership', 'ESG score, compensation alignment, red flags'] },
-      { id: 'recommendation', title: 'Recommendation & Action Plan', prompt: 'Final rating (Strong Buy to Strong Sell), conviction level, position sizing, entry/exit strategy, monitoring triggers, and review schedule.', bullets: ['Final rating & conviction & R/R score', 'Position sizing (% of portfolio, max size)', 'Entry strategy (limit/market, scale-in levels)', 'Stop loss & take profit with R/R ratio', 'Monitoring triggers (re-evaluate if / exit if)', 'Next review date & frequency'] }
+      { id: 'summary', title: 'Executive Summary', prompt: 'Company overview: name, ticker, exchange, current price, market cap, EV, 52-week range, dividend yield. Key metrics snapshot (P/E fwd, EV/EBITDA, FCF yield, rev growth). Price target and expected return. One paragraph on the business and recommendation.', bullets: ['Company name, ticker, exchange', 'Price, market cap, EV, 52-week range', 'Key metrics snapshot (P/E, EV/EBITDA, FCF yield)', 'Price target, upside %, conviction level'] },
+      { id: 'thesis', title: 'Investment Thesis', prompt: 'Core thesis in 1-2 sentences. Bull case (3 arguments), bear case (3 arguments). Variant perception: what does the market get wrong? Base case scenario with probability-weighted return.', bullets: ['Core thesis (1-2 sentences — why own this)', 'Bull case: 3 key arguments', 'Bear case: 3 key arguments', 'Variant perception: where consensus is wrong', 'Base case: 12-18 month probability-weighted return'] },
+      { id: 'business', title: 'Business Model & Revenue Segments', prompt: 'How does the company make money? Revenue breakdown by segment (name, revenue, % of total, growth, margin). Geographic revenue mix. Customer concentration, recurring revenue %, revenue visibility.', bullets: ['Revenue model and pricing structure', 'Revenue by segment (3+) with growth & margin', 'Geographic mix (NA, Europe, APAC, Other)', 'Customer concentration (top 1, top 10)', 'Recurring revenue % and visibility'] },
+      { id: 'industry', title: 'Industry & TAM', prompt: 'Market sizing: TAM, SAM, SOM, market share, industry CAGR. Porter\'s Five Forces (score 1-5 each with reasoning). Key industry dynamics: trends, cycle position, disruption risks.', bullets: ['TAM / SAM / SOM and market share', 'Industry growth rate (CAGR)', 'Porter\'s Five Forces (each scored 1-5)', 'Key industry trends and secular shifts', 'Industry cycle position (early/mid/late)'] },
+      { id: 'financials', title: 'Financial Analysis', prompt: 'Income statement 3-year trend + 2-year forward estimates (revenue, growth, margins, EPS). Balance sheet (debt, cash, net debt, ratios). Cash flow (OCF, CapEx, FCF, FCF margin, conversion). Key returns (ROE, ROA, ROIC). Earnings quality flags: accruals ratio, one-time items, DSO trend.', bullets: ['Income statement: 3yr history + 2yr forward estimates', 'Revenue, margins, EPS trend table', 'Balance sheet: debt, cash, D/E, current ratio', 'Cash flow: FCF, FCF margin, FCF conversion', 'Returns: ROE, ROA, ROIC, ROCE', 'Earnings quality: accruals, one-timers, DSO trend'] },
+      { id: 'capital', title: 'Capital Allocation', prompt: 'Shareholder returns: dividend (yield, payout ratio, growth), buybacks ($B, share count trend), total shareholder yield. M&A track record (recent deals, success rate). Reinvestment (R&D and CapEx as % of revenue). Capital allocation priority ranking.', bullets: ['Dividend: yield, payout ratio, 5yr growth CAGR', 'Buybacks: $B last 12mo, share count trend', 'Total shareholder yield (div + buyback)', 'M&A track record and integration success', 'R&D and CapEx as % of revenue', 'Capital allocation priority order'] },
+      { id: 'valuation', title: 'Valuation', prompt: 'Relative valuation table: P/E fwd, EV/EBITDA, P/S, P/FCF, PEG — each vs sector and 5yr avg with premium/discount. DCF summary with sensitivity table (WACC ±1%, growth ±1%). Sum-of-parts if multi-segment. Scenario analysis: bear/base/bull with probabilities and targets.', bullets: ['Relative valuation table vs sector & 5yr avg', 'DCF: WACC, terminal growth, implied price', 'Sensitivity table (WACC ±1% × growth ±1%)', 'Sum-of-parts (if applicable)', 'Scenario analysis: bear/base/bull with probabilities'] },
+      { id: 'competitive', title: 'Competitive Landscape', prompt: 'Peer comparison table (4 companies): mkt cap, P/E, EV/EBITDA, rev growth, op margin, ROE. Moat assessment: type (none/narrow/wide), trend, and score each source (brand, switching costs, network effects, cost advantage, IP) 1-5 with reasoning.', bullets: ['Peer table: 3 peers with 6 metrics each', 'Moat type (none/narrow/wide) & trend', 'Moat sources scored 1-5 each with reasoning', 'Moat composite score /25'] },
+      { id: 'ownership', title: 'Ownership & Short Interest', prompt: 'Top 3 institutional holders (name, %, change, shares). Total institutional and hedge fund ownership %. Insider activity last 12mo (buys vs sells, net sentiment, notable transactions). Short interest: % of float, days to cover, trend, squeeze risk.', bullets: ['Top 3 institutional holders with changes', 'Total institutional & hedge fund ownership %', 'Insider buys vs sells (last 12 months)', 'Net insider sentiment and notable transactions', 'Short interest %, days to cover, trend'] },
+      { id: 'catalysts', title: 'Catalysts & Growth Drivers', prompt: 'Near-term catalysts (0-6mo) with expected dates and price impact estimates. Medium-term growth drivers (6-18mo) quantified. Long-term secular trends (18mo+). Key upcoming dates (earnings, ex-div, analyst day, product launch).', bullets: ['Near-term catalysts with dates & price impact', 'Medium-term growth drivers (quantified)', 'Long-term secular trends', 'Key dates: earnings, ex-div, analyst day'] },
+      { id: 'risks', title: 'Risk Assessment', prompt: 'Company risks with impact, probability, valuation impact ($), and mitigation. Macro/sector risks with valuation impact. Tail risks with hedging strategy. ESG risks: Environmental (1-5), Social (1-5), Governance (1-5) with key issues and composite score /15.', bullets: ['Company risks with valuation impact ($)', 'Macro/sector risks with valuation impact ($)', 'Tail risks with hedging strategy', 'ESG: E/S/G scored 1-5 each with key issues', 'ESG composite /15 and trend'] },
+      { id: 'technical', title: 'Technical Analysis', prompt: 'Price action: 52W high/low, % from ATH, support/resistance. Moving averages (50/200 DMA, golden/death cross). RSI, MACD, volume vs 20D avg. Overall trend and key level with reasoning.', bullets: ['52W range, % from ATH, support/resistance', '50-DMA & 200-DMA, golden/death cross', 'RSI, MACD, volume vs 20D average', 'Trend direction & key level that matters'] },
+      { id: 'management', title: 'Management & Governance', prompt: 'CEO and CFO: tenure, track record (1-5), alignment. Board independence %, insider/institutional ownership. Compensation alignment, say-on-pay approval %. Red flags (related-party, dilution, restatements).', bullets: ['CEO: tenure, track record, alignment', 'CFO: capital allocation quality', 'Board independence, ownership breakdown', 'Compensation alignment, say-on-pay %', 'Red flags (related-party, dilution, restatements)'] },
+      { id: 'recommendation', title: 'Recommendation & Action Plan', prompt: 'Final rating (Strong Buy to Strong Sell), conviction, R/R score. Position sizing (% of portfolio, max, entry strategy, scale-in levels). Stop loss and take profit with R/R ratio. Monitoring triggers: re-evaluate if and hard exit if (fundamental thesis break). Next review date and frequency.', bullets: ['Final rating, conviction, R/R score', 'Position sizing: %, max, entry strategy', 'Scale-in levels, stop loss, take profit, R/R', 'Re-evaluate triggers (price, earnings, news)', 'Hard exit triggers (thesis break)', 'Next review date & frequency'] }
     ]
   },
   quick: {
