@@ -12,6 +12,13 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 - **Knowledge Base:** 4 SKILL.md files (MISSION, TRADING-EDGE, ASYMMETRIC-SETUPS, FUNDAMENTAL-ANALYSIS)
 - **Users:** Jumparo (crypto) & Tihomir (equities)
 
+## Architecture — 3 Research Divisions
+| Division | Agent | Mission |
+|----------|-------|---------|
+| **On-Chain Intel** | Sentinel | Smart money tracking, flow analysis, venue intelligence |
+| **Research** | Analyst | Fundamental deep dives, tokenomics, catalysts, valuation |
+| **Technical** | Quant | Market regime, setups, playbooks, confluence scoring |
+
 ## Pages
 | Page | Section | Description |
 |------|---------|-------------|
@@ -20,14 +27,15 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Project Dump | Pipeline | Quick capture for project ideas |
 | Watchlist | Pipeline | Tracked assets with scores, detail view, Firebase sync |
 | Alerts | Pipeline | Signals from scheduled scans + Pamela, severity levels, browser notifications |
-| Templates | Research | 4 templates (Crypto 16s, Stock 10s, Quick Thesis 5s, Commodity 12s), view/edit modes |
-| Reports | Research | AI-generated research reports, rating, conviction |
-| Market Data | Market | Live search/discovery, CoinGecko + FMP fundamentals |
-| Hyperliquid | Market | On-chain whale tracker — wallet scanner, whale discovery, saved wallets, perp positioning |
-| Tasks | Management | Kanban board with milestones, priority, assignee |
-| Roadmap | Management | Tasks grouped by milestone with progress bars |
-| Progress | Management | Daily work log, timeline, streak tracking |
-| Help | Tools | Visual 5-step research pipeline guide |
+| On-Chain Intel | On-Chain | 5 tabs: Overview, Hyperliquid, Entity Tracker, Flow Monitor, Signal Feed |
+| Market Data | Research | Live search/discovery, CoinGecko + FMP fundamentals |
+| Templates | Research | 4 templates (Crypto 16s, Stock 14s, Quick Thesis 5s, Commodity 12s), view/edit modes |
+| Reports | Research | AI-generated research reports, rating, conviction, Substack, Trash |
+| Technical | Technical | 5 tabs: Market Regime, Setup Scanner, Playbooks, Confluence, Trade Log |
+| Tasks | Operations | Kanban board with milestones, priority, assignee |
+| Roadmap | Operations | Tasks grouped by milestone with progress bars |
+| Progress | Operations | Daily work log, timeline, streak tracking |
+| Docs | Tools | GitBook-style documentation with changelog |
 | Settings | Tools | API keys, Firebase config |
 
 ## Pamela (AI Agent)
@@ -60,17 +68,21 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-16: **3-Division Architecture** — restructured entire platform into On-Chain Intel, Research, and Technical Analysis
+- 2026-03-16: **On-Chain Intel page** — Overview dashboard (regime, entities, signals, venues), Hyperliquid preserved as sub-module, Entity Tracker / Flow Monitor / Signal Feed placeholders
+- 2026-03-16: **Technical Analysis page** — Market Regime (risk-on/neutral/risk-off rules), Setup Scanner, Playbooks (3 strategies + Momo Short backlog), Confluence (4-factor scoring), Trade Log
+- 2026-03-16: **Sidebar restructured** — On-Chain Intel, Research, Technical, Operations sections (renamed from Management)
+- 2026-03-16: **Stock template upgraded** — expanded from 10 to 14 sections with institutional research rigor
+- 2026-03-16: **Report Trash** — soft-delete with 30-day retention, restore, permanent delete, auto-purge
+- 2026-03-16: **Perp Positioning** — new Hyperliquid tab showing 190 active perps with OI, funding, volume
+- 2026-03-16: **Hyperliquid Agent v2** — rewritten with Market Regime, Pattern Detector, Copy-Trade Signals, enhanced scoring
+- 2026-03-16: **Logo navigation** — click logo returns to Dashboard
+- 2026-03-16: **Docs changelog** — updated with all March 16 changes
 - 2026-03-15: Fix login modal bug — was using CSS class `show` instead of `open`, modal never appeared
 - 2026-03-15: Oil research report posted to Firebase — 12-section commodity analysis, tactical short thesis, QA'd against live data
-- 2026-03-15: Commodity Research template — 12 sections for oil, gold, natgas (supply/demand, geopolitics, seasonality, futures curve, CFTC COT, trade setup)
-- 2026-03-15: Perp Positioning tab — aggregate OI, funding rates, volume, premium across 190 perps (Crypto + XYZ dex)
-- 2026-03-15: Hyperliquid page — on-chain whale tracker with 4 tabs (Wallet Scanner, Whale Discovery, Saved Wallets, Perp Positioning)
-- 2026-03-15: Wallet Scanner — paste any 0x address, see account value, positions, PnL, win rate, trade history
-- 2026-03-15: Whale Discovery — scans top coins via Hyperliquid API, finds $500K+ positions, sortable by size/PnL/leverage
-- 2026-03-15: Saved Wallets — label & track wallets with live position updates, Firebase sync
-- 2026-03-15: Python agent (`agents/hyperliquid/agent.py`) — wallet profiling, whale discovery, WebSocket monitoring, Firebase alerts
-- 2026-03-15: Firebase sync — saved wallets + discovered whales shared between frontend and Python agent
-- 2026-03-15: Pamela Hyperliquid tools (20 total) — hl_scan_wallet, hl_whale_positions, hl_saved_wallets
+- 2026-03-15: Commodity Research template — 12 sections for oil, gold, natgas
+- 2026-03-15: Hyperliquid page — wallet scanner, whale discovery, saved wallets, perp positioning
+- 2026-03-15: Python agent + Firebase sync + Pamela HL tools (20 total)
 - 2026-03-12: About page — Fund HQ mission, operating principles, scale trajectory as own tab under Overview
 - 2026-03-12: Full 5-phase roadmap — 35 items across Data Infrastructure, Quant Models, Risk Framework, Learning & Edge, Full Autonomy
 - 2026-03-12: Phase 0: Prototype marked complete (8 items)
