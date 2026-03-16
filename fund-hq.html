@@ -718,6 +718,7 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item" data-page="projects"><span class="icon">&#9733;</span> Project Dump <span class="badge" id="badge-projects">0</span></div>
     <div class="nav-item" data-page="watchlist"><span class="icon">&#128065;</span> Watchlist <span class="badge" id="badge-watchlist">0</span></div>
     <div class="nav-item" data-page="alerts"><span class="icon">&#128276;</span> Alerts <span class="badge" id="badge-alerts">0</span></div>
+    <div class="nav-item" data-page="portfolio"><span class="icon">&#128176;</span> Portfolio <span class="badge" id="badge-portfolio">0</span></div>
 
     <div class="nav-section">On-Chain Intel</div>
     <div class="nav-item" data-page="onchain"><span class="icon">&#128279;</span> On-Chain <span class="badge" id="badge-hl-wallets">0</span></div>
@@ -1125,6 +1126,42 @@ tbody tr:hover { background: var(--bg3); }
         </div>
       </div>
       <div id="market-detail" style="margin-top:0;"></div>
+    </div>
+
+    <!-- ===== PORTFOLIO ===== -->
+    <div id="page-portfolio" class="page hidden">
+      <div class="page-header">
+        <h1>&#128176; Portfolio</h1>
+        <p>Holdings, allocation & P&L tracking</p>
+      </div>
+      <!-- Portfolio stats -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="card" style="padding:16px 20px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Value</div><div id="pf-total-value" style="font-size:24px;font-weight:700;color:var(--green);">$0.00</div></div>
+        <div class="card" style="padding:16px 20px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Cost</div><div id="pf-total-cost" style="font-size:24px;font-weight:700;color:var(--text);">$0.00</div></div>
+        <div class="card" style="padding:16px 20px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Unrealized P&L</div><div id="pf-total-pnl" style="font-size:24px;font-weight:700;color:var(--green);">$0.00</div></div>
+        <div class="card" style="padding:16px 20px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Positions</div><div id="pf-position-count" style="font-size:24px;font-weight:700;color:var(--accent2);">0</div></div>
+        <div class="card" style="padding:16px 20px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Cash</div><div id="pf-cash" style="font-size:24px;font-weight:700;color:var(--text2);">$0.00</div></div>
+      </div>
+      <!-- Holdings table -->
+      <div class="card" style="padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="font-size:14px;color:var(--text2);margin:0;">Holdings</h3>
+          <div style="display:flex;gap:8px;" class="admin-only">
+            <button class="btn btn-sm btn-primary" onclick="pfShowAddModal()">+ Add Position</button>
+            <button class="btn btn-sm btn-ghost" onclick="pfSetCash()">&#128178; Set Cash</button>
+          </div>
+        </div>
+        <div id="pf-holdings-container">
+          <div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No positions yet. Click "+ Add Position" to track your first holding.</div>
+        </div>
+      </div>
+      <!-- Allocation breakdown -->
+      <div class="card" style="padding:16px;">
+        <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Allocation Breakdown</h3>
+        <div id="pf-allocation-container">
+          <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">Add positions to see allocation breakdown.</div>
+        </div>
+      </div>
     </div>
 
     <!-- ===== ON-CHAIN INTEL ===== -->
@@ -7034,13 +7071,14 @@ const PAGE_ALIASES = {
   hyperliquid: 'onchain', hl: 'onchain', whales: 'onchain', 'whale tracker': 'onchain',
   'on-chain': 'onchain', 'on chain': 'onchain', onchain: 'onchain', 'smart money': 'onchain', sentinel: 'onchain', 'entity tracker': 'onchain', flows: 'onchain',
   technical: 'technical', ta: 'technical', 'technical analysis': 'technical', setups: 'technical', playbooks: 'technical', confluence: 'technical', 'trade log': 'technical', regime: 'technical', quant: 'technical',
-  catalysts: 'catalysts', catalyst: 'catalysts', unlocks: 'catalysts', events: 'catalysts', 'token unlock': 'catalysts'
+  catalysts: 'catalysts', catalyst: 'catalysts', unlocks: 'catalysts', events: 'catalysts', 'token unlock': 'catalysts',
+  portfolio: 'portfolio', holdings: 'portfolio', positions: 'portfolio', allocation: 'portfolio', 'my portfolio': 'portfolio', pnl: 'portfolio'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel', technical: 'Technical Analysis', catalysts: 'Catalysts'
+  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel', technical: 'Technical Analysis', catalysts: 'Catalysts', portfolio: 'Portfolio'
 };
 
 function toggleChat() {
@@ -8269,7 +8307,7 @@ function catDelete(id) {
 }
 
 // Load entities + setups + catalysts + signals + trades from Firebase on init
-setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); catLoadFromFirebase(); catUpdateBadge(); sigLoadFromFirebase(); tradeLoadFromFirebase(); }, 2000);
+setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); catLoadFromFirebase(); catUpdateBadge(); sigLoadFromFirebase(); tradeLoadFromFirebase(); pfLoadFromFirebase(); }, 2000);
 
 // ===== CONFLUENCE SCORING =====
 function confCalc() {
@@ -8731,6 +8769,176 @@ function tradeDelete(id) {
   if (!confirm('Delete this trade?')) return;
   tradeLog = tradeLog.filter(function(t) { return t.id !== id; });
   tradeSave(); tradeRender();
+}
+
+// ===== PORTFOLIO =====
+var pfHoldings = [];
+var pfCash = 0;
+function pfLoadFromFirebase() {
+  if (typeof firebaseReady !== 'undefined' && firebaseReady && typeof firebase !== 'undefined') {
+    firebase.database().ref('portfolio').once('value').then(function(snap) {
+      var val = snap.val();
+      if (val) { pfHoldings = val.holdings || []; pfCash = parseFloat(val.cash || 0); }
+      pfRender();
+    }).catch(function() {});
+  } else {
+    try {
+      var raw = JSON.parse(localStorage.getItem('fundHQ_portfolio') || '{}');
+      pfHoldings = raw.holdings || [];
+      pfCash = parseFloat(raw.cash || 0);
+    } catch(e) { pfHoldings = []; pfCash = 0; }
+    pfRender();
+  }
+}
+function pfSave() {
+  var data = { holdings: pfHoldings, cash: pfCash };
+  try { localStorage.setItem('fundHQ_portfolio', JSON.stringify(data)); } catch(e) {}
+  if (typeof firebaseReady !== 'undefined' && firebaseReady && typeof firebase !== 'undefined') {
+    firebase.database().ref('portfolio').set(data).catch(function() {});
+  }
+}
+function pfRender() {
+  if (typeof pfHoldings === 'undefined') pfHoldings = [];
+  var totalCost = 0, totalValue = 0;
+  pfHoldings.forEach(function(h) {
+    totalCost += (parseFloat(h.avgCost) || 0) * (parseFloat(h.quantity) || 0);
+    totalValue += (parseFloat(h.currentPrice) || parseFloat(h.avgCost) || 0) * (parseFloat(h.quantity) || 0);
+  });
+  var totalPnl = totalValue - totalCost;
+  var el;
+  el = document.getElementById('pf-total-value'); if (el) el.textContent = '$' + totalValue.toFixed(2);
+  el = document.getElementById('pf-total-cost'); if (el) el.textContent = '$' + totalCost.toFixed(2);
+  el = document.getElementById('pf-total-pnl');
+  if (el) { el.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2); el.style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)'; }
+  el = document.getElementById('pf-position-count'); if (el) el.textContent = pfHoldings.length;
+  el = document.getElementById('pf-cash'); if (el) el.textContent = '$' + pfCash.toFixed(2);
+  el = document.getElementById('badge-portfolio'); if (el) el.textContent = pfHoldings.length;
+  // Holdings table
+  var container = document.getElementById('pf-holdings-container');
+  if (!container) return;
+  if (!pfHoldings.length) { container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No positions yet.</div>'; pfRenderAllocation(totalValue); return; }
+  var sorted = pfHoldings.slice().sort(function(a,b) {
+    var va = (parseFloat(a.currentPrice) || parseFloat(a.avgCost) || 0) * (parseFloat(a.quantity) || 0);
+    var vb = (parseFloat(b.currentPrice) || parseFloat(b.avgCost) || 0) * (parseFloat(b.quantity) || 0);
+    return vb - va;
+  });
+  var html = '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+  html += '<tr style="border-bottom:1px solid var(--border);">';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Asset</th>';
+  html += '<th style="padding:8px;text-align:left;color:var(--text3);">Type</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Quantity</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Avg Cost</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Current</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Value</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">P&L</th>';
+  html += '<th style="padding:8px;text-align:right;color:var(--text3);">Allocation</th>';
+  html += '<th style="padding:8px;text-align:center;color:var(--text3);">Actions</th>';
+  html += '</tr>';
+  sorted.forEach(function(h) {
+    var value = (parseFloat(h.currentPrice) || parseFloat(h.avgCost) || 0) * (parseFloat(h.quantity) || 0);
+    var cost = (parseFloat(h.avgCost) || 0) * (parseFloat(h.quantity) || 0);
+    var pnl = value - cost;
+    var pnlPct = cost > 0 ? ((pnl/cost)*100).toFixed(1) : '0.0';
+    var alloc = (totalValue + pfCash) > 0 ? ((value / (totalValue + pfCash)) * 100).toFixed(1) : '0.0';
+    html += '<tr style="border-bottom:1px solid var(--border);">';
+    html += '<td style="padding:8px;font-weight:700;color:var(--accent2);">' + esc(h.asset) + '</td>';
+    html += '<td style="padding:8px;color:var(--text3);font-size:11px;">' + esc(h.type || 'crypto') + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">' + parseFloat(h.quantity).toFixed(4) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">$' + parseFloat(h.avgCost).toFixed(2) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);">$' + (parseFloat(h.currentPrice) || parseFloat(h.avgCost) || 0).toFixed(2) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">$' + value.toFixed(2) + '</td>';
+    html += '<td style="padding:8px;text-align:right;color:' + (pnl>=0?'var(--green)':'var(--red)') + ';font-weight:600;">' + (pnl>=0?'+':'') + '$' + pnl.toFixed(2) + ' (' + pnlPct + '%)</td>';
+    html += '<td style="padding:8px;text-align:right;color:var(--text2);">' + alloc + '%</td>';
+    html += '<td style="padding:8px;text-align:center;" class="admin-only">';
+    html += '<button class="btn btn-sm btn-ghost" onclick="pfUpdatePrice(\'' + h.id + '\')" style="font-size:10px;padding:2px 6px;">&#128260;</button> ';
+    html += '<button class="btn btn-sm btn-ghost" onclick="pfDeleteHolding(\'' + h.id + '\')" style="font-size:10px;padding:2px 6px;color:var(--red);">&#128465;</button>';
+    html += '</td></tr>';
+  });
+  html += '</table></div>';
+  container.innerHTML = html;
+  pfRenderAllocation(totalValue);
+  updateAdminUI();
+}
+function pfRenderAllocation(totalValue) {
+  var container = document.getElementById('pf-allocation-container');
+  if (!container) return;
+  if (!pfHoldings.length) { container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">Add positions to see allocation.</div>'; return; }
+  var totalWithCash = totalValue + pfCash;
+  if (totalWithCash <= 0) { container.innerHTML = ''; return; }
+  var items = [];
+  pfHoldings.forEach(function(h) {
+    var value = (parseFloat(h.currentPrice) || parseFloat(h.avgCost) || 0) * (parseFloat(h.quantity) || 0);
+    items.push({ name: h.asset, value: value, pct: (value/totalWithCash)*100 });
+  });
+  if (pfCash > 0) items.push({ name: 'Cash', value: pfCash, pct: (pfCash/totalWithCash)*100 });
+  items.sort(function(a,b) { return b.value - a.value; });
+  var colors = ['var(--accent2)','var(--green)','var(--yellow)','var(--blue)','var(--orange)','var(--purple)','var(--red)','var(--text2)'];
+  // Bar chart
+  var html = '<div style="display:flex;height:24px;border-radius:6px;overflow:hidden;margin-bottom:16px;">';
+  items.forEach(function(item, i) {
+    if (item.pct > 0.5) html += '<div style="width:' + item.pct + '%;background:' + colors[i%colors.length] + ';min-width:2px;" title="' + esc(item.name) + ': ' + item.pct.toFixed(1) + '%"></div>';
+  });
+  html += '</div>';
+  // Legend
+  html += '<div style="display:flex;flex-wrap:wrap;gap:12px;">';
+  items.forEach(function(item, i) {
+    html += '<div style="display:flex;align-items:center;gap:6px;font-size:12px;">';
+    html += '<div style="width:10px;height:10px;border-radius:2px;background:' + colors[i%colors.length] + ';"></div>';
+    html += '<span style="color:var(--text);">' + esc(item.name) + '</span>';
+    html += '<span style="color:var(--text3);">' + item.pct.toFixed(1) + '% ($' + item.value.toFixed(0) + ')</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+function pfShowAddModal() {
+  var html = '<h2 style="margin:0 0 16px 0;">Add Position</h2>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Asset</label><input type="text" id="pf-add-asset" placeholder="BTC, ETH, AAPL..."></div>';
+  html += '<div class="form-group"><label>Type</label><select id="pf-add-type"><option value="crypto">Crypto</option><option value="stock">Stock</option><option value="commodity">Commodity</option><option value="stablecoin">Stablecoin</option></select></div>';
+  html += '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Quantity</label><input type="number" id="pf-add-qty" step="any" placeholder="0.00"></div>';
+  html += '<div class="form-group"><label>Avg Cost ($)</label><input type="number" id="pf-add-cost" step="any" placeholder="0.00"></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label>Current Price ($, optional)</label><input type="number" id="pf-add-price" step="any" placeholder="Leave blank to use avg cost"></div>';
+  html += '<div class="form-group"><label>Notes</label><input type="text" id="pf-add-notes" placeholder="Exchange, wallet, thesis..."></div>';
+  html += '<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-primary" onclick="pfAddHolding()">Add Position</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button></div>';
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+function pfAddHolding() {
+  var asset = (document.getElementById('pf-add-asset')?.value || '').trim().toUpperCase();
+  var qty = parseFloat(document.getElementById('pf-add-qty')?.value || 0);
+  var cost = parseFloat(document.getElementById('pf-add-cost')?.value || 0);
+  if (!asset || !qty || !cost) { alert('Asset, quantity, and avg cost required'); return; }
+  var price = document.getElementById('pf-add-price')?.value;
+  pfHoldings.push({
+    id: 'pf_' + Date.now(), asset: asset,
+    type: document.getElementById('pf-add-type')?.value || 'crypto',
+    quantity: qty, avgCost: cost,
+    currentPrice: price ? parseFloat(price) : cost,
+    notes: (document.getElementById('pf-add-notes')?.value || '').trim(),
+    createdAt: new Date().toISOString()
+  });
+  pfSave(); pfRender(); closeModal();
+}
+function pfUpdatePrice(id) {
+  var newPrice = prompt('New current price ($):');
+  if (!newPrice) return;
+  pfHoldings.forEach(function(h) { if (h.id === id) h.currentPrice = parseFloat(newPrice); });
+  pfSave(); pfRender();
+}
+function pfDeleteHolding(id) {
+  if (!confirm('Remove this position?')) return;
+  pfHoldings = pfHoldings.filter(function(h) { return h.id !== id; });
+  pfSave(); pfRender();
+}
+function pfSetCash() {
+  var val = prompt('Set cash balance ($):', pfCash);
+  if (val === null) return;
+  pfCash = parseFloat(val) || 0;
+  pfSave(); pfRender();
 }
 
 // ===== TECHNICAL ANALYSIS TAB NAVIGATION =====
