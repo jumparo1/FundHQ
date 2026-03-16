@@ -1175,6 +1175,7 @@ tbody tr:hover { background: var(--bg3); }
       <!-- Division Tabs -->
       <div class="market-tabs" style="margin-bottom:20px;">
         <button class="market-tab active" onclick="ocShowDivision('overview')" id="oc-div-overview">Overview</button>
+        <button class="market-tab" onclick="ocShowDivision('tokenintel')" id="oc-div-tokenintel">Token Intel</button>
         <button class="market-tab" onclick="ocShowDivision('hyperliquid')" id="oc-div-hyperliquid">Hyperliquid</button>
         <button class="market-tab" onclick="ocShowDivision('entities')" id="oc-div-entities">Entity Tracker</button>
         <button class="market-tab" onclick="ocShowDivision('dexscreener')" id="oc-div-dexscreener">Dexscreener</button>
@@ -1221,6 +1222,40 @@ tbody tr:hover { background: var(--bg3); }
           <div class="card" style="padding:18px 22px;">
             <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Recent Activity</h3>
             <div id="oc-recent-activity" style="font-size:13px;color:var(--text3);">No recent on-chain activity tracked yet. Start by scanning wallets on Hyperliquid.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOKEN INTEL -->
+      <div id="oc-panel-tokenintel" style="display:none;">
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="ocShowDivision('overview')">On-Chain</span>
+          <span style="font-size:11px;color:var(--text3);">/</span>
+          <span style="font-size:12px;color:var(--text1);font-weight:600;">&#127793; Token Intel</span>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <div class="market-search" style="flex:1;min-width:280px;max-width:500px;position:relative;">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="ti-search" placeholder="Enter ticker (BTC, ETH, SOL, PEPE...)" autocomplete="off" onkeydown="if(event.key==='Enter')tiScan()" style="font-size:15px;font-weight:600;">
+          </div>
+          <button class="btn btn-primary" onclick="tiScan()" style="padding:10px 24px;font-size:14px;">&#9889; Scan Smart Money</button>
+        </div>
+
+        <!-- Results Container -->
+        <div id="ti-results">
+          <div class="card" style="padding:40px;text-align:center;">
+            <div style="font-size:40px;margin-bottom:12px;">&#127793;</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">Token Intelligence Scanner</div>
+            <div style="font-size:13px;color:var(--text3);max-width:500px;margin:0 auto;line-height:1.6;">
+              Enter any ticker to get the full smart money picture:<br>
+              <strong style="color:var(--accent2);">Who's buying &amp; selling</strong> — tracked entity positions<br>
+              <strong style="color:var(--green);">Insider positioning</strong> — high-grade wallets (A+/A)<br>
+              <strong style="color:var(--yellow);">Wallet clusters</strong> — entities on the same side<br>
+              <strong style="color:var(--text2);">DEX liquidity</strong> — Dexscreener pair data<br>
+              <strong style="color:var(--blue);">HL perp data</strong> — funding, OI, volume
+            </div>
           </div>
         </div>
       </div>
@@ -2397,6 +2432,26 @@ cd ~/deploy && git add . && git commit && git push
           <p style="font-size:11px;color:var(--text3);margin-top:6px;">Powers "Research with AI" in reports. Get a key at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
         </div>
         <div style="max-width:400px;margin-top:16px;">
+          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Moralis API Key <span style="color:var(--accent);">(On-Chain Holders)</span></label>
+          <input type="text" id="settings-moralis-key" autocomplete="off" data-1p-ignore placeholder="Enter your Moralis API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" onclick="localStorage.setItem('moralisKey',document.getElementById('settings-moralis-key').value.trim());document.getElementById('moralis-test-result').textContent='Saved!';document.getElementById('moralis-test-result').style.color='var(--green)';">Save Key</button>
+            <button class="btn btn-ghost btn-sm" onclick="testMoralisKey()">Test Connection</button>
+          </div>
+          <div id="moralis-test-result" style="font-size:12px;margin-top:4px;"></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Token Intel: top holders, whale categories. Free at <a href="https://admin.moralis.com/register" target="_blank" style="color:var(--accent);">moralis.com</a> (40K CU/day)</p>
+        </div>
+        <div style="max-width:400px;margin-top:16px;">
+          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Birdeye API Key <span style="color:var(--accent);">(Solana Top Traders)</span></label>
+          <input type="text" id="settings-birdeye-key" autocomplete="off" data-1p-ignore placeholder="Enter your Birdeye API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" onclick="localStorage.setItem('birdeyeKey',document.getElementById('settings-birdeye-key').value.trim());document.getElementById('birdeye-test-result').textContent='Saved!';document.getElementById('birdeye-test-result').style.color='var(--green)';">Save Key</button>
+            <button class="btn btn-ghost btn-sm" onclick="testBirdeyeKey()">Test Connection</button>
+          </div>
+          <div id="birdeye-test-result" style="font-size:12px;margin-top:4px;"></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:6px;">Token Intel: top traders on Solana DEXs. Free at <a href="https://bds.birdeye.so/user/signup" target="_blank" style="color:var(--accent);">birdeye.so</a></p>
+        </div>
+        <div style="max-width:400px;margin-top:16px;">
           <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">CoinGlass API Key <span style="color:var(--accent);">(Whale Tracker)</span></label>
           <input type="text" id="settings-coinglass-key" autocomplete="off" data-1p-ignore placeholder="Enter your CoinGlass API key..." style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;">
           <div style="display:flex;gap:8px;margin-top:8px;">
@@ -2615,6 +2670,48 @@ function saveFmpKey(key) { localStorage.setItem('fundHQ_fmpApiKey', key.trim());
 function getCoinglassKey() { return localStorage.getItem('fundHQ_coinglassApiKey') || ''; }
 function saveCoinglassKey(key) { localStorage.setItem('fundHQ_coinglassApiKey', key.trim()); }
 
+async function testMoralisKey() {
+  var key = document.getElementById('settings-moralis-key')?.value?.trim();
+  if (key) localStorage.setItem('moralisKey', key);
+  else key = localStorage.getItem('moralisKey') || '';
+  var el = document.getElementById('moralis-test-result');
+  if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
+  try {
+    el.textContent = 'Testing...'; el.style.color = 'var(--text3)';
+    var resp = await fetch('https://deep-index.moralis.io/api/v2.2/erc20/0xdac17f958d2ee523a2206206994597c13d831ec7/owners?chain=0x1&limit=3', {
+      headers: { 'X-API-Key': key, 'Accept': 'application/json' }
+    });
+    if (resp.ok) {
+      var data = await resp.json();
+      el.textContent = 'Connected! Found ' + (data.result?.length || 0) + ' USDT holders (test).';
+      el.style.color = 'var(--green)';
+    } else {
+      el.textContent = 'Error ' + resp.status + ': ' + (resp.status === 401 ? 'Invalid key' : 'API error');
+      el.style.color = 'var(--red)';
+    }
+  } catch(e) { el.textContent = 'Connection failed: ' + e.message; el.style.color = 'var(--red)'; }
+}
+async function testBirdeyeKey() {
+  var key = document.getElementById('settings-birdeye-key')?.value?.trim();
+  if (key) localStorage.setItem('birdeyeKey', key);
+  else key = localStorage.getItem('birdeyeKey') || '';
+  var el = document.getElementById('birdeye-test-result');
+  if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
+  try {
+    el.textContent = 'Testing...'; el.style.color = 'var(--text3)';
+    var resp = await fetch('https://public-api.birdeye.so/defi/v2/tokens/top_traders?address=So11111111111111111111111111111111111111112&time_frame=24h&limit=3', {
+      headers: { 'X-API-Key': key, 'Accept': 'application/json', 'x-chain': 'solana' }
+    });
+    if (resp.ok) {
+      var data = await resp.json();
+      el.textContent = 'Connected! Birdeye API working.';
+      el.style.color = 'var(--green)';
+    } else {
+      el.textContent = 'Error ' + resp.status + ': ' + (resp.status === 401 ? 'Invalid key' : 'API error');
+      el.style.color = 'var(--red)';
+    }
+  } catch(e) { el.textContent = 'Connection failed: ' + e.message; el.style.color = 'var(--red)'; }
+}
 async function testCoinglassKey() {
   const inputVal = document.getElementById('settings-coinglass-key')?.value?.trim();
   if (inputVal) saveCoinglassKey(inputVal);
@@ -9000,7 +9097,7 @@ function taShowTab(tab) {
 
 // ===== ON-CHAIN INTEL DIVISION NAVIGATION =====
 function ocShowDivision(div) {
-  ['overview','hyperliquid','entities','dexscreener','flows','signals'].forEach(d => {
+  ['overview','tokenintel','hyperliquid','entities','dexscreener','flows','signals'].forEach(d => {
     var panel = document.getElementById('oc-panel-' + d);
     if (panel) panel.style.display = d === div ? '' : 'none';
     var tab = document.getElementById('oc-div-' + d);
@@ -9966,6 +10063,557 @@ function renderAll() {
   if (anthropicInput && !anthropicInput.value) anthropicInput.value = getAnthropicKey();
   const cgInput = document.getElementById('settings-coinglass-key');
   if (cgInput && !cgInput.value) cgInput.value = getCoinglassKey();
+  const morInput = document.getElementById('settings-moralis-key');
+  if (morInput && !morInput.value) morInput.value = localStorage.getItem('moralisKey') || '';
+  const beInput = document.getElementById('settings-birdeye-key');
+  if (beInput && !beInput.value) beInput.value = localStorage.getItem('birdeyeKey') || '';
+}
+
+// ===== TOKEN INTEL SCANNER =====
+async function tiScan() {
+  var ticker = (document.getElementById('ti-search')?.value || '').trim().toUpperCase();
+  if (!ticker) return;
+  var container = document.getElementById('ti-results');
+  container.innerHTML = '<div class="card" style="padding:40px;text-align:center;"><div style="font-size:28px;margin-bottom:8px;">&#9889;</div><div style="font-size:14px;color:var(--text3);">Scanning all sources for <strong style="color:var(--accent2);">' + esc(ticker) + '</strong>...</div><div id="ti-status" style="font-size:12px;color:var(--text3);margin-top:8px;"></div></div>';
+
+  var results = { ticker: ticker, entities: [], hlPerp: null, dexPairs: [], signals: [], catalysts: [], flowSummary: null };
+
+  // 1. Scan tracked entities for this token
+  document.getElementById('ti-status').textContent = 'Scanning tracked entities...';
+  if (typeof etEntities !== 'undefined' && etEntities.length > 0) {
+    // First do a fresh scan of all entities
+    for (var i = 0; i < etEntities.length; i++) {
+      var ent = etEntities[i];
+      if (!ent.address) continue;
+      try {
+        var state = await hlPost({ type:'clearinghouseState', user: ent.address });
+        var mg = state.marginSummary || {};
+        ent.accountValue = parseFloat(mg.accountValue || 0);
+        ent.positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
+        ent.positionCount = ent.positions.length;
+        ent.totalPnl = parseFloat(mg.totalRawUsd || 0);
+        ent.lastScan = new Date().toISOString();
+      } catch(e) {}
+      if (i < etEntities.length - 1) await new Promise(function(r) { setTimeout(r, 150); });
+      document.getElementById('ti-status').textContent = 'Scanning entities ' + (i+1) + '/' + etEntities.length + '...';
+    }
+    etSave();
+    // Now extract positions for this ticker
+    etEntities.forEach(function(e) {
+      if (!e.positions) return;
+      e.positions.forEach(function(p) {
+        if (p.coin && p.coin.toUpperCase() === ticker) {
+          var szi = parseFloat(p.szi || 0);
+          var entryPx = parseFloat(p.entryPx || 0);
+          var notional = Math.abs(szi) * entryPx;
+          var leverage = parseFloat(p.leverage?.value || p.leverage || 0);
+          var upnl = parseFloat(p.unrealizedPnl || 0);
+          results.entities.push({
+            name: e.name, address: e.address, type: e.type, grade: e.grade,
+            side: szi > 0 ? 'LONG' : 'SHORT', size: szi, notional: notional,
+            entryPx: entryPx, leverage: leverage, pnl: upnl,
+            accountValue: e.accountValue
+          });
+        }
+      });
+    });
+  }
+
+  // 2. Fetch HL perp data for this token
+  document.getElementById('ti-status').textContent = 'Fetching Hyperliquid perp data...';
+  try {
+    var meta = await hlPost({ type:'metaAndAssetCtxs' });
+    var idx = meta[0].universe.findIndex(function(c) { return c.name.toUpperCase() === ticker; });
+    if (idx >= 0) {
+      var ctx = meta[1][idx];
+      var u = meta[0].universe[idx];
+      results.hlPerp = {
+        markPx: parseFloat(ctx.markPx || 0), oraclePx: parseFloat(ctx.oraclePx || 0),
+        oi: parseFloat(ctx.openInterest || 0), funding: parseFloat(ctx.funding || 0),
+        premium: parseFloat(ctx.premium || 0), vol24h: parseFloat(ctx.dayNtlVlm || 0),
+        prevDayPx: parseFloat(ctx.prevDayPx || 0), maxLev: u.maxLeverage || 0
+      };
+      if (results.hlPerp.prevDayPx > 0) {
+        results.hlPerp.pxChange = ((results.hlPerp.markPx - results.hlPerp.prevDayPx) / results.hlPerp.prevDayPx * 100);
+      }
+    }
+  } catch(e) {}
+
+  // 3. Search Dexscreener
+  document.getElementById('ti-status').textContent = 'Searching Dexscreener...';
+  try {
+    var dexResp = await fetch(DEX_API + '/latest/dex/search?q=' + encodeURIComponent(ticker));
+    var dexData = await dexResp.json();
+    results.dexPairs = (dexData.pairs || []).slice(0, 10);
+  } catch(e) {}
+
+  // 3b. Moralis: Top token holders (if key available)
+  var moralisKey = localStorage.getItem('moralisKey') || '';
+  results.moralisHolders = [];
+  results.moralisStats = null;
+  if (moralisKey) {
+    document.getElementById('ti-status').textContent = 'Fetching on-chain holders (Moralis)...';
+    // Need token contract address — get from Dexscreener results
+    var tokenAddress = null, tokenChain = null;
+    if (results.dexPairs && results.dexPairs.length > 0) {
+      // Find best EVM pair (ethereum or base preferred)
+      var evmPair = results.dexPairs.find(function(p) { return p.chainId === 'ethereum'; })
+        || results.dexPairs.find(function(p) { return p.chainId === 'base'; })
+        || results.dexPairs.find(function(p) { return p.chainId === 'bsc'; })
+        || results.dexPairs.find(function(p) { return p.chainId === 'polygon'; });
+      if (evmPair && evmPair.baseToken) {
+        tokenAddress = evmPair.baseToken.address;
+        tokenChain = evmPair.chainId;
+      }
+    }
+    if (tokenAddress && tokenChain) {
+      var morChainMap = { ethereum: '0x1', base: '0x2105', bsc: '0x38', polygon: '0x89', arbitrum: '0xa4b1', optimism: '0xa', avalanche: '0xa86a' };
+      var morChain = morChainMap[tokenChain] || '0x1';
+      try {
+        var morResp = await fetch('https://deep-index.moralis.io/api/v2.2/erc20/' + tokenAddress + '/owners?chain=' + morChain + '&limit=50&order=DESC', {
+          headers: { 'X-API-Key': moralisKey, 'Accept': 'application/json' }
+        });
+        if (morResp.ok) {
+          var morData = await morResp.json();
+          results.moralisHolders = (morData.result || []).slice(0, 30);
+          // Get token metadata for decimals
+          if (results.moralisHolders.length > 0) {
+            var decimals = parseInt(results.moralisHolders[0].token_decimals || 18);
+            results.moralisHolders.forEach(function(h) {
+              h._balanceFormatted = parseFloat(h.balance || 0) / Math.pow(10, decimals);
+              h._pctOfSupply = parseFloat(h.percentage_relative_to_total_supply || 0);
+              h._usdValue = parseFloat(h.usd_value || 0);
+            });
+          }
+          // Get holder stats
+          try {
+            var statsResp = await fetch('https://deep-index.moralis.io/api/v2.2/erc20/' + tokenAddress + '/owners/count?chain=' + morChain, {
+              headers: { 'X-API-Key': moralisKey, 'Accept': 'application/json' }
+            });
+            if (statsResp.ok) results.moralisStats = await statsResp.json();
+          } catch(e2) {}
+        }
+      } catch(e) { console.warn('Moralis error:', e); }
+    }
+    results._tokenAddress = tokenAddress;
+    results._tokenChain = tokenChain;
+  }
+
+  // 3c. Birdeye: Top traders on Solana (if key available)
+  var birdeyeKey = localStorage.getItem('birdeyeKey') || '';
+  results.birdeyeTraders = [];
+  if (birdeyeKey) {
+    document.getElementById('ti-status').textContent = 'Fetching top traders (Birdeye)...';
+    // Get Solana token address from Dexscreener
+    var solPair = (results.dexPairs || []).find(function(p) { return p.chainId === 'solana'; });
+    var solAddress = solPair && solPair.baseToken ? solPair.baseToken.address : null;
+    if (solAddress) {
+      try {
+        var beResp = await fetch('https://public-api.birdeye.so/defi/v2/tokens/top_traders?address=' + solAddress + '&time_frame=24h&sort_type=volume&sort_by=desc&limit=20', {
+          headers: { 'X-API-Key': birdeyeKey, 'Accept': 'application/json', 'x-chain': 'solana' }
+        });
+        if (beResp.ok) {
+          var beData = await beResp.json();
+          results.birdeyeTraders = (beData.data?.items || []).slice(0, 20);
+        }
+      } catch(e) { console.warn('Birdeye error:', e); }
+    }
+    results._solAddress = solAddress;
+  }
+
+  // 4. Existing signals for this token
+  if (typeof sigSignals !== 'undefined') {
+    results.signals = sigSignals.filter(function(s) {
+      return s.asset && s.asset.toUpperCase() === ticker && s.status !== 'expired' && s.status !== 'invalidated';
+    });
+  }
+
+  // 5. Upcoming catalysts
+  if (typeof catEvents !== 'undefined') {
+    var now = new Date();
+    results.catalysts = catEvents.filter(function(c) {
+      return c.asset && c.asset.toUpperCase() === ticker && new Date(c.date) > now;
+    });
+  }
+
+  // 6. Whale discovery — scan top HL wallets for this token
+  document.getElementById('ti-status').textContent = 'Discovering whales holding ' + ticker + '...';
+  var discoveredWhales = [];
+  try {
+    var lbResp = await fetch('https://stats-data.hyperliquid.xyz/Mainnet/leaderboard');
+    var lbData = await lbResp.json();
+    var topWallets = (lbData.leaderboardRows || [])
+      .map(function(r) { return { addr: r.ethAddress, acctVal: parseFloat(r.accountValue || 0) }; })
+      .filter(function(r) { return r.acctVal >= 100000; })
+      .sort(function(a,b) { return b.acctVal - a.acctVal; })
+      .slice(0, 30);
+
+    for (var w = 0; w < topWallets.length; w++) {
+      document.getElementById('ti-status').textContent = 'Scanning whale ' + (w+1) + '/' + topWallets.length + ' for ' + ticker + '...';
+      try {
+        var wState = await hlPost({ type:'clearinghouseState', user: topWallets[w].addr });
+        var wPos = (wState.assetPositions || []).map(function(p) { return p.position; });
+        var match = wPos.find(function(p) { return p.coin && p.coin.toUpperCase() === ticker && parseFloat(p.szi) !== 0; });
+        if (match) {
+          var szi = parseFloat(match.szi);
+          var ep = parseFloat(match.entryPx || 0);
+          // Check if already in our entity list
+          var isTracked = results.entities.find(function(e) { return e.address === topWallets[w].addr; });
+          discoveredWhales.push({
+            address: topWallets[w].addr, accountValue: topWallets[w].acctVal,
+            side: szi > 0 ? 'LONG' : 'SHORT', size: szi, notional: Math.abs(szi) * ep,
+            entryPx: ep, pnl: parseFloat(match.unrealizedPnl || 0),
+            leverage: parseFloat(match.leverage?.value || match.leverage || 0),
+            isTracked: !!isTracked
+          });
+        }
+      } catch(e) {}
+      if (w < topWallets.length - 1) await new Promise(function(r) { setTimeout(r, 150); });
+    }
+  } catch(e) {}
+
+  // Render results
+  tiRender(results, discoveredWhales);
+}
+
+function tiRender(r, whales) {
+  var container = document.getElementById('ti-results');
+  var html = '';
+
+  // === HEADER: Token + Price ===
+  var price = r.hlPerp ? r.hlPerp.markPx : (r.dexPairs.length > 0 ? parseFloat(r.dexPairs[0].priceUsd || 0) : 0);
+  var pxChange = r.hlPerp ? (r.hlPerp.pxChange || 0) : (r.dexPairs.length > 0 ? parseFloat(r.dexPairs[0].priceChange?.h24 || 0) : 0);
+  html += '<div class="card" style="padding:20px;margin-bottom:16px;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">';
+  html += '<div><span style="font-size:28px;font-weight:800;color:var(--accent2);">' + esc(r.ticker) + '</span>';
+  if (price > 0) html += ' <span style="font-size:22px;font-weight:700;color:var(--text);margin-left:12px;">$' + (price < 1 ? price.toFixed(6) : price.toFixed(2)) + '</span>';
+  if (pxChange) html += ' <span style="font-size:14px;font-weight:600;color:' + (pxChange >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (pxChange >= 0 ? '+' : '') + pxChange.toFixed(2) + '%</span>';
+  html += '</div>';
+  // Quick stats
+  var totalLong = 0, totalShort = 0;
+  r.entities.forEach(function(e) { if (e.side === 'LONG') totalLong += e.notional; else totalShort += e.notional; });
+  whales.forEach(function(w) { if (w.side === 'LONG') totalLong += w.notional; else totalShort += w.notional; });
+  var allCount = r.entities.length + whales.filter(function(w) { return !w.isTracked; }).length;
+  html += '<div style="display:flex;gap:20px;font-size:12px;">';
+  html += '<div><span style="color:var(--text3);">Wallets Found</span><br><span style="font-size:18px;font-weight:700;">' + allCount + '</span></div>';
+  html += '<div><span style="color:var(--text3);">Long Exposure</span><br><span style="font-size:18px;font-weight:700;color:var(--green);">$' + dexFmt(totalLong) + '</span></div>';
+  html += '<div><span style="color:var(--text3);">Short Exposure</span><br><span style="font-size:18px;font-weight:700;color:var(--red);">$' + dexFmt(totalShort) + '</span></div>';
+  html += '<div><span style="color:var(--text3);">Net Bias</span><br><span style="font-size:18px;font-weight:700;color:' + (totalLong >= totalShort ? 'var(--green)' : 'var(--red)') + ';">' + (totalLong >= totalShort ? 'BULLISH' : 'BEARISH') + '</span></div>';
+  html += '</div></div></div>';
+
+  // === SMART MONEY SENTIMENT BAR ===
+  if (totalLong + totalShort > 0) {
+    var longPct = totalLong / (totalLong + totalShort) * 100;
+    html += '<div class="card" style="padding:16px;margin-bottom:16px;">';
+    html += '<div style="font-size:12px;color:var(--text3);margin-bottom:8px;display:flex;justify-content:space-between;"><span>SMART MONEY SENTIMENT</span><span style="color:var(--text2);">' + longPct.toFixed(0) + '% Long / ' + (100-longPct).toFixed(0) + '% Short</span></div>';
+    html += '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;">';
+    html += '<div style="width:' + longPct + '%;background:var(--green);"></div>';
+    html += '<div style="width:' + (100-longPct) + '%;background:var(--red);"></div>';
+    html += '</div></div>';
+  }
+
+  // === SECTION: Tracked Entities (our entities with positions) ===
+  if (r.entities.length > 0) {
+    // Sort by grade then notional
+    var gradeOrder = {'A+':0,'A':1,'B+':2,'B':3,'C':4,'?':5};
+    r.entities.sort(function(a,b) { return (gradeOrder[a.grade]||5) - (gradeOrder[b.grade]||5) || b.notional - a.notional; });
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128373; Tracked Entities Holding ' + esc(r.ticker) + ' (' + r.entities.length + ')</h3>';
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">Entity</th><th style="padding:8px;text-align:left;color:var(--text3);">Grade</th><th style="padding:8px;text-align:left;color:var(--text3);">Type</th><th style="padding:8px;text-align:center;color:var(--text3);">Side</th><th style="padding:8px;text-align:right;color:var(--text3);">Size</th><th style="padding:8px;text-align:right;color:var(--text3);">Entry</th><th style="padding:8px;text-align:right;color:var(--text3);">Leverage</th><th style="padding:8px;text-align:right;color:var(--text3);">uPnL</th><th style="padding:8px;text-align:right;color:var(--text3);">Acct Value</th></tr>';
+    r.entities.forEach(function(e) {
+      var gradeColors = {'A+':'var(--green)','A':'var(--green)','B+':'var(--yellow)','B':'var(--text2)','C':'var(--text3)','?':'var(--text3)'};
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:8px;font-weight:700;color:var(--text);">' + esc(e.name) + '</td>';
+      html += '<td style="padding:8px;"><span style="font-weight:700;color:' + (gradeColors[e.grade]||'var(--text3)') + ';">' + esc(e.grade || '?') + '</span></td>';
+      html += '<td style="padding:8px;color:var(--text3);font-size:11px;">' + esc(e.type || '') + '</td>';
+      html += '<td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + (e.side==='LONG'?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)') + ';color:' + (e.side==='LONG'?'var(--green)':'var(--red)') + ';">' + e.side + '</span></td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">$' + dexFmt(e.notional) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);font-family:monospace;">$' + e.entryPx.toFixed(2) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);">' + (e.leverage > 0 ? e.leverage.toFixed(1) + 'x' : '--') + '</td>';
+      html += '<td style="padding:8px;text-align:right;font-weight:600;color:' + (e.pnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (e.pnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(e.pnl)) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text2);">$' + dexFmt(e.accountValue) + '</td>';
+      html += '</tr>';
+    });
+    html += '</table></div>';
+
+    // Cluster analysis: group by side
+    var longs = r.entities.filter(function(e) { return e.side === 'LONG'; });
+    var shorts = r.entities.filter(function(e) { return e.side === 'SHORT'; });
+    if (longs.length > 0 || shorts.length > 0) {
+      html += '<div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+      html += '<div style="padding:10px 14px;background:rgba(16,185,129,0.06);border-radius:8px;border-left:3px solid var(--green);">';
+      html += '<div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:4px;">LONG CLUSTER (' + longs.length + ')</div>';
+      longs.forEach(function(e) { html += '<div style="font-size:11px;color:var(--text2);">' + esc(e.name) + ' <span style="color:var(--text3);">(' + e.grade + ')</span> — $' + dexFmt(e.notional) + '</div>'; });
+      if (!longs.length) html += '<div style="font-size:11px;color:var(--text3);">No tracked entities long</div>';
+      html += '</div>';
+      html += '<div style="padding:10px 14px;background:rgba(239,68,68,0.06);border-radius:8px;border-left:3px solid var(--red);">';
+      html += '<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px;">SHORT CLUSTER (' + shorts.length + ')</div>';
+      shorts.forEach(function(e) { html += '<div style="font-size:11px;color:var(--text2);">' + esc(e.name) + ' <span style="color:var(--text3);">(' + e.grade + ')</span> — $' + dexFmt(e.notional) + '</div>'; });
+      if (!shorts.length) html += '<div style="font-size:11px;color:var(--text3);">No tracked entities short</div>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  // === SECTION: Discovered Whales (from leaderboard) ===
+  var newWhales = whales.filter(function(w) { return !w.isTracked; });
+  if (newWhales.length > 0) {
+    newWhales.sort(function(a,b) { return b.notional - a.notional; });
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128011; Discovered Whales — Not Yet Tracked (' + newWhales.length + ')</h3>';
+    html += '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Top HL leaderboard wallets holding ' + esc(r.ticker) + '. Add to Entity Tracker to monitor them.</div>';
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">Address</th><th style="padding:8px;text-align:center;color:var(--text3);">Side</th><th style="padding:8px;text-align:right;color:var(--text3);">Size</th><th style="padding:8px;text-align:right;color:var(--text3);">Entry</th><th style="padding:8px;text-align:right;color:var(--text3);">Lev</th><th style="padding:8px;text-align:right;color:var(--text3);">uPnL</th><th style="padding:8px;text-align:right;color:var(--text3);">Acct Value</th><th style="padding:8px;text-align:center;color:var(--text3);">Action</th></tr>';
+    newWhales.forEach(function(w) {
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:8px;font-family:monospace;font-size:11px;color:var(--accent2);">' + hlAddr(w.address) + '</td>';
+      html += '<td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + (w.side==='LONG'?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)') + ';color:' + (w.side==='LONG'?'var(--green)':'var(--red)') + ';">' + w.side + '</span></td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">$' + dexFmt(w.notional) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);font-family:monospace;">$' + w.entryPx.toFixed(2) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);">' + (w.leverage > 0 ? w.leverage.toFixed(1) + 'x' : '--') + '</td>';
+      html += '<td style="padding:8px;text-align:right;font-weight:600;color:' + (w.pnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (w.pnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(w.pnl)) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text2);">$' + dexFmt(w.accountValue) + '</td>';
+      html += '<td style="padding:8px;text-align:center;"><button class="btn btn-sm btn-ghost admin-only" onclick="tiAddEntity(\'' + esc(w.address) + '\',' + w.accountValue + ')" style="font-size:10px;padding:2px 8px;">+ Track</button></td>';
+      html += '</tr>';
+    });
+    html += '</table></div></div>';
+  }
+
+  // === SECTION: On-Chain Top Holders (Moralis) ===
+  if (r.moralisHolders && r.moralisHolders.length > 0) {
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 4px;font-size:14px;color:var(--text2);">&#128176; On-Chain Top Holders';
+    if (r._tokenChain) html += ' <span style="font-size:11px;color:var(--text3);font-weight:400;">(' + esc(r._tokenChain) + ')</span>';
+    html += '</h3>';
+    if (r.moralisStats) {
+      html += '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Total holders: <strong style="color:var(--text);">' + (r.moralisStats.count || r.moralisStats.total || '?').toLocaleString() + '</strong></div>';
+    }
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">#</th><th style="padding:8px;text-align:left;color:var(--text3);">Address</th><th style="padding:8px;text-align:right;color:var(--text3);">Balance</th><th style="padding:8px;text-align:right;color:var(--text3);">% Supply</th><th style="padding:8px;text-align:right;color:var(--text3);">USD Value</th><th style="padding:8px;text-align:center;color:var(--text3);">Label</th></tr>';
+    r.moralisHolders.forEach(function(h, idx) {
+      var isKnown = h.owner_address_label || '';
+      var isEntity = typeof etEntities !== 'undefined' && etEntities.find(function(e) { return e.address && e.address.toLowerCase() === (h.owner_address || '').toLowerCase(); });
+      html += '<tr style="border-bottom:1px solid var(--border);' + (isEntity ? 'background:rgba(99,102,241,0.06);' : '') + '">';
+      html += '<td style="padding:8px;color:var(--text3);">' + (idx+1) + '</td>';
+      html += '<td style="padding:8px;font-family:monospace;font-size:11px;color:var(--accent2);">' + hlAddr(h.owner_address || '') + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">' + (h._balanceFormatted > 1e9 ? dexFmt(h._balanceFormatted) : h._balanceFormatted.toLocaleString(undefined, {maximumFractionDigits:2})) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:' + (h._pctOfSupply > 5 ? 'var(--yellow)' : 'var(--text2)') + ';font-weight:600;">' + h._pctOfSupply.toFixed(2) + '%</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);">' + (h._usdValue > 0 ? '$' + dexFmt(h._usdValue) : '--') + '</td>';
+      html += '<td style="padding:8px;text-align:center;">';
+      if (isEntity) html += '<span style="font-size:10px;padding:2px 6px;background:rgba(99,102,241,0.12);color:var(--accent2);border-radius:4px;">TRACKED</span>';
+      else if (isKnown) html += '<span style="font-size:10px;color:var(--text2);">' + esc(isKnown) + '</span>';
+      else html += '<button class="btn btn-sm btn-ghost admin-only" onclick="tiAddEntity(\'' + esc(h.owner_address || '') + '\',0)" style="font-size:10px;padding:1px 6px;">+ Track</button>';
+      html += '</td></tr>';
+    });
+    html += '</table></div>';
+    // Concentration analysis
+    var top10Pct = 0;
+    r.moralisHolders.slice(0, 10).forEach(function(h) { top10Pct += h._pctOfSupply; });
+    html += '<div style="margin-top:12px;padding:10px 14px;background:var(--bg2);border-radius:6px;font-size:12px;">';
+    html += '<strong style="color:var(--text2);">Concentration:</strong> Top 10 holders own <strong style="color:' + (top10Pct > 50 ? 'var(--red)' : top10Pct > 30 ? 'var(--yellow)' : 'var(--green)') + ';">' + top10Pct.toFixed(1) + '%</strong> of supply';
+    if (top10Pct > 50) html += ' <span style="color:var(--red);">— HIGH concentration risk</span>';
+    else if (top10Pct > 30) html += ' <span style="color:var(--yellow);">— moderate concentration</span>';
+    else html += ' <span style="color:var(--green);">— well distributed</span>';
+    html += '</div></div>';
+  }
+
+  // === SECTION: Top Traders (Birdeye / Solana) ===
+  if (r.birdeyeTraders && r.birdeyeTraders.length > 0) {
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128640; Top Traders — Solana DEXs (24h)</h3>';
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">#</th><th style="padding:8px;text-align:left;color:var(--text3);">Wallet</th><th style="padding:8px;text-align:center;color:var(--text3);">Type</th><th style="padding:8px;text-align:right;color:var(--text3);">Volume</th><th style="padding:8px;text-align:right;color:var(--text3);">Buy Vol</th><th style="padding:8px;text-align:right;color:var(--text3);">Sell Vol</th><th style="padding:8px;text-align:right;color:var(--text3);">Txns</th><th style="padding:8px;text-align:center;color:var(--text3);">Bias</th></tr>';
+    r.birdeyeTraders.forEach(function(t, idx) {
+      var buyVol = parseFloat(t.volume_buy || t.buy_volume || 0);
+      var sellVol = parseFloat(t.volume_sell || t.sell_volume || 0);
+      var totalVol = parseFloat(t.volume || buyVol + sellVol);
+      var txns = parseInt(t.trade_count || t.txs || 0);
+      var bias = buyVol > sellVol ? 'BUY' : buyVol < sellVol ? 'SELL' : 'NEUTRAL';
+      var biasColor = bias === 'BUY' ? 'var(--green)' : bias === 'SELL' ? 'var(--red)' : 'var(--text3)';
+      var addr = t.owner || t.wallet || t.address || '';
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:8px;color:var(--text3);">' + (idx+1) + '</td>';
+      html += '<td style="padding:8px;font-family:monospace;font-size:11px;color:var(--accent2);">' + hlAddr(addr) + '</td>';
+      html += '<td style="padding:8px;text-align:center;font-size:10px;color:var(--text3);">' + esc(t.type || t.owner_type || '--') + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">$' + dexFmt(totalVol) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--green);">$' + dexFmt(buyVol) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--red);">$' + dexFmt(sellVol) + '</td>';
+      html += '<td style="padding:8px;text-align:right;color:var(--text2);">' + txns + '</td>';
+      html += '<td style="padding:8px;text-align:center;"><span style="font-size:11px;font-weight:700;color:' + biasColor + ';">' + bias + '</span></td>';
+      html += '</tr>';
+    });
+    html += '</table></div>';
+    // Aggregate buy vs sell
+    var totalBuy = 0, totalSell = 0;
+    r.birdeyeTraders.forEach(function(t) { totalBuy += parseFloat(t.volume_buy || t.buy_volume || 0); totalSell += parseFloat(t.volume_sell || t.sell_volume || 0); });
+    if (totalBuy + totalSell > 0) {
+      var buyPct = totalBuy / (totalBuy + totalSell) * 100;
+      html += '<div style="margin-top:12px;padding:10px 14px;background:var(--bg2);border-radius:6px;font-size:12px;">';
+      html += '<strong style="color:var(--text2);">DEX Trader Sentiment:</strong> ';
+      html += '<span style="color:var(--green);">' + buyPct.toFixed(0) + '% buying</span> / <span style="color:var(--red);">' + (100-buyPct).toFixed(0) + '% selling</span>';
+      html += ' ($' + dexFmt(totalBuy) + ' buy vs $' + dexFmt(totalSell) + ' sell)';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // === SECTION: HL Perp Data ===
+  if (r.hlPerp) {
+    var p = r.hlPerp;
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128202; Hyperliquid Perp Data</h3>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Mark Price</div><div style="font-size:16px;font-weight:700;">$' + (p.markPx < 1 ? p.markPx.toFixed(6) : p.markPx.toFixed(2)) + '</div></div>';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Open Interest</div><div style="font-size:16px;font-weight:700;">$' + dexFmt(p.oi * p.markPx) + '</div></div>';
+    var fundingColor = p.funding >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Funding (8h)</div><div style="font-size:16px;font-weight:700;color:' + fundingColor + ';">' + (p.funding * 100).toFixed(4) + '%</div></div>';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">24h Volume</div><div style="font-size:16px;font-weight:700;">$' + dexFmt(p.vol24h) + '</div></div>';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Premium</div><div style="font-size:16px;font-weight:700;color:' + (p.premium >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (p.premium * 100).toFixed(4) + '%</div></div>';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Max Leverage</div><div style="font-size:16px;font-weight:700;">' + p.maxLev + 'x</div></div>';
+    html += '</div></div>';
+  }
+
+  // === SECTION: DEX Data ===
+  if (r.dexPairs.length > 0) {
+    var topPair = r.dexPairs[0];
+    var totalLiq = 0, totalVol = 0;
+    r.dexPairs.forEach(function(p) { totalLiq += parseFloat(p.liquidity?.usd || 0); totalVol += parseFloat(p.volume?.h24 || 0); });
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128142; DEX Liquidity (' + r.dexPairs.length + ' pairs)</h3>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px;">';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Total Liquidity</div><div style="font-size:16px;font-weight:700;">$' + dexFmt(totalLiq) + '</div></div>';
+    html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">24h DEX Volume</div><div style="font-size:16px;font-weight:700;">$' + dexFmt(totalVol) + '</div></div>';
+    if (topPair.fdv) html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">FDV</div><div style="font-size:16px;font-weight:700;">$' + dexFmt(parseFloat(topPair.fdv)) + '</div></div>';
+    html += '</div>';
+    // Top pairs table
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:11px;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:6px;text-align:left;color:var(--text3);">Pair</th><th style="padding:6px;text-align:left;color:var(--text3);">Chain/DEX</th><th style="padding:6px;text-align:right;color:var(--text3);">Price</th><th style="padding:6px;text-align:right;color:var(--text3);">24h%</th><th style="padding:6px;text-align:right;color:var(--text3);">Volume</th><th style="padding:6px;text-align:right;color:var(--text3);">Liquidity</th><th style="padding:6px;text-align:center;color:var(--text3);">Link</th></tr>';
+    r.dexPairs.forEach(function(p) {
+      var bt = p.baseToken || {};
+      var qt = p.quoteToken || {};
+      var px = parseFloat(p.priceUsd || 0);
+      var chg = parseFloat(p.priceChange?.h24 || 0);
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:6px;font-weight:600;color:var(--accent2);">' + esc(bt.symbol||'?') + '/' + esc(qt.symbol||'?') + '</td>';
+      html += '<td style="padding:6px;color:var(--text3);">' + esc(p.chainId||'') + '/' + esc(p.dexId||'') + '</td>';
+      html += '<td style="padding:6px;text-align:right;font-family:monospace;color:var(--text);">$' + (px < 0.01 ? px.toExponential(2) : px.toFixed(px < 1 ? 4 : 2)) + '</td>';
+      html += '<td style="padding:6px;text-align:right;color:' + (chg >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:600;">' + (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%</td>';
+      html += '<td style="padding:6px;text-align:right;">$' + dexFmt(parseFloat(p.volume?.h24 || 0)) + '</td>';
+      html += '<td style="padding:6px;text-align:right;">$' + dexFmt(parseFloat(p.liquidity?.usd || 0)) + '</td>';
+      html += '<td style="padding:6px;text-align:center;">' + (p.url ? '<a href="' + esc(p.url) + '" target="_blank" style="color:var(--accent2);">Chart</a>' : '--') + '</td>';
+      html += '</tr>';
+    });
+    html += '</table></div></div>';
+  }
+
+  // === SECTION: Active Signals ===
+  if (r.signals.length > 0) {
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128276; Active Signals (' + r.signals.length + ')</h3>';
+    r.signals.forEach(function(s) {
+      var tc = {whale_move:'var(--blue)',accumulation:'var(--green)',distribution:'var(--red)',new_position:'var(--accent2)',liquidation:'var(--orange)',flow_anomaly:'var(--yellow)'}[s.type] || 'var(--text3)';
+      html += '<div style="padding:8px 12px;background:var(--bg2);border-radius:6px;border-left:3px solid ' + tc + ';margin-bottom:6px;font-size:12px;">';
+      html += '<span style="font-weight:700;">' + esc((s.type||'').replace(/_/g,' ')) + '</span>';
+      html += ' <span style="color:var(--text3);">|</span> <span style="color:' + (s.conviction==='high'?'var(--yellow)':'var(--text2)') + ';">' + esc(s.conviction||'medium') + '</span>';
+      if (s.description) html += ' — ' + esc(s.description);
+      if (s.notes) html += ' — ' + esc(s.notes);
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // === SECTION: Upcoming Catalysts ===
+  if (r.catalysts.length > 0) {
+    html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128197; Upcoming Catalysts (' + r.catalysts.length + ')</h3>';
+    r.catalysts.forEach(function(c) {
+      var impactColor = c.impact === 'positive' ? 'var(--green)' : c.impact === 'negative' ? 'var(--red)' : 'var(--text3)';
+      html += '<div style="padding:8px 12px;background:var(--bg2);border-radius:6px;border-left:3px solid ' + impactColor + ';margin-bottom:6px;font-size:12px;">';
+      html += '<span style="font-weight:700;">' + esc(c.title || '') + '</span>';
+      html += ' <span style="color:var(--text3);">|</span> ' + esc(c.date || '') + ' <span style="color:' + impactColor + ';">(' + esc(c.impact || 'neutral') + ')</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // === SECTION: Alpha Summary ===
+  html += '<div class="card" style="padding:18px;border-left:3px solid var(--accent2);">';
+  html += '<h3 style="margin:0 0 10px;font-size:14px;color:var(--text2);">&#127919; Alpha Summary</h3>';
+  var insights = [];
+  if (r.entities.length > 0) {
+    var highGrade = r.entities.filter(function(e) { return e.grade === 'A+' || e.grade === 'A'; });
+    if (highGrade.length > 0) {
+      var hgSides = {};
+      highGrade.forEach(function(e) { hgSides[e.side] = (hgSides[e.side] || 0) + 1; });
+      var dominant = Object.keys(hgSides).sort(function(a,b) { return hgSides[b]-hgSides[a]; })[0];
+      insights.push('<span style="color:var(--green);">&#10003;</span> ' + highGrade.length + ' high-grade entities (A+/A) are positioned — majority <strong>' + dominant + '</strong>');
+    }
+  }
+  if (newWhales.length > 0) {
+    var whSides = {};
+    newWhales.forEach(function(w) { whSides[w.side] = (whSides[w.side] || 0) + 1; });
+    var wDom = Object.keys(whSides).sort(function(a,b) { return whSides[b]-whSides[a]; })[0];
+    insights.push('<span style="color:var(--yellow);">&#128011;</span> ' + newWhales.length + ' untracked whales found — <strong>' + (whSides[wDom] || 0) + ' ' + wDom + '</strong> vs ' + ((whSides[wDom === 'LONG' ? 'SHORT' : 'LONG']) || 0) + ' ' + (wDom === 'LONG' ? 'SHORT' : 'LONG'));
+  }
+  if (r.hlPerp) {
+    var f = r.hlPerp.funding;
+    if (Math.abs(f) > 0.0001) {
+      insights.push('<span style="color:' + (f > 0 ? 'var(--green)' : 'var(--red)') + ';">&#128178;</span> Funding ' + (f > 0 ? 'positive (longs paying shorts)' : 'negative (shorts paying longs)') + ': ' + (f * 100).toFixed(4) + '%');
+    }
+  }
+  if (r.catalysts.length > 0) {
+    var posCats = r.catalysts.filter(function(c) { return c.impact === 'positive'; });
+    if (posCats.length > 0) insights.push('<span style="color:var(--accent2);">&#128197;</span> ' + posCats.length + ' positive catalyst(s) upcoming');
+  }
+  if (r.moralisHolders && r.moralisHolders.length > 0) {
+    var top10Pct2 = 0;
+    r.moralisHolders.slice(0, 10).forEach(function(h) { top10Pct2 += h._pctOfSupply; });
+    if (top10Pct2 > 50) insights.push('<span style="color:var(--red);">&#9888;</span> Top 10 holders own ' + top10Pct2.toFixed(0) + '% — high concentration risk');
+    else if (top10Pct2 < 20) insights.push('<span style="color:var(--green);">&#10003;</span> Token well distributed — top 10 own only ' + top10Pct2.toFixed(0) + '%');
+    // Check if tracked entities are among top holders
+    var trackedInTop = r.moralisHolders.filter(function(h) {
+      return typeof etEntities !== 'undefined' && etEntities.find(function(e) { return e.address && e.address.toLowerCase() === (h.owner_address || '').toLowerCase(); });
+    });
+    if (trackedInTop.length > 0) insights.push('<span style="color:var(--accent2);">&#128373;</span> ' + trackedInTop.length + ' of your tracked entities are top holders on-chain');
+  }
+  if (r.birdeyeTraders && r.birdeyeTraders.length > 0) {
+    var tbuy = 0, tsell = 0;
+    r.birdeyeTraders.forEach(function(t) { tbuy += parseFloat(t.volume_buy || t.buy_volume || 0); tsell += parseFloat(t.volume_sell || t.sell_volume || 0); });
+    if (tbuy + tsell > 0) {
+      var buyRatio = tbuy / (tbuy + tsell);
+      if (buyRatio > 0.65) insights.push('<span style="color:var(--green);">&#128640;</span> Solana top traders heavily buying (' + (buyRatio*100).toFixed(0) + '% buy volume)');
+      else if (buyRatio < 0.35) insights.push('<span style="color:var(--red);">&#9888;</span> Solana top traders heavily selling (' + ((1-buyRatio)*100).toFixed(0) + '% sell volume)');
+    }
+  }
+  if (r.dexPairs.length > 0) {
+    var topLiq = parseFloat(r.dexPairs[0].liquidity?.usd || 0);
+    if (topLiq < 50000) insights.push('<span style="color:var(--red);">&#9888;</span> Low DEX liquidity ($' + dexFmt(topLiq) + ') — high slippage risk');
+    else if (topLiq > 1000000) insights.push('<span style="color:var(--green);">&#10003;</span> Deep DEX liquidity ($' + dexFmt(topLiq) + ')');
+  }
+  if (!insights.length) insights.push('<span style="color:var(--text3);">No tracked entities holding this token. Add entities in Entity Tracker to get smart money signals.</span>');
+  html += '<div style="font-size:13px;line-height:1.8;">' + insights.join('<br>') + '</div>';
+  html += '</div>';
+
+  container.innerHTML = html;
+  updateAdminUI();
+}
+
+function tiAddEntity(address, acctVal) {
+  if (typeof etEntities === 'undefined') return;
+  var exists = etEntities.find(function(e) { return e.address === address; });
+  if (exists) { alert('Already tracking this entity'); return; }
+  var label = prompt('Name this entity (e.g. "Whale #12", "Unknown Fund"):');
+  if (!label) return;
+  etEntities.push({
+    id: 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    name: label, address: address, type: 'whale', grade: '?',
+    venues: ['hyperliquid'], notes: 'Discovered via Token Intel scan',
+    addedAt: new Date().toISOString(), lastScan: null,
+    accountValue: acctVal, positions: [], positionCount: 0, totalPnl: 0
+  });
+  etSave();
+  alert(label + ' added to Entity Tracker!');
 }
 
 // ===== DEXSCREENER INTEGRATION =====
