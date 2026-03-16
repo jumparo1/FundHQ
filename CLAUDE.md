@@ -27,10 +27,12 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Project Dump | Pipeline | Quick capture for project ideas |
 | Watchlist | Pipeline | Tracked assets with scores, detail view, Firebase sync |
 | Alerts | Pipeline | Signals from scheduled scans + Pamela, severity levels, browser notifications |
+| Portfolio | Pipeline | Holdings tracker, allocation breakdown, P&L tracking, cash management |
 | On-Chain Intel | On-Chain | 5 tabs: Overview, Hyperliquid, Entity Tracker, Flow Monitor, Signal Feed |
 | Market Data | Research | Live search/discovery, CoinGecko + FMP fundamentals |
 | Templates | Research | 4 templates (Crypto 16s, Stock 14s, Quick Thesis 5s, Commodity 12s), view/edit modes |
 | Reports | Research | AI-generated research reports, rating, conviction, Substack, Trash |
+| Catalysts | Research | Event tracking (8 types), impact/time filters, summary cards, Firebase sync |
 | Technical | Technical | 5 tabs: Market Regime, Setup Scanner, Playbooks, Confluence, Trade Log |
 | Tasks | Operations | Kanban board with milestones, priority, assignee |
 | Roadmap | Operations | Tasks grouped by milestone with progress bars |
@@ -69,6 +71,7 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 
 ## Recent Changes
 - 2026-03-16: **3-Division Architecture** — restructured entire platform into On-Chain Intel, Research, and Technical Analysis
+- 2026-03-16: **Portfolio page** — holdings tracker with allocation breakdown, P&L, cash management, visual allocation bar chart
 - 2026-03-16: **Signal Feed** — functional on-chain signal aggregation with type/conviction filters, status tracking, win/loss outcome tracking
 - 2026-03-16: **Flow Monitor** — aggregate entity flow scanning via HL API, accumulation/distribution detection, net flow by asset, auto-signal generation for $100K+ positions
 - 2026-03-16: **Trade Log** — full CRUD trade logging with P&L, R:R calculation, playbook linkage, win rate stats, best playbook mining

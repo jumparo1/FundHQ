@@ -12,11 +12,13 @@ AI-powered institutional research operating system for crypto and equities. Thre
 
 ## Features
 
-- **On-Chain Intel** — Hyperliquid whale tracker (wallet scanner, whale discovery, saved wallets, perp positioning), Entity Tracker, Flow Monitor, Signal Feed
+- **On-Chain Intel** — Hyperliquid whale tracker (wallet scanner, whale discovery, saved wallets, perp positioning), Entity Tracker (full CRUD, import from HL), Flow Monitor (aggregate smart money flows), Signal Feed (on-chain signal aggregation with status lifecycle)
+- **Portfolio** — Holdings tracker with allocation breakdown, P&L tracking, cash management, visual allocation bar chart
 - **Market Data** — Live search across crypto (CoinGecko) and stocks (FMP) with auto-scoring
 - **Research Templates** — Crypto (16s), Stock (14s), Commodity (12s), Quick Thesis (5s) with AI-powered section analysis
 - **Reports** — AI-generated research reports with rating, conviction, Substack publishing, soft-delete trash
-- **Technical Analysis** — Market regime detection, setup scanner, strategy playbooks, 4-factor confluence scoring, trade log
+- **Catalysts** — Event tracking with 8 types, impact/time filters, summary cards, Firebase sync
+- **Technical Analysis** — Market regime detection, setup scanner, strategy playbooks, 4-factor confluence scoring, trade log with P&L and win rate tracking
 - **AI Assistant** — "Pamela" Claude-powered agent with 20 tools, multi-turn reasoning, web search
 - **Scheduled Tasks** — Daily market scans, watchlist refresh, weekly deep dives via Claude Code cron
 - **Dashboard** — Fund overview with watchlist, reports, tasks, quick actions
@@ -24,12 +26,12 @@ AI-powered institutional research operating system for crypto and equities. Thre
 
 ## Tech Stack
 
-- Single HTML file — no build tools, no frameworks
+- Single HTML file (~10K lines) — no build tools, no frameworks
 - **Firebase Realtime Database** for cloud sync
 - **localStorage** fallback for offline use
 - **Anthropic Claude API** for AI research + Pamela agent
 - **Hyperliquid API** for on-chain data
-- **Python agent** for persistent monitoring + WebSocket alerts
+- **Python agents** — Sentinel (on-chain), Analyst (research), Quant (technical)
 - Vanilla JavaScript, CSS custom properties, dark theme
 
 ## Live
