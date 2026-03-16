@@ -719,13 +719,13 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item" data-page="watchlist"><span class="icon">&#128065;</span> Watchlist <span class="badge" id="badge-watchlist">0</span></div>
     <div class="nav-item" data-page="alerts"><span class="icon">&#128276;</span> Alerts <span class="badge" id="badge-alerts">0</span></div>
 
+    <div class="nav-section">On-Chain Intel</div>
+    <div class="nav-item" data-page="onchain"><span class="icon">&#128279;</span> On-Chain <span class="badge" id="badge-hl-wallets">0</span></div>
+
     <div class="nav-section">Research</div>
+    <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
     <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
     <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
-
-    <div class="nav-section">Market</div>
-    <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
-    <div class="nav-item" data-page="hyperliquid"><span class="icon">&#128011;</span> Hyperliquid <span class="badge" id="badge-hl-wallets">0</span></div>
 
     <div class="nav-section">Management</div>
     <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
@@ -763,6 +763,7 @@ tbody tr:hover { background: var(--bg3); }
       <div class="card" style="margin-bottom:20px;padding:16px 20px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:13px;color:var(--text3);font-weight:600;margin-right:6px;">Quick Actions</span>
+          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=onchain]').click()">&#128279; On-Chain Intel</button>
           <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=marketdata]').click()">&#128270; Search Market</button>
           <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=templates]').click()">&#128218; Research Templates</button>
           <button class="btn btn-sm btn-ghost admin-only" onclick="openModal('report')">&#128196; New Report</button>
@@ -1057,20 +1058,79 @@ tbody tr:hover { background: var(--bg3); }
       <div id="market-detail" style="margin-top:0;"></div>
     </div>
 
-    <!-- ===== HYPERLIQUID ===== -->
-    <div id="page-hyperliquid" class="page hidden">
+    <!-- ===== ON-CHAIN INTEL ===== -->
+    <div id="page-onchain" class="page hidden">
       <div class="page-header">
-        <h1>&#128011; Hyperliquid</h1>
-        <p>On-chain whale tracker — find profitable wallets &amp; monitor positions</p>
+        <h1>&#128279; On-Chain Intel</h1>
+        <p>Smart money tracking, flow analysis &amp; venue intelligence</p>
       </div>
 
-      <!-- Tabs -->
+      <!-- Division Tabs -->
       <div class="market-tabs" style="margin-bottom:20px;">
-        <button class="market-tab active" onclick="hlShowTab('scanner')" id="hl-tab-scanner">Wallet Scanner</button>
-        <button class="market-tab" onclick="hlShowTab('whales')" id="hl-tab-whales">Whale Discovery</button>
-        <button class="market-tab" onclick="hlShowTab('saved')" id="hl-tab-saved">Saved Wallets</button>
-        <button class="market-tab" onclick="hlShowTab('perps')" id="hl-tab-perps">Perp Positioning</button>
+        <button class="market-tab active" onclick="ocShowDivision('overview')" id="oc-div-overview">Overview</button>
+        <button class="market-tab" onclick="ocShowDivision('hyperliquid')" id="oc-div-hyperliquid">Hyperliquid</button>
+        <button class="market-tab" onclick="ocShowDivision('entities')" id="oc-div-entities">Entity Tracker</button>
+        <button class="market-tab" onclick="ocShowDivision('flows')" id="oc-div-flows">Flow Monitor</button>
+        <button class="market-tab" onclick="ocShowDivision('signals')" id="oc-div-signals">Signal Feed</button>
       </div>
+
+      <!-- ON-CHAIN OVERVIEW -->
+      <div id="oc-panel-overview">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Market Regime</div>
+            <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="oc-regime">--</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;" id="oc-regime-detail">Load data to detect regime</div>
+          </div>
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Tracked Entities</div>
+            <div style="font-size:22px;font-weight:700;" id="oc-entity-count">0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Across all venues</div>
+          </div>
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Active Signals</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green);" id="oc-signal-count">0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Last 24h</div>
+          </div>
+          <div class="card" style="padding:16px 20px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Venues Connected</div>
+            <div style="font-size:22px;font-weight:700;">1</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Hyperliquid (Arkham, Dexscreener soon)</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card" style="padding:18px 22px;">
+            <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Quick Access</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('hyperliquid')" style="justify-content:flex-start;text-align:left;">&#128011; Hyperliquid — Wallet Scanner, Whales, Perps</button>
+              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('entities')" style="justify-content:flex-start;text-align:left;">&#128373; Entity Tracker — Cross-venue wallet intelligence</button>
+              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('flows')" style="justify-content:flex-start;text-align:left;">&#128200; Flow Monitor — Smart money flow detection</button>
+              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('signals')" style="justify-content:flex-start;text-align:left;">&#128276; Signal Feed — High-conviction on-chain signals</button>
+            </div>
+          </div>
+          <div class="card" style="padding:18px 22px;">
+            <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Recent Activity</h3>
+            <div id="oc-recent-activity" style="font-size:13px;color:var(--text3);">No recent on-chain activity tracked yet. Start by scanning wallets on Hyperliquid.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HYPERLIQUID SUB-MODULE -->
+      <div id="oc-panel-hyperliquid" style="display:none;">
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="ocShowDivision('overview')">On-Chain</span>
+          <span style="font-size:11px;color:var(--text3);">/</span>
+          <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128011; Hyperliquid</span>
+        </div>
+
+        <!-- HL Sub-Tabs -->
+        <div class="market-tabs" style="margin-bottom:20px;">
+          <button class="market-tab active" onclick="hlShowTab('scanner')" id="hl-tab-scanner">Wallet Scanner</button>
+          <button class="market-tab" onclick="hlShowTab('whales')" id="hl-tab-whales">Whale Discovery</button>
+          <button class="market-tab" onclick="hlShowTab('saved')" id="hl-tab-saved">Saved Wallets</button>
+          <button class="market-tab" onclick="hlShowTab('perps')" id="hl-tab-perps">Perp Positioning</button>
+        </div>
 
       <!-- SCANNER TAB -->
       <div id="hl-panel-scanner">
@@ -1154,7 +1214,59 @@ tbody tr:hover { background: var(--bg3); }
         <div id="hl-perp-summary"></div>
         <div id="hl-perp-result"></div>
       </div>
-    </div>
+      </div><!-- /oc-panel-hyperliquid -->
+
+      <!-- ENTITY TRACKER -->
+      <div id="oc-panel-entities" style="display:none;">
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="ocShowDivision('overview')">On-Chain</span>
+          <span style="font-size:11px;color:var(--text3);">/</span>
+          <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128373; Entity Tracker</span>
+        </div>
+        <div class="card" style="padding:24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">&#128373;</div>
+          <h3 style="margin:0 0 8px 0;color:var(--text1);">Entity Tracker</h3>
+          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Cross-venue wallet intelligence — track entities across Hyperliquid, Arkham, and Dexscreener. Monitor funds, market makers, whales, and insiders.</p>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+            <span class="badge" style="background:var(--accent-bg);color:var(--accent2);padding:4px 10px;font-size:11px;">Hyperliquid</span>
+            <span class="badge" style="background:var(--bg3);color:var(--text3);padding:4px 10px;font-size:11px;">Arkham (coming)</span>
+            <span class="badge" style="background:var(--bg3);color:var(--text3);padding:4px 10px;font-size:11px;">Dexscreener (coming)</span>
+          </div>
+          <p style="color:var(--text3);font-size:12px;margin-top:16px;">Phase 2 — Coming next sprint</p>
+        </div>
+      </div>
+
+      <!-- FLOW MONITOR -->
+      <div id="oc-panel-flows" style="display:none;">
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="ocShowDivision('overview')">On-Chain</span>
+          <span style="font-size:11px;color:var(--text3);">/</span>
+          <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128200; Flow Monitor</span>
+        </div>
+        <div class="card" style="padding:24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">&#128200;</div>
+          <h3 style="margin:0 0 8px 0;color:var(--text1);">Flow Monitor</h3>
+          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">Aggregate smart money flow detection — accumulation/distribution patterns, squeeze setups, venue flow comparisons.</p>
+          <p style="color:var(--text3);font-size:12px;">Phase 2 — Coming next sprint</p>
+        </div>
+      </div>
+
+      <!-- SIGNAL FEED -->
+      <div id="oc-panel-signals" style="display:none;">
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="ocShowDivision('overview')">On-Chain</span>
+          <span style="font-size:11px;color:var(--text3);">/</span>
+          <span style="font-size:12px;color:var(--text1);font-weight:600;">&#128276; Signal Feed</span>
+        </div>
+        <div class="card" style="padding:24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">&#128276;</div>
+          <h3 style="margin:0 0 8px 0;color:var(--text1);">Signal Feed</h3>
+          <p style="color:var(--text3);font-size:13px;max-width:480px;margin:0 auto 16px;">High-conviction on-chain signals — filtered by entity grade, regime alignment, and conviction level. Powered by Sentinel agent.</p>
+          <p style="color:var(--text3);font-size:12px;">Phase 2 — Coming next sprint</p>
+        </div>
+      </div>
+
+    </div><!-- /page-onchain -->
 
     <!-- ===== DOCS (GitBook-style) ===== -->
     <div id="page-help" class="page hidden">
@@ -1268,8 +1380,8 @@ tbody tr:hover { background: var(--bg3); }
                   <tr><td><strong>Alerts</strong></td><td>Pipeline</td><td>Signals from scheduled scans + Pamela</td></tr>
                   <tr><td><strong>Templates</strong></td><td>Research</td><td>Crypto (18s), Stock (14s), Quick Thesis (5s)</td></tr>
                   <tr><td><strong>Reports</strong></td><td>Research</td><td>AI-generated reports with rating and conviction</td></tr>
-                  <tr><td><strong>Market Data</strong></td><td>Market</td><td>Live search, CoinGecko + FMP fundamentals</td></tr>
-                  <tr><td><strong>Hyperliquid</strong></td><td>Market</td><td>Whale tracker — wallet scanner, discovery, saved wallets</td></tr>
+                  <tr><td><strong>On-Chain Intel</strong></td><td>On-Chain</td><td>Smart money tracking — Hyperliquid, Entity Tracker, Flow Monitor, Signals</td></tr>
+                  <tr><td><strong>Market Data</strong></td><td>Research</td><td>Live search, CoinGecko + FMP fundamentals</td></tr>
                   <tr><td><strong>Tasks</strong></td><td>Management</td><td>Kanban board with milestones, priority, assignee</td></tr>
                   <tr><td><strong>Roadmap</strong></td><td>Management</td><td>Tasks grouped by milestone with progress bars</td></tr>
                   <tr><td><strong>Progress</strong></td><td>Management</td><td>Daily work log, timeline, streak tracking</td></tr>
@@ -6508,13 +6620,14 @@ const PAGE_ALIASES = {
   alerts: 'alerts', alert: 'alerts', notifications: 'alerts', signals: 'alerts',
   about: 'about', mission: 'about', bitfunded: 'about',
   help: 'help', docs: 'help', documentation: 'help', guide: 'help',
-  hyperliquid: 'hyperliquid', hl: 'hyperliquid', whales: 'hyperliquid', 'whale tracker': 'hyperliquid'
+  hyperliquid: 'onchain', hl: 'onchain', whales: 'onchain', 'whale tracker': 'onchain',
+  'on-chain': 'onchain', 'on chain': 'onchain', onchain: 'onchain', 'smart money': 'onchain', sentinel: 'onchain', 'entity tracker': 'onchain', flows: 'onchain'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', hyperliquid: 'Hyperliquid'
+  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel'
 };
 
 function toggleChat() {
@@ -7138,6 +7251,26 @@ function docsNav(page) {
 function docsShowTab(tab) {
   const map = {overview:'overview', agents:'pamela', data:'apis', changelog:'changelog'};
   docsNav(map[tab] || tab);
+}
+
+// ===== ON-CHAIN INTEL DIVISION NAVIGATION =====
+function ocShowDivision(div) {
+  ['overview','hyperliquid','entities','flows','signals'].forEach(d => {
+    var panel = document.getElementById('oc-panel-' + d);
+    if (panel) panel.style.display = d === div ? '' : 'none';
+    var tab = document.getElementById('oc-div-' + d);
+    if (tab) tab.classList.toggle('active', d === div);
+  });
+  // Auto-load HL saved wallets count when entering HL
+  if (div === 'hyperliquid') {
+    hlShowTab('scanner');
+  }
+  // Update entity count on overview
+  if (div === 'overview') {
+    var saved = JSON.parse(localStorage.getItem('hl_saved_wallets') || '[]');
+    var el = document.getElementById('oc-entity-count');
+    if (el) el.textContent = saved.length;
+  }
 }
 
 function hlShowTab(tab) {
