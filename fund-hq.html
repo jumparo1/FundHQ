@@ -726,6 +726,7 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
     <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
     <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
+    <div class="nav-item" data-page="catalysts"><span class="icon">&#128197;</span> Catalysts <span class="badge" id="badge-catalysts">0</span></div>
 
     <div class="nav-section">Technical</div>
     <div class="nav-item" data-page="technical"><span class="icon">&#128202;</span> Technical</div>
@@ -1000,6 +1001,71 @@ tbody tr:hover { background: var(--bg3); }
         <input type="text" placeholder="Search reports..." oninput="renderReports(this.value)">
       </div>
       <div id="reports-list"></div>
+    </div>
+
+    <!-- ===== CATALYSTS ===== -->
+    <div id="page-catalysts" class="page hidden">
+      <div class="page-header">
+        <h1>&#128197; Catalysts</h1>
+        <p>Upcoming events, unlocks, and catalysts for covered assets</p>
+        <div class="header-actions">
+          <button class="btn btn-primary admin-only" onclick="catShowAddModal()">+ Add Catalyst</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <select id="cat-filter-type" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="catRender()">
+          <option value="all">All Types</option>
+          <option value="unlock">Token Unlock</option>
+          <option value="launch">Mainnet / Launch</option>
+          <option value="earnings">Earnings</option>
+          <option value="governance">Governance</option>
+          <option value="partnership">Partnership</option>
+          <option value="regulatory">Regulatory</option>
+          <option value="upgrade">Protocol Upgrade</option>
+          <option value="other">Other</option>
+        </select>
+        <select id="cat-filter-impact" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="catRender()">
+          <option value="all">All Impact</option>
+          <option value="positive">Positive</option>
+          <option value="negative">Negative</option>
+          <option value="neutral">Neutral</option>
+        </select>
+        <select id="cat-filter-time" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="catRender()">
+          <option value="upcoming">Upcoming</option>
+          <option value="7d">Next 7 Days</option>
+          <option value="30d">Next 30 Days</option>
+          <option value="past">Past</option>
+          <option value="all">All</option>
+        </select>
+        <span id="cat-count" style="font-size:12px;color:var(--text3);"></span>
+      </div>
+
+      <!-- Summary -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">This Week</div>
+          <div style="font-size:20px;font-weight:700;color:var(--yellow);" id="cat-this-week">0</div>
+        </div>
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">This Month</div>
+          <div style="font-size:20px;font-weight:700;" id="cat-this-month">0</div>
+        </div>
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Positive</div>
+          <div style="font-size:20px;font-weight:700;color:var(--green);" id="cat-positive">0</div>
+        </div>
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Negative</div>
+          <div style="font-size:20px;font-weight:700;color:var(--red);" id="cat-negative">0</div>
+        </div>
+      </div>
+
+      <div id="cat-list"></div>
+      <div id="cat-empty" style="display:none;padding:40px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">&#128197;</div>
+        <p style="color:var(--text3);font-size:13px;">No catalysts tracked yet. Click <strong>+ Add Catalyst</strong> to track upcoming events.</p>
+      </div>
     </div>
 
     <!-- ===== TASKS (Kanban Board) ===== -->
@@ -1443,17 +1509,72 @@ tbody tr:hover { background: var(--bg3); }
 
       <!-- CONFLUENCE -->
       <div id="ta-panel-confluence" style="display:none;">
-        <div class="card" style="padding:24px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">&#128200;</div>
-          <h3 style="margin:0 0 8px 0;color:var(--text1);">Confluence Scoring</h3>
-          <p style="color:var(--text3);font-size:13px;max-width:520px;margin:0 auto 16px;">Multi-factor scoring across all 3 divisions. On-Chain signal (25%) + Fundamental thesis (25%) + TA setup (30%) + Regime alignment (20%). Minimum 3.5 to act.</p>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:480px;margin:0 auto;">
-            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">On-Chain</div><div style="font-size:16px;font-weight:700;">25%</div></div>
-            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">Fundamental</div><div style="font-size:16px;font-weight:700;">25%</div></div>
-            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">Technical</div><div style="font-size:16px;font-weight:700;">30%</div></div>
-            <div style="padding:10px;background:var(--bg2);border-radius:6px;"><div style="font-size:11px;color:var(--text3);">Regime</div><div style="font-size:16px;font-weight:700;">20%</div></div>
+        <div class="card" style="padding:20px;margin-bottom:16px;">
+          <h3 style="margin:0 0 4px 0;font-size:14px;color:var(--text2);">Confluence Scorer</h3>
+          <p style="font-size:12px;color:var(--text3);margin:0 0 16px;">Rate each factor 1-5. Weighted score determines position sizing. Minimum 3.5 to act.</p>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label style="font-size:12px;">Asset</label>
+            <input type="text" id="conf-asset" placeholder="BTC, ETH, SOL..." style="max-width:200px;">
           </div>
-          <p style="color:var(--text3);font-size:12px;margin-top:16px;">Phase 2 — Coming next sprint</p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div style="padding:14px;background:var(--bg2);border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:600;">&#128279; On-Chain Signal</span>
+                <span style="font-size:11px;color:var(--text3);">25% weight</span>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Entity grade, flow size, smart money alignment</div>
+              <input type="range" id="conf-onchain" min="1" max="5" step="0.5" value="3" oninput="confCalc()" style="width:100%;">
+              <div style="text-align:center;font-size:16px;font-weight:700;" id="conf-onchain-val">3.0</div>
+            </div>
+            <div style="padding:14px;background:var(--bg2);border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:600;">&#128200; Fundamental Thesis</span>
+                <span style="font-size:11px;color:var(--text3);">25% weight</span>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Conviction, catalyst proximity, risk flags</div>
+              <input type="range" id="conf-fundamental" min="1" max="5" step="0.5" value="3" oninput="confCalc()" style="width:100%;">
+              <div style="text-align:center;font-size:16px;font-weight:700;" id="conf-fundamental-val">3.0</div>
+            </div>
+            <div style="padding:14px;background:var(--bg2);border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:600;">&#128202; Technical Setup</span>
+                <span style="font-size:11px;color:var(--text3);">30% weight</span>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Playbook match, R:R ratio, structure quality</div>
+              <input type="range" id="conf-technical" min="1" max="5" step="0.5" value="3" oninput="confCalc()" style="width:100%;">
+              <div style="text-align:center;font-size:16px;font-weight:700;" id="conf-technical-val">3.0</div>
+            </div>
+            <div style="padding:14px;background:var(--bg2);border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:600;">&#127919; Regime Alignment</span>
+                <span style="font-size:11px;color:var(--text3);">20% weight</span>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Does current regime support this trade type?</div>
+              <input type="range" id="conf-regime" min="1" max="5" step="0.5" value="3" oninput="confCalc()" style="width:100%;">
+              <div style="text-align:center;font-size:16px;font-weight:700;" id="conf-regime-val">3.0</div>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div style="padding:16px;background:var(--bg1);border-radius:8px;border:2px solid var(--border);text-align:center;" id="conf-result">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Weighted Confluence Score</div>
+            <div style="font-size:36px;font-weight:800;margin:4px 0;" id="conf-score">3.00</div>
+            <div style="font-size:13px;font-weight:600;" id="conf-verdict">WAIT — Below minimum threshold</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;" id="conf-sizing">No position recommended</div>
+          </div>
+        </div>
+
+        <!-- Scoring Guide -->
+        <div class="card" style="padding:16px;">
+          <h4 style="margin:0 0 10px;font-size:13px;color:var(--text2);">Scoring Guide</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:12px;">
+            <div style="padding:8px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--red);"><strong>1-2:</strong> Weak / against thesis</div>
+            <div style="padding:8px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--yellow);"><strong>3:</strong> Neutral / insufficient data</div>
+            <div style="padding:8px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--green);"><strong>4-5:</strong> Strong / high conviction</div>
+            <div style="padding:8px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--accent2);"><strong>Min 3.5:</strong> Required to act. 4.5+ = max conviction (rare)</div>
+          </div>
         </div>
       </div>
 
@@ -6842,13 +6963,14 @@ const PAGE_ALIASES = {
   help: 'help', docs: 'help', documentation: 'help', guide: 'help',
   hyperliquid: 'onchain', hl: 'onchain', whales: 'onchain', 'whale tracker': 'onchain',
   'on-chain': 'onchain', 'on chain': 'onchain', onchain: 'onchain', 'smart money': 'onchain', sentinel: 'onchain', 'entity tracker': 'onchain', flows: 'onchain',
-  technical: 'technical', ta: 'technical', 'technical analysis': 'technical', setups: 'technical', playbooks: 'technical', confluence: 'technical', 'trade log': 'technical', regime: 'technical', quant: 'technical'
+  technical: 'technical', ta: 'technical', 'technical analysis': 'technical', setups: 'technical', playbooks: 'technical', confluence: 'technical', 'trade log': 'technical', regime: 'technical', quant: 'technical',
+  catalysts: 'catalysts', catalyst: 'catalysts', unlocks: 'catalysts', events: 'catalysts', 'token unlock': 'catalysts'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel', technical: 'Technical Analysis'
+  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel', technical: 'Technical Analysis', catalysts: 'Catalysts'
 };
 
 function toggleChat() {
@@ -7917,8 +8039,206 @@ function setupDelete(id) {
   setupSave(); setupRender();
 }
 
-// Load entities + setups from Firebase on init
-setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); }, 2000);
+// ===== CATALYST TRACKER =====
+var catEvents = [];
+try { catEvents = JSON.parse(localStorage.getItem('cat_events') || '[]'); } catch(e) { catEvents = []; }
+
+function catSave() {
+  localStorage.setItem('cat_events', JSON.stringify(catEvents));
+  if (hlIsFirebase()) {
+    var fbData = {};
+    catEvents.forEach(function(c) { fbData[c.id] = c; });
+    dbRef.child('catalysts').set(fbData);
+  }
+  catUpdateBadge();
+}
+
+function catLoadFromFirebase() {
+  if (hlIsFirebase()) {
+    dbRef.child('catalysts').once('value', function(snap) {
+      var data = snap.val();
+      if (data) {
+        var fbList = Object.values(data);
+        var idSet = new Set(catEvents.map(function(c) { return c.id; }));
+        fbList.forEach(function(c) {
+          if (c.id && !idSet.has(c.id)) { catEvents.push(c); idSet.add(c.id); }
+          else if (c.id && idSet.has(c.id)) {
+            var idx = catEvents.findIndex(function(x) { return x.id === c.id; });
+            if (idx >= 0) catEvents[idx] = c;
+          }
+        });
+        localStorage.setItem('cat_events', JSON.stringify(catEvents));
+        catUpdateBadge();
+      }
+    });
+  }
+}
+
+function catUpdateBadge() {
+  if (typeof catEvents === 'undefined' || !catEvents) return;
+  var now = new Date();
+  var weekEnd = new Date(now.getTime() + 7 * 86400000);
+  var upcoming = catEvents.filter(function(c) { var d = new Date(c.date); return d >= now && d <= weekEnd; }).length;
+  var badge = document.getElementById('badge-catalysts');
+  if (badge) badge.textContent = upcoming || '';
+}
+
+function catRender() {
+  if (typeof catEvents === 'undefined' || !catEvents) catEvents = [];
+  var filterType = document.getElementById('cat-filter-type')?.value || 'all';
+  var filterImpact = document.getElementById('cat-filter-impact')?.value || 'all';
+  var filterTime = document.getElementById('cat-filter-time')?.value || 'upcoming';
+
+  var now = new Date();
+  var today = now.toISOString().slice(0,10);
+  var weekEnd = new Date(now.getTime() + 7 * 86400000).toISOString().slice(0,10);
+  var monthEnd = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0,10);
+
+  var filtered = catEvents.filter(function(c) {
+    if (filterType !== 'all' && c.type !== filterType) return false;
+    if (filterImpact !== 'all' && c.impact !== filterImpact) return false;
+    if (filterTime === 'upcoming' && c.date < today) return false;
+    if (filterTime === '7d' && (c.date < today || c.date > weekEnd)) return false;
+    if (filterTime === '30d' && (c.date < today || c.date > monthEnd)) return false;
+    if (filterTime === 'past' && c.date >= today) return false;
+    return true;
+  }).sort(function(a,b) { return a.date.localeCompare(b.date); });
+
+  // Summary stats
+  var thisWeek = catEvents.filter(function(c) { return c.date >= today && c.date <= weekEnd; }).length;
+  var thisMonth = catEvents.filter(function(c) { return c.date >= today && c.date <= monthEnd; }).length;
+  var positive = catEvents.filter(function(c) { return c.date >= today && c.impact === 'positive'; }).length;
+  var negative = catEvents.filter(function(c) { return c.date >= today && c.impact === 'negative'; }).length;
+  var el;
+  el = document.getElementById('cat-this-week'); if (el) el.textContent = thisWeek;
+  el = document.getElementById('cat-this-month'); if (el) el.textContent = thisMonth;
+  el = document.getElementById('cat-positive'); if (el) el.textContent = positive;
+  el = document.getElementById('cat-negative'); if (el) el.textContent = negative;
+
+  var countEl = document.getElementById('cat-count');
+  if (countEl) countEl.textContent = filtered.length + ' catalyst' + (filtered.length !== 1 ? 's' : '');
+
+  var listEl = document.getElementById('cat-list');
+  var emptyEl = document.getElementById('cat-empty');
+  if (!filtered.length) { if (listEl) listEl.innerHTML = ''; if (emptyEl) emptyEl.style.display = ''; return; }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  var typeIcons = {unlock:'&#128275;',launch:'&#128640;',earnings:'&#128176;',governance:'&#9878;',partnership:'&#129309;',regulatory:'&#9878;',upgrade:'&#128736;',other:'&#128204;'};
+  var typeLabels = {unlock:'Token Unlock',launch:'Mainnet/Launch',earnings:'Earnings',governance:'Governance',partnership:'Partnership',regulatory:'Regulatory',upgrade:'Protocol Upgrade',other:'Other'};
+  var impactColors = {positive:'var(--green)',negative:'var(--red)',neutral:'var(--yellow)'};
+
+  var html = '<div style="display:grid;gap:10px;">';
+  filtered.forEach(function(c) {
+    var dateObj = new Date(c.date + 'T12:00:00');
+    var formatted = dateObj.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'});
+    var daysAway = Math.ceil((new Date(c.date) - new Date(today)) / 86400000);
+    var urgency = daysAway <= 0 ? 'TODAY' : daysAway <= 3 ? daysAway + 'd away' : daysAway <= 7 ? daysAway + 'd away' : daysAway + 'd';
+    var urgencyColor = daysAway <= 0 ? 'var(--red)' : daysAway <= 3 ? 'var(--yellow)' : daysAway <= 7 ? 'var(--accent2)' : 'var(--text3)';
+    var impactColor = impactColors[c.impact] || 'var(--text3)';
+
+    html += '<div class="card" style="padding:14px 18px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;">';
+    html += '<span style="font-size:16px;">'+(typeIcons[c.type]||'&#128204;')+'</span>';
+    html += '<span style="font-size:15px;font-weight:700;color:var(--text1);">'+esc(c.asset)+'</span>';
+    html += '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:var(--bg3);color:var(--text3);">'+(typeLabels[c.type]||c.type)+'</span>';
+    html += '<span style="font-size:11px;font-weight:600;color:'+impactColor+';">'+c.impact+'</span>';
+    html += '</div>';
+    html += '<div style="display:flex;align-items:center;gap:8px;">';
+    html += '<span style="font-size:11px;font-weight:600;color:'+urgencyColor+';">'+urgency+'</span>';
+    html += '<button class="btn btn-sm btn-ghost admin-only" onclick="catDelete(\''+c.id+'\')" style="color:var(--red);">&#10005;</button>';
+    html += '</div></div>';
+    html += '<div style="font-size:13px;color:var(--text2);margin-bottom:4px;">'+esc(c.title)+'</div>';
+    html += '<div style="font-size:11px;color:var(--text3);">'+formatted;
+    if (c.notes) html += ' &mdash; '+esc(c.notes);
+    html += '</div></div>';
+  });
+  html += '</div>';
+  if (listEl) listEl.innerHTML = html;
+}
+
+function catShowAddModal() {
+  var html = '<h2>Add Catalyst</h2>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Asset</label><input type="text" id="cat-asset" placeholder="BTC, ETH, SOL..."></div>';
+  html += '<div class="form-group"><label>Date</label><input type="date" id="cat-date"></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label>Event Title</label><input type="text" id="cat-title" placeholder="e.g. 500M token unlock, Mainnet v2 launch..."></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  html += '<div class="form-group"><label>Type</label><select id="cat-type"><option value="unlock">Token Unlock</option><option value="launch">Mainnet/Launch</option><option value="earnings">Earnings</option><option value="governance">Governance</option><option value="partnership">Partnership</option><option value="regulatory">Regulatory</option><option value="upgrade">Protocol Upgrade</option><option value="other">Other</option></select></div>';
+  html += '<div class="form-group"><label>Expected Impact</label><select id="cat-impact"><option value="positive">Positive</option><option value="negative">Negative</option><option value="neutral">Neutral</option></select></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label>Notes (optional)</label><textarea id="cat-notes" rows="2" placeholder="Additional context..."></textarea></div>';
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">';
+  html += '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>';
+  html += '<button class="btn btn-primary" onclick="catAdd()">Add Catalyst</button></div>';
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+
+function catAdd() {
+  var asset = (document.getElementById('cat-asset')?.value || '').trim().toUpperCase();
+  var date = document.getElementById('cat-date')?.value || '';
+  var title = (document.getElementById('cat-title')?.value || '').trim();
+  if (!asset || !date || !title) { alert('Asset, date, and title required'); return; }
+  catEvents.push({
+    id: 'cat_' + Date.now(),
+    asset: asset, date: date, title: title,
+    type: document.getElementById('cat-type')?.value || 'other',
+    impact: document.getElementById('cat-impact')?.value || 'neutral',
+    notes: (document.getElementById('cat-notes')?.value || '').trim(),
+    createdAt: new Date().toISOString()
+  });
+  catSave(); catRender(); closeModal();
+}
+
+function catDelete(id) {
+  if (!confirm('Delete this catalyst?')) return;
+  catEvents = catEvents.filter(function(c) { return c.id !== id; });
+  catSave(); catRender();
+}
+
+// Load entities + setups + catalysts from Firebase on init
+setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); catLoadFromFirebase(); catUpdateBadge(); }, 2000);
+
+// ===== CONFLUENCE SCORING =====
+function confCalc() {
+  var oc = parseFloat(document.getElementById('conf-onchain')?.value || 3);
+  var fu = parseFloat(document.getElementById('conf-fundamental')?.value || 3);
+  var ta = parseFloat(document.getElementById('conf-technical')?.value || 3);
+  var re = parseFloat(document.getElementById('conf-regime')?.value || 3);
+
+  document.getElementById('conf-onchain-val').textContent = oc.toFixed(1);
+  document.getElementById('conf-fundamental-val').textContent = fu.toFixed(1);
+  document.getElementById('conf-technical-val').textContent = ta.toFixed(1);
+  document.getElementById('conf-regime-val').textContent = re.toFixed(1);
+
+  var score = (oc * 0.25) + (fu * 0.25) + (ta * 0.30) + (re * 0.20);
+  var scoreEl = document.getElementById('conf-score');
+  var verdictEl = document.getElementById('conf-verdict');
+  var sizingEl = document.getElementById('conf-sizing');
+  var resultEl = document.getElementById('conf-result');
+
+  if (scoreEl) scoreEl.textContent = score.toFixed(2);
+
+  if (score >= 4.5) {
+    if (verdictEl) { verdictEl.textContent = 'MAXIMUM CONVICTION'; verdictEl.style.color = 'var(--green)'; }
+    if (sizingEl) sizingEl.textContent = '3% risk — rare, highest conviction setup';
+    if (resultEl) resultEl.style.borderColor = 'var(--green)';
+  } else if (score >= 4.0) {
+    if (verdictEl) { verdictEl.textContent = 'STRONG CONVICTION'; verdictEl.style.color = 'var(--green)'; }
+    if (sizingEl) sizingEl.textContent = '2% risk — solid multi-factor alignment';
+    if (resultEl) resultEl.style.borderColor = 'var(--green)';
+  } else if (score >= 3.5) {
+    if (verdictEl) { verdictEl.textContent = 'ACTIONABLE'; verdictEl.style.color = 'var(--yellow)'; }
+    if (sizingEl) sizingEl.textContent = '1% risk — minimum threshold met';
+    if (resultEl) resultEl.style.borderColor = 'var(--yellow)';
+  } else {
+    if (verdictEl) { verdictEl.textContent = 'WAIT — Below minimum threshold'; verdictEl.style.color = 'var(--red)'; }
+    if (sizingEl) sizingEl.textContent = 'No position recommended';
+    if (resultEl) resultEl.style.borderColor = 'var(--border)';
+  }
+}
 
 // ===== TECHNICAL ANALYSIS TAB NAVIGATION =====
 function taShowTab(tab) {
