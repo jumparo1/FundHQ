@@ -3422,7 +3422,7 @@ var ANALYST_TOOLS = [
 
 var SENTINEL_TOOLS = [
   { name: 'hl_scan_wallet', description: 'Scan a Hyperliquid wallet: positions, PnL, win rate, trade history.', input_schema: { type: 'object', properties: { address: { type: 'string', description: 'Wallet address (0x...)' } }, required: ['address'] } },
-  { name: 'hl_whale_positions', description: 'Find whale positions on Hyperliquid for a specific coin or across top coins. Scans trades to discover large wallets.', input_schema: { type: 'object', properties: { coin: { type: 'string', description: 'Coin to scan (e.g. ETH, BTC, SOL)' }, min_size: { type: 'number', description: 'Min position size USD (default 500000)' } } } },
+  { name: 'hl_whale_positions', description: 'Find whale positions on Hyperliquid for a specific coin. Returns: perp market data (OI, funding, volume, price), long/short ratio from scanned wallets, and top 10 notable positions. Use this for "who is long X?", "whale activity on X", "perp positioning on X".', input_schema: { type: 'object', properties: { coin: { type: 'string', description: 'Coin to scan (e.g. ETH, BTC, SOL, ZEC)' }, min_size: { type: 'number', description: 'Min position size USD (default 50000)' } } } },
   { name: 'hl_saved_wallets', description: 'Get all saved/tracked HL wallets with labels and last known values.', input_schema: { type: 'object', properties: {} } },
   { name: 'get_entities', description: 'Get tracked entities from Entity Tracker, optionally filtered by type or grade.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter by type: whale/fund/insider/mm/copyable/degen' }, grade: { type: 'string', description: 'Minimum grade: A+/A/B+/B/C' } } } },
   { name: 'get_signals', description: 'Get on-chain signals, optionally filtered by type or status.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter: accumulation/distribution/whale_entry/whale_exit' }, status: { type: 'string', description: 'Filter: new/reviewing/acted/dismissed' } } } },
@@ -4009,30 +4009,62 @@ async function executeToolCall(name, input) {
     }
     case 'hl_whale_positions': {
       try {
-        const coins = input.coin ? [input.coin.toUpperCase()] : ['BTC', 'ETH', 'SOL', 'HYPE', 'DOGE', 'SUI'];
-        const minSize = input.min_size || 500000;
+        const coin = input.coin ? input.coin.toUpperCase() : null;
+        const coins = coin ? [coin] : ['BTC', 'ETH', 'SOL', 'HYPE', 'DOGE', 'SUI'];
+        const minSize = input.min_size || 50000;
+
+        // Step 1: Fetch perp market data (OI, funding, volume, price)
+        var marketData = {};
+        try {
+          const meta = await hlPost({ type: 'metaAndAssetCtxs' });
+          if (meta && meta[0] && meta[1]) {
+            var universe = meta[0].universe || [];
+            var contexts = meta[1] || [];
+            for (var mi = 0; mi < universe.length; mi++) {
+              var sym = universe[mi].name;
+              if (coin && sym !== coin && coins.indexOf(sym) === -1) continue;
+              var ctx = contexts[mi] || {};
+              marketData[sym] = {
+                mark_price: parseFloat(ctx.markPx || 0),
+                open_interest: parseFloat(ctx.openInterest || 0),
+                funding_rate: parseFloat(ctx.funding || 0),
+                volume_24h: parseFloat(ctx.dayNtlVlm || 0),
+                premium: parseFloat(ctx.premium || 0)
+              };
+            }
+          }
+        } catch(e) {}
+
+        // Step 2: Discover addresses from recent trades
         const addresses = new Set();
-        for (const coin of coins) {
+        for (const c of coins) {
           try {
-            const trades = await hlPost({ type: 'recentTrades', coin });
+            const trades = await hlPost({ type: 'recentTrades', coin: c });
             if (Array.isArray(trades)) trades.forEach(t => { if (t.users) t.users.forEach(u => { if (u && u.startsWith('0x')) addresses.add(u); }); });
           } catch(e) {}
         }
+
+        // Step 3: Scan wallets for positions (up to 50)
         const whalePositions = [];
-        const checked = Array.from(addresses).slice(0, 30);
+        var longNotional = 0, shortNotional = 0, longCount = 0, shortCount = 0;
+        const checked = Array.from(addresses).slice(0, 50);
         for (const addr of checked) {
           try {
             const state = await hlPost({ type: 'clearinghouseState', user: addr });
             const acctVal = parseFloat((state.marginSummary || {}).accountValue || 0);
-            if (acctVal < 100000) continue;
+            if (acctVal < 10000) continue;
             (state.assetPositions || []).forEach(ap => {
               const p = ap.position || ap;
               const sz = parseFloat(p.szi || 0);
               if (sz === 0) return;
               const entry = parseFloat(p.entryPx || 0);
               const notional = Math.abs(sz * entry);
+              if (coin && p.coin !== coin) return;
+              // Track all positions for long/short ratio
+              if (sz > 0) { longNotional += notional; longCount++; }
+              else { shortNotional += notional; shortCount++; }
+              // Only include positions above min size
               if (notional < minSize) return;
-              if (input.coin && p.coin !== input.coin.toUpperCase()) return;
               whalePositions.push({
                 wallet: addr.slice(0, 10) + '...',
                 full_address: addr,
@@ -4048,7 +4080,35 @@ async function executeToolCall(name, input) {
           } catch(e) {}
         }
         whalePositions.sort((a, b) => b.size_usd - a.size_usd);
-        return { coins_scanned: coins, addresses_checked: checked.length, whale_positions: whalePositions.slice(0, 15) };
+
+        // Build result with market context
+        var result = {
+          coins_scanned: coins,
+          addresses_checked: checked.length,
+          min_position_size: minSize,
+          positioning: {
+            long_count: longCount,
+            short_count: shortCount,
+            long_notional: Math.round(longNotional),
+            short_notional: Math.round(shortNotional),
+            long_short_ratio: shortNotional > 0 ? parseFloat((longNotional / shortNotional).toFixed(2)) : longCount > 0 ? 'all_long' : 'no_positions',
+            bias: longNotional > shortNotional * 1.5 ? 'bullish' : shortNotional > longNotional * 1.5 ? 'bearish' : 'neutral'
+          },
+          top_positions: whalePositions.slice(0, 10)
+        };
+        // Add perp market data if scanning specific coin
+        if (coin && marketData[coin]) {
+          var md = marketData[coin];
+          result.market = {
+            mark_price: md.mark_price,
+            open_interest_usd: Math.round(md.open_interest * md.mark_price),
+            funding_rate_8h: parseFloat((md.funding_rate * 100).toFixed(4)) + '%',
+            funding_annualized: parseFloat((md.funding_rate * 100 * 3 * 365).toFixed(1)) + '%',
+            volume_24h: Math.round(md.volume_24h),
+            premium: parseFloat((md.premium * 100).toFixed(3)) + '%'
+          };
+        }
+        return result;
       } catch(e) { return { error: 'Whale scan failed: ' + e.message }; }
     }
     case 'hl_saved_wallets': {
