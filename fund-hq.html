@@ -1097,81 +1097,133 @@ tbody tr:hover { background: var(--bg3); }
         <p>Track fundraising channels, saved raises, and VC-backed projects</p>
         <div class="header-actions">
           <button class="btn btn-primary admin-only" onclick="vcShowAddRaise()">+ Add Raise</button>
-          <button class="btn btn-ghost" onclick="vcRefreshFeed()">&#128260; Refresh Feed</button>
         </div>
       </div>
 
-      <!-- Sources / Channels -->
-      <div class="card" style="padding:16px;margin-bottom:20px;">
-        <h3 style="font-size:13px;color:var(--text2);margin-bottom:12px;">Intelligence Sources</h3>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a href="https://x.com/CryptoRank_VCs" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#120143; CryptoRank VCs</a>
-          <a href="https://defillama.com/raises" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#128142; DefiLlama Raises</a>
-          <a href="https://cryptorank.io/funding-rounds" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#128200; CryptoRank Rounds</a>
-          <a href="https://rootdata.com/Fundraising" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#127793; RootData</a>
-          <button class="btn btn-ghost admin-only" style="font-size:12px;" onclick="vcAddSource()">+ Add Source</button>
-        </div>
-        <div id="vc-custom-sources" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <button class="tab active" id="vc-tab-my" onclick="vcSwitchTab('my')">&#128203; My Raises</button>
+        <button class="tab" id="vc-tab-feed" onclick="vcSwitchTab('feed')">&#128225; Live Feed <span id="vc-feed-badge" style="font-size:10px;background:var(--accent);color:var(--bg1);padding:1px 6px;border-radius:8px;margin-left:4px;display:none;">0</span></button>
       </div>
 
-      <!-- Stats -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
-        <div class="card" style="padding:12px 16px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Tracked Raises</div>
-          <div style="font-size:20px;font-weight:700;color:var(--blue, #60a5fa);" id="vc-stat-total">0</div>
+      <!-- ===== MY RAISES TAB ===== -->
+      <div id="vc-panel-my">
+        <!-- Sources / Channels -->
+        <div class="card" style="padding:16px;margin-bottom:20px;">
+          <h3 style="font-size:13px;color:var(--text2);margin-bottom:12px;">Intelligence Sources</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="https://x.com/CryptoRank_VCs" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#120143; CryptoRank VCs</a>
+            <a href="https://defillama.com/raises" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#128142; DefiLlama Raises</a>
+            <a href="https://cryptorank.io/funding-rounds" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#128200; CryptoRank Rounds</a>
+            <a href="https://rootdata.com/Fundraising" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#127793; RootData</a>
+            <button class="btn btn-ghost admin-only" style="font-size:12px;" onclick="vcAddSource()">+ Add Source</button>
+          </div>
+          <div id="vc-custom-sources" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
         </div>
-        <div class="card" style="padding:12px 16px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total Raised</div>
-          <div style="font-size:20px;font-weight:700;color:var(--green);" id="vc-stat-raised">$0M</div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Tracked Raises</div>
+            <div style="font-size:20px;font-weight:700;color:var(--blue, #60a5fa);" id="vc-stat-total">0</div>
+          </div>
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total Raised</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green);" id="vc-stat-raised">$0M</div>
+          </div>
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Tier 1 Backed</div>
+            <div style="font-size:20px;font-weight:700;color:var(--yellow, #fbbf24);" id="vc-stat-tier1">0</div>
+          </div>
+          <div class="card" style="padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">100x Candidates</div>
+            <div style="font-size:20px;font-weight:700;color:var(--accent);" id="vc-stat-gems">0</div>
+          </div>
         </div>
-        <div class="card" style="padding:12px 16px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Tier 1 Backed</div>
-          <div style="font-size:20px;font-weight:700;color:var(--yellow, #fbbf24);" id="vc-stat-tier1">0</div>
+
+        <!-- Filter -->
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <select id="vc-filter-round" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
+            <option value="all">All Rounds</option>
+            <option value="Seed">Seed</option>
+            <option value="Series A">Series A</option>
+            <option value="Series B">Series B</option>
+            <option value="Strategic">Strategic</option>
+            <option value="Other">Other</option>
+          </select>
+          <select id="vc-filter-category" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
+            <option value="all">All Categories</option>
+            <option value="DeFi">DeFi</option>
+            <option value="Infrastructure">Infrastructure</option>
+            <option value="Gaming">Gaming</option>
+            <option value="AI">AI</option>
+            <option value="Chain">Chain / L1/L2</option>
+            <option value="NFT">NFT</option>
+            <option value="CeFi">CeFi</option>
+            <option value="DePIN">DePIN</option>
+            <option value="RWA">RWA</option>
+            <option value="Social">Social</option>
+          </select>
+          <select id="vc-filter-status" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
+            <option value="all">All Status</option>
+            <option value="watching">Watching</option>
+            <option value="researching">Researching</option>
+            <option value="invested">Invested</option>
+            <option value="passed">Passed</option>
+          </select>
+          <span id="vc-count" style="font-size:12px;color:var(--text3);"></span>
         </div>
-        <div class="card" style="padding:12px 16px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">100x Candidates</div>
-          <div style="font-size:20px;font-weight:700;color:var(--accent);" id="vc-stat-gems">0</div>
+
+        <!-- Raises List -->
+        <div id="vc-raises-list"></div>
+        <div id="vc-empty" style="display:none;padding:40px;text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">&#128176;</div>
+          <p style="color:var(--text3);font-size:13px;">No raises tracked yet. Click <strong>+ Add Raise</strong> or ask Pamela <em>"who raised recently?"</em></p>
         </div>
       </div>
 
-      <!-- Filter -->
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-        <select id="vc-filter-round" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
-          <option value="all">All Rounds</option>
-          <option value="Seed">Seed</option>
-          <option value="Series A">Series A</option>
-          <option value="Series B">Series B</option>
-          <option value="Strategic">Strategic</option>
-          <option value="Other">Other</option>
-        </select>
-        <select id="vc-filter-category" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
-          <option value="all">All Categories</option>
-          <option value="DeFi">DeFi</option>
-          <option value="Infrastructure">Infrastructure</option>
-          <option value="Gaming">Gaming</option>
-          <option value="AI">AI</option>
-          <option value="Chain">Chain / L1/L2</option>
-          <option value="NFT">NFT</option>
-          <option value="CeFi">CeFi</option>
-          <option value="DePIN">DePIN</option>
-          <option value="RWA">RWA</option>
-          <option value="Social">Social</option>
-        </select>
-        <select id="vc-filter-status" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
-          <option value="all">All Status</option>
-          <option value="watching">Watching</option>
-          <option value="researching">Researching</option>
-          <option value="invested">Invested</option>
-          <option value="passed">Passed</option>
-        </select>
-        <span id="vc-count" style="font-size:12px;color:var(--text3);"></span>
-      </div>
+      <!-- ===== LIVE FEED TAB ===== -->
+      <div id="vc-panel-feed" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <span id="vc-feed-status" style="font-size:12px;color:var(--text3);">Feed updates daily via DefiLlama</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="vc-feed-filter-round" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:6px 10px;border-radius:8px;font-size:11px;" onchange="vcRenderFeed()">
+              <option value="all">All Rounds</option>
+              <option value="Seed">Seed</option>
+              <option value="Pre-Seed">Pre-Seed</option>
+              <option value="Series A">Series A</option>
+              <option value="Series B">Series B</option>
+              <option value="Strategic">Strategic</option>
+            </select>
+            <select id="vc-feed-filter-cat" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:6px 10px;border-radius:8px;font-size:11px;" onchange="vcRenderFeed()">
+              <option value="all">All Categories</option>
+              <option value="DeFi">DeFi</option>
+              <option value="Infrastructure">Infrastructure</option>
+              <option value="Gaming">Gaming</option>
+              <option value="AI">AI</option>
+              <option value="Chain">Chain</option>
+              <option value="CeFi">CeFi</option>
+              <option value="NFT">NFT</option>
+            </select>
+            <select id="vc-feed-filter-days" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:6px 10px;border-radius:8px;font-size:11px;" onchange="vcRenderFeed()">
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="0">All time</option>
+            </select>
+            <span id="vc-feed-count" style="font-size:12px;color:var(--text3);"></span>
+          </div>
+        </div>
 
-      <!-- Raises List -->
-      <div id="vc-raises-list"></div>
-      <div id="vc-empty" style="display:none;padding:40px;text-align:center;">
-        <div style="font-size:32px;margin-bottom:8px;">&#128176;</div>
-        <p style="color:var(--text3);font-size:13px;">No raises tracked yet. Click <strong>+ Add Raise</strong> or ask Pamela <em>"who raised recently?"</em></p>
+        <div id="vc-feed-list"></div>
+        <div id="vc-feed-empty" style="display:none;padding:40px;text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">&#128225;</div>
+          <p style="color:var(--text3);font-size:13px;">No feed data yet. The daily scan will populate this automatically.</p>
+          <p style="color:var(--text3);font-size:11px;margin-top:8px;">Data source: DefiLlama Raises API (fetched server-side daily)</p>
+        </div>
       </div>
     </div>
 
@@ -10371,6 +10423,206 @@ function vcRefreshFeed() {
     chatInput.value = 'Show me the latest crypto fundraising rounds from the past 7 days — focus on Seed and Series A from top VCs';
     if (typeof chatSend === 'function') chatSend();
   }
+}
+
+// ===== VC FEED (DefiLlama via Firebase) =====
+var vcFeedData = [];
+var vcFeedTab = 'my';
+
+function vcSwitchTab(tab) {
+  vcFeedTab = tab;
+  var myPanel = document.getElementById('vc-panel-my');
+  var feedPanel = document.getElementById('vc-panel-feed');
+  var myTab = document.getElementById('vc-tab-my');
+  var feedTab = document.getElementById('vc-tab-feed');
+  if (!myPanel || !feedPanel) return;
+  if (tab === 'feed') {
+    myPanel.style.display = 'none';
+    feedPanel.style.display = '';
+    if (myTab) myTab.classList.remove('active');
+    if (feedTab) feedTab.classList.add('active');
+    vcLoadFeed();
+  } else {
+    myPanel.style.display = '';
+    feedPanel.style.display = 'none';
+    if (myTab) myTab.classList.add('active');
+    if (feedTab) feedTab.classList.remove('active');
+    vcRender();
+  }
+}
+
+function vcLoadFeed() {
+  // Try localStorage cache first
+  try { vcFeedData = JSON.parse(localStorage.getItem('vc_feed') || '[]'); } catch(e) { vcFeedData = []; }
+  // Then try Firebase
+  try {
+    if (typeof dbRef !== 'undefined' && dbRef) {
+      dbRef.child('vcFeed').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data && Array.isArray(data) && data.length > 0) {
+          vcFeedData = data;
+          localStorage.setItem('vc_feed', JSON.stringify(vcFeedData));
+          vcRenderFeed();
+          // Update badge
+          var badge = document.getElementById('vc-feed-badge');
+          if (badge) { badge.textContent = vcFeedData.length; badge.style.display = 'inline'; }
+        }
+      }).catch(function(){});
+    }
+  } catch(e) {}
+  vcRenderFeed();
+}
+
+function vcRenderFeed() {
+  if (!Array.isArray(vcFeedData)) vcFeedData = [];
+  var list = document.getElementById('vc-feed-list');
+  var empty = document.getElementById('vc-feed-empty');
+  var status = document.getElementById('vc-feed-status');
+  if (!list) return;
+
+  // Filters
+  var roundF = document.getElementById('vc-feed-filter-round');
+  var catF = document.getElementById('vc-feed-filter-cat');
+  var daysF = document.getElementById('vc-feed-filter-days');
+  var roundFilter = roundF ? roundF.value : 'all';
+  var catFilter = catF ? catF.value : 'all';
+  var daysFilter = daysF ? parseInt(daysF.value) : 30;
+
+  var now = Date.now() / 1000;
+  var filtered = vcFeedData.filter(function(r) {
+    if (roundFilter !== 'all' && (!r.round || r.round.indexOf(roundFilter) === -1)) return false;
+    if (catFilter !== 'all' && (!r.category || r.category.indexOf(catFilter) === -1)) return false;
+    if (daysFilter > 0 && r.date) {
+      var raiseTime = typeof r.date === 'number' ? r.date : new Date(r.date).getTime() / 1000;
+      if (now - raiseTime > daysFilter * 86400) return false;
+    }
+    return true;
+  });
+  filtered.sort(function(a, b) {
+    var da = typeof a.date === 'number' ? a.date : new Date(a.date || 0).getTime() / 1000;
+    var db = typeof b.date === 'number' ? b.date : new Date(b.date || 0).getTime() / 1000;
+    return db - da;
+  });
+
+  // Show last updated
+  var lastUpdated = localStorage.getItem('vc_feed_updated');
+  if (status) {
+    status.textContent = lastUpdated
+      ? 'Last updated: ' + lastUpdated + ' · ' + vcFeedData.length + ' total raises'
+      : 'Feed updates daily via DefiLlama · No data yet';
+  }
+
+  var countEl = document.getElementById('vc-feed-count');
+  if (countEl) countEl.textContent = filtered.length + ' raises';
+
+  if (!filtered.length) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  var roundColors = { 'Seed': 'var(--accent)', 'Pre-Seed': 'var(--accent)', 'Series A': 'var(--green)', 'Series B': 'var(--blue, #60a5fa)', 'Strategic': 'var(--yellow, #fbbf24)' };
+
+  // Check which projects are already in My Raises
+  var trackedNames = {};
+  vcRaises.forEach(function(r) { if (r.project) trackedNames[r.project.toLowerCase()] = true; });
+
+  list.innerHTML = filtered.slice(0, 100).map(function(r) {
+    var roundColor = roundColors[r.round] || 'var(--text3)';
+    var dateStr = '';
+    if (r.date) {
+      var d = typeof r.date === 'number' ? new Date(r.date * 1000) : new Date(r.date);
+      dateStr = d.toISOString().split('T')[0];
+    }
+    var investors = [];
+    if (r.leadInvestors && r.leadInvestors.length) investors = investors.concat(r.leadInvestors.map(function(i) { return '<strong>' + esc(i) + '</strong>'; }));
+    if (r.otherInvestors && r.otherInvestors.length) investors = investors.concat(r.otherInvestors.slice(0, 5).map(function(i) { return esc(i); }));
+    var investorStr = investors.length ? investors.join(', ') : 'Undisclosed';
+    if (r.otherInvestors && r.otherInvestors.length > 5) investorStr += ' +' + (r.otherInvestors.length - 5) + ' more';
+
+    var isTier1 = vcIsTier1((r.leadInvestors || []).concat(r.otherInvestors || []).join(', '));
+    var isTracked = trackedNames[(r.name || '').toLowerCase()];
+
+    return '<div class="card" style="padding:12px 16px;margin-bottom:8px;border-left:3px solid ' + roundColor + ';">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
+        '<div style="flex:1;">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">' +
+            '<strong style="font-size:13px;color:var(--text1);">' + esc(r.name || '') + '</strong>' +
+            '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + roundColor + '20;color:' + roundColor + ';font-weight:600;">' + esc(r.round || '?') + '</span>' +
+            (isTier1 ? '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--green)20;color:var(--green);font-weight:600;">TIER 1</span>' : '') +
+            (r.amount ? '<span style="font-size:12px;font-weight:700;color:var(--text1);">$' + r.amount + 'M</span>' : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text2);margin-bottom:2px;">' +
+            (r.category || '') +
+            (r.chains && r.chains.length ? ' &middot; ' + r.chains.join(', ') : '') +
+            (dateStr ? ' &middot; ' + dateStr : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text3);">' + investorStr + '</div>' +
+        '</div>' +
+        '<div>' +
+          (isTracked
+            ? '<span style="font-size:11px;color:var(--green);font-weight:600;">&#10003; Tracked</span>'
+            : '<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="vcTrackFromFeed(' + filtered.indexOf(r) + ')">+ Track</button>') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function vcTrackFromFeed(idx) {
+  var r = vcFeedData.filter(function(r) {
+    // Re-apply filters to get same index
+    var roundF = document.getElementById('vc-feed-filter-round');
+    var catF = document.getElementById('vc-feed-filter-cat');
+    var daysF = document.getElementById('vc-feed-filter-days');
+    return true; // simplified — just use vcFeedData directly
+  })[idx];
+  if (!r) return;
+  // Find the actual item from filtered list
+  var items = vcFeedData;
+  var roundF = document.getElementById('vc-feed-filter-round');
+  var catF = document.getElementById('vc-feed-filter-cat');
+  var daysF = document.getElementById('vc-feed-filter-days');
+  var roundFilter = roundF ? roundF.value : 'all';
+  var catFilter = catF ? catF.value : 'all';
+  var daysFilter = daysF ? parseInt(daysF.value) : 30;
+  var now = Date.now() / 1000;
+  var filtered = items.filter(function(r) {
+    if (roundFilter !== 'all' && (!r.round || r.round.indexOf(roundFilter) === -1)) return false;
+    if (catFilter !== 'all' && (!r.category || r.category.indexOf(catFilter) === -1)) return false;
+    if (daysFilter > 0 && r.date) {
+      var raiseTime = typeof r.date === 'number' ? r.date : new Date(r.date).getTime() / 1000;
+      if (now - raiseTime > daysFilter * 86400) return false;
+    }
+    return true;
+  });
+  filtered.sort(function(a, b) {
+    var da = typeof a.date === 'number' ? a.date : new Date(a.date || 0).getTime() / 1000;
+    var db = typeof b.date === 'number' ? b.date : new Date(b.date || 0).getTime() / 1000;
+    return db - da;
+  });
+  var item = filtered[idx];
+  if (!item) return;
+
+  var dateStr = '';
+  if (item.date) {
+    var d = typeof item.date === 'number' ? new Date(item.date * 1000) : new Date(item.date);
+    dateStr = d.toISOString().split('T')[0];
+  }
+  var allInvestors = (item.leadInvestors || []).concat(item.otherInvestors || []);
+
+  vcAddFromAgent({
+    project: item.name,
+    amount: item.amount || 0,
+    round: item.round || 'Other',
+    investors: allInvestors.join(', '),
+    category: item.category || '',
+    chains: (item.chains || []).join(', '),
+    notes: item.sector || '',
+    date: dateStr
+  });
+  vcRenderFeed();
 }
 
 // Add VC agent tool to save raises from chat
