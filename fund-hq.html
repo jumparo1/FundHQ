@@ -10169,8 +10169,34 @@ function vcIs100x(raise) {
   return raise.round && raise.round.toLowerCase().indexOf('seed') >= 0 && vcIsTier1(raise.investors);
 }
 
+function vcSeedDefaults() {
+  var defaults = [
+    { id: 'vc_levl', project: 'Levl', amount: 4, round: 'Seed', investors: '', category: 'DeFi', chains: 'Ethereum', notes: '$4M seed (10 Mar 2026). TGE: 12 Mar 2026.', date: '2026-03-10', status: 'watching' },
+    { id: 'vc_novig', project: 'Novig', amount: 12.5, round: 'Seed', investors: '', category: 'Other', chains: '', notes: '$12.5M seed (10 Mar 2026). Sports prediction market. No TGE.', date: '2026-03-10', status: 'watching' },
+    { id: 'vc_based', project: 'Based', amount: 4, round: 'Seed', investors: '', category: 'DeFi', chains: 'Base', notes: '$4M seed (11 Mar 2026). No TGE.', date: '2026-03-11', status: 'watching' },
+    { id: 'vc_saturn', project: 'Saturn', amount: 0, round: 'Other', investors: '', category: 'Infrastructure', chains: 'Solana', notes: 'Amount undisclosed (11 Mar 2026). No TGE.', date: '2026-03-11', status: 'watching' },
+    { id: 'vc_odei', project: 'ODEI', amount: 0, round: 'Other', investors: '', category: 'AI', chains: '', notes: 'Amount undisclosed (12 Mar 2026). No TGE.', date: '2026-03-12', status: 'watching' },
+    { id: 'vc_01exchange', project: '01 Exchange', amount: 0, round: 'Other', investors: '', category: 'DeFi', chains: 'Solana', notes: 'Amount undisclosed (12 Mar 2026). Token live, DEX.', date: '2026-03-12', status: 'watching' },
+    { id: 'vc_kledai', project: 'Kled AI', amount: 3, round: 'Seed', investors: '', category: 'AI', chains: '', notes: '$3M seed (12 Mar 2026). No TGE.', date: '2026-03-12', status: 'watching' },
+    { id: 'vc_veryai', project: 'VeryAI', amount: 10, round: 'Seed', investors: '', category: 'AI', chains: '', notes: '$10M seed (12 Mar 2026). No TGE.', date: '2026-03-12', status: 'watching' },
+    { id: 'vc_generaltensor', project: 'General Tensor', amount: 14, round: 'Seed', investors: '', category: 'AI', chains: '', notes: '$14M seed (14 Mar 2026). No TGE.', date: '2026-03-14', status: 'watching' },
+    { id: 'vc_ironlight', project: 'Ironlight', amount: 21, round: 'Series A', investors: '', category: 'Gaming', chains: '', notes: '$21M Series A (16 Mar 2026). No TGE.', date: '2026-03-16', status: 'watching' },
+    { id: 'vc_roboforce', project: 'RoboForce', amount: 52, round: 'Other', investors: '', category: 'AI', chains: '', notes: '$52M round, $67M total (16 Mar 2026). No TGE.', date: '2026-03-16', status: 'watching' },
+    { id: 'vc_backpack', project: 'Backpack', amount: 0, round: 'Other', investors: '', category: 'CeFi', chains: 'Solana', notes: 'TGE: 23 March 2026.', date: '2026-03-23', status: 'watching' },
+    { id: 'vc_eightco', project: 'Eightco Holdings', amount: 125, round: 'Other', investors: '', category: 'Other', chains: '', notes: '$125M allocation for BTC and SOL treasury (12 Mar 2026). Public company.', date: '2026-03-12', status: 'watching' },
+    { id: 'vc_kast', project: 'KAST', amount: 10, round: 'Other', investors: '', category: 'DeFi', chains: '', notes: '$10M raise (10 Mar 2026). TGE: 20 Mar 2026.', date: '2026-03-10', status: 'watching' },
+    { id: 'vc_cryptio', project: 'Cryptio', amount: 10, round: 'Other', investors: '', category: 'Infrastructure', chains: '', notes: '$10M raise (11 Mar 2026). Crypto accounting. No TGE.', date: '2026-03-11', status: 'watching' },
+    { id: 'vc_zodl', project: 'Zodl', amount: 7, round: 'Seed', investors: '', category: 'DeFi', chains: 'Solana', notes: '$7M seed (11 Mar 2026). Stablecoin payments. No TGE.', date: '2026-03-11', status: 'watching' },
+    { id: 'vc_unitaslabs', project: 'Unitas Labs', amount: 13.33, round: 'Seed', investors: '', category: 'DeFi', chains: '', notes: '$13.33M seed. Token trading since 13 Mar on Kraken.', date: '2026-03-13', status: 'watching' },
+    { id: 'vc_metacomp', project: 'MetaComp', amount: 218, round: 'Other', investors: '', category: 'CeFi', chains: '', notes: '$218M raise (12 Mar 2026). Singapore exchange. No TGE.', date: '2026-03-12', status: 'watching' }
+  ];
+  vcRaises = defaults;
+  localStorage.setItem('vc_raises', JSON.stringify(vcRaises));
+}
+
 function vcRender() {
   if (!Array.isArray(vcRaises)) { try { vcRaises = JSON.parse(localStorage.getItem('vc_raises') || '[]'); } catch(e) { vcRaises = []; } }
+  if (!vcRaises.length) { vcSeedDefaults(); }
   var list = document.getElementById('vc-raises-list');
   var empty = document.getElementById('vc-empty');
   if (!list) return;
