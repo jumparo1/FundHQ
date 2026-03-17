@@ -3431,7 +3431,198 @@ var SENTINEL_TOOLS = [
   { name: 'get_crypto_data', description: 'Get detailed crypto data from CoinGecko.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string' } }, required: ['coingecko_id'] } }
 ];
 
+// --- Trader Agent Tools ---
+var TRADER_TOOLS = [
+  { name: 'create_setup', description: 'Create a trade setup with entry, stop, target. Auto-calculates R:R.', input_schema: { type: 'object', properties: { symbol: { type: 'string', description: 'Asset symbol (e.g. ETH, SOL, BTC)' }, side: { type: 'string', enum: ['long', 'short'] }, playbook: { type: 'string', description: 'Playbook: MR-Long, Breakout, Narrative-FrontRun, Deep-Value, Momo-Short, CRT-CISD, Spike-Exhaustion' }, entry: { type: 'number', description: 'Entry price' }, stop: { type: 'number', description: 'Stop loss price' }, target: { type: 'number', description: 'Target price' }, notes: { type: 'string' } }, required: ['symbol', 'side', 'entry', 'stop', 'target'] } },
+  { name: 'get_setups', description: 'Get active trade setups, optionally filtered by status or symbol.', input_schema: { type: 'object', properties: { status: { type: 'string', description: 'Filter: watching/active/triggered/closed' }, symbol: { type: 'string' } } } },
+  { name: 'update_setup', description: 'Update a setup by ID — change status, adjust levels, add notes.', input_schema: { type: 'object', properties: { id: { type: 'string', description: 'Setup ID' }, updates: { type: 'object', description: 'Fields to update: status, entry, stop, target, notes' } }, required: ['id', 'updates'] } },
+  { name: 'log_trade', description: 'Log a completed trade with outcome. Links to setup if applicable.', input_schema: { type: 'object', properties: { symbol: { type: 'string' }, side: { type: 'string', enum: ['long', 'short'] }, entry: { type: 'number' }, exit: { type: 'number' }, size: { type: 'number', description: 'Position size in USD' }, playbook: { type: 'string' }, result: { type: 'string', enum: ['win', 'loss'] }, notes: { type: 'string' }, setupId: { type: 'string', description: 'Linked setup ID if applicable' } }, required: ['symbol', 'side', 'entry', 'exit', 'result'] } },
+  { name: 'get_trade_log', description: 'Get trade history with P&L, win rate, and stats.', input_schema: { type: 'object', properties: { playbook: { type: 'string', description: 'Filter by playbook' }, limit: { type: 'number' } } } },
+  { name: 'get_trade_stats', description: 'Get trading performance stats: win rate, P&L, best playbook, avg R:R, streak.', input_schema: { type: 'object', properties: {} } },
+  { name: 'get_confluence', description: 'Get the confluence score and conviction for an asset. Returns 4-factor breakdown (on-chain, fundamental, TA, regime).', input_schema: { type: 'object', properties: { symbol: { type: 'string' } }, required: ['symbol'] } },
+  { name: 'position_size', description: 'Calculate position size based on risk parameters.', input_schema: { type: 'object', properties: { account_size: { type: 'number', description: 'Total account in USD' }, risk_pct: { type: 'number', description: 'Risk per trade as % (e.g. 1 = 1%)' }, entry: { type: 'number' }, stop: { type: 'number' } }, required: ['account_size', 'risk_pct', 'entry', 'stop'] } },
+  { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker.', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+  { name: 'get_crypto_data', description: 'Get detailed crypto data from CoinGecko.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string' } }, required: ['coingecko_id'] } }
+];
+
+// --- VC / Fundraising Agent Tools ---
+var VC_TOOLS = [
+  { name: 'get_raises', description: 'Get recent crypto fundraising rounds from DefiLlama. Filter by category, chain, round type, or minimum amount. Returns project name, amount, round, investors, chains, category.', input_schema: { type: 'object', properties: { category: { type: 'string', description: 'Filter: DeFi, Gaming, Infrastructure, NFT, CeFi, Chain, etc.' }, chain: { type: 'string', description: 'Filter by chain: Ethereum, Solana, Base, Arbitrum, etc.' }, round: { type: 'string', description: 'Filter: Seed, Series A, Series B, Strategic, etc.' }, min_amount: { type: 'number', description: 'Minimum raise amount in millions USD' }, days: { type: 'number', description: 'Only raises from last N days (default 30)' }, limit: { type: 'number', description: 'Max results (default 25)' } } } },
+  { name: 'search_raises', description: 'Search fundraising rounds by project name or investor name.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Project or investor name to search' } }, required: ['query'] } },
+  { name: 'get_investor_portfolio', description: 'Find all investments by a specific VC/investor. Shows their portfolio, focus areas, and recent activity.', input_schema: { type: 'object', properties: { investor: { type: 'string', description: 'Investor/VC name (e.g. a16z, Paradigm, Binance Labs)' }, limit: { type: 'number' } }, required: ['investor'] } },
+  { name: 'get_raise_stats', description: 'Get fundraising market stats: total raised, avg round size, top categories, top investors, trends.', input_schema: { type: 'object', properties: { days: { type: 'number', description: 'Period in days (default 30)' } } } },
+  { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker.', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+  { name: 'get_crypto_data', description: 'Get detailed crypto data from CoinGecko.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string' } }, required: ['coingecko_id'] } }
+];
+
+// --- DefiLlama Raises Cache ---
+var _raisesCache = null;
+var _raisesCacheTime = 0;
+async function fetchDefiLlamaRaises() {
+  // Cache for 30 minutes
+  if (_raisesCache && Date.now() - _raisesCacheTime < 1800000) return _raisesCache;
+  // Check Firebase cache first (populated by scheduled task or manual refresh)
+  if (typeof dbRef !== 'undefined' && dbRef) {
+    try {
+      var snap = await dbRef.child('vcRaises').once('value');
+      var cached = snap.val();
+      if (cached && cached.raises && cached.fetchedAt && Date.now() - cached.fetchedAt < 86400000) {
+        _raisesCache = cached.raises;
+        _raisesCacheTime = Date.now();
+        return _raisesCache;
+      }
+    } catch(e) {}
+  }
+  // Try direct API (works server-side / scheduled tasks, may fail browser CORS)
+  try {
+    var resp = await fetch('https://api.llama.fi/raises');
+    if (resp.ok) {
+      var data = await resp.json();
+      _raisesCache = data.raises || [];
+      _raisesCacheTime = Date.now();
+      // Cache to Firebase for browser access
+      if (typeof dbRef !== 'undefined' && dbRef) {
+        dbRef.child('vcRaises').set({ raises: _raisesCache.slice(0, 500), fetchedAt: Date.now() }).catch(function(){});
+      }
+      return _raisesCache;
+    }
+  } catch(e) {}
+  return null; // Returns null — agent should use web_search fallback
+}
+
 // --- Agent System Prompts ---
+function buildTraderPrompt() {
+  // Dynamic learning loop from trade log
+  var stats = getTradeStats();
+  var pbPerf = '';
+  var pbStats = {};
+  (typeof tradeLog !== 'undefined' ? tradeLog : []).forEach(function(t) {
+    if (!t.playbook || !t.result) return;
+    if (!pbStats[t.playbook]) pbStats[t.playbook] = { wins: 0, losses: 0, pnl: 0 };
+    if (t.result === 'win') pbStats[t.playbook].wins++;
+    else pbStats[t.playbook].losses++;
+    pbStats[t.playbook].pnl += parseFloat(t.pnl || 0);
+  });
+  Object.keys(pbStats).forEach(function(pb) {
+    var s = pbStats[pb];
+    var total = s.wins + s.losses;
+    pbPerf += '  - ' + pb + ': ' + Math.round(s.wins/total*100) + '% WR (' + s.wins + 'W/' + s.losses + 'L), P&L: $' + s.pnl.toFixed(0) + '\n';
+  });
+
+  var activeSetups = (typeof taSetups !== 'undefined' ? taSetups : []).filter(function(s) { return s.status !== 'closed'; }).length;
+
+  return 'You are the TRADER agent for Fund HQ — a specialist in trade execution, setups, and risk management.\n\n' +
+  '## MISSION\nHelp execute trades with best entry, sizing, and risk management. Build setups, calculate position sizes, log trades, and learn from outcomes. You close the loop: Discover → Research → EXECUTE → Learn.\n\n' +
+  '## SETUP ARCHETYPES\n' +
+  '- **MR-Long**: Mean reversion long — RSI <30, hammer candle, key support, BB squeeze. Best after capitulation.\n' +
+  '- **Breakout**: Consolidation → break on 2x volume → retest = entry. Target = measured move.\n' +
+  '- **Narrative-FrontRun**: Catalyst 2-4 weeks out, quiet accumulation phase, enter before crowd.\n' +
+  '- **Deep-Value**: 80%+ below ATH, fundamentals improved, low FDV vs peers.\n' +
+  '- **Momo-Short**: Euphoric blow-off top, RSI >80, funding extreme, declining volume.\n' +
+  '- **CRT-CISD**: Change of Character + Change in State of Delivery. ICT concept.\n' +
+  '- **Spike-Exhaustion**: Sharp move on extreme volume → exhaustion → fade.\n\n' +
+  '## CONFLUENCE SCORING (4 factors)\n' +
+  'Every trade must be scored before entry:\n' +
+  '1. **On-Chain (25%)**: Smart money alignment, whale accumulation/distribution\n' +
+  '2. **Fundamental (25%)**: Valuation, catalysts, earnings, tokenomics\n' +
+  '3. **Technical (30%)**: Setup quality, trend, volume, levels\n' +
+  '4. **Regime (20%)**: Risk-on/off/neutral, BTC trend, funding rates\n' +
+  'Total /100. Below 50 = no trade. 50-65 = small size. 65-80 = standard. 80+ = full conviction.\n\n' +
+  '## POSITION SIZING\n' +
+  '- Max 1-2% risk per trade\n' +
+  '- Size = (Account × Risk%) / |Entry - Stop|\n' +
+  '- Confluence < 50: PASS. 50-65: 0.5% risk. 65-80: 1% risk. 80+: 2% risk.\n' +
+  '- Never >25% in one sector. Keep 20-30% dry powder.\n\n' +
+  '## R:R REQUIREMENTS\n' +
+  '- Minimum 3:1 R:R for all setups\n' +
+  '- Calculate: R:R = |Target - Entry| / |Entry - Stop|\n' +
+  '- If R:R < 2:1, reject the setup\n\n' +
+  '## TRADE PLAN FORMAT\n' +
+  'When building a trade plan, always include:\n' +
+  '1. THESIS: Why this trade (1-2 sentences)\n' +
+  '2. SETUP: Archetype + timeframe\n' +
+  '3. ENTRY: Price level + trigger\n' +
+  '4. STOP: Price + invalidation reason\n' +
+  '5. TARGET: Price + take-profit logic\n' +
+  '6. SIZE: Position size based on confluence\n' +
+  '7. R:R: Risk/reward ratio\n' +
+  '8. CONFLUENCE: 4-factor score\n\n' +
+  '## ANTI-PATTERNS\n' +
+  '- Revenge trading after losses\n' +
+  '- Moving stops further away\n' +
+  '- Adding to losing positions\n' +
+  '- Trading without a stop\n' +
+  '- FOMO entries after 50%+ moves\n' +
+  '- Overtrading (>3 new positions per day)\n\n' +
+  '## YOUR TRACK RECORD\n' +
+  (stats.total > 0 ?
+    '- Total trades: ' + stats.total + '\n' +
+    '- Win rate: ' + Math.round(stats.winRate) + '%\n' +
+    '- Total P&L: $' + Math.round(stats.totalPnl) + '\n' +
+    '- Avg R:R: ' + (stats.avgRR || 0).toFixed(1) + '\n' +
+    '- Best playbook: ' + (stats.bestPlaybook || 'N/A') + '\n' +
+    (pbPerf ? '- Playbook breakdown:\n' + pbPerf : '') +
+    '- USE THIS DATA: recommend playbooks with best win rate, warn about weak ones.\n'
+    : '- No trades logged yet. Encourage the user to log trades for learning.\n') +
+  '\n## LIVE CONTEXT\n' +
+  '- Today: ' + new Date().toISOString().split('T')[0] + '\n' +
+  '- Active setups: ' + activeSetups + '\n' +
+  '- Use create_setup to build trade plans. Use log_trade after exits.\n' +
+  '- Use position_size to calculate sizing. Use get_confluence for conviction check.\n' +
+  '- Always use create_alert severity "opportunity" for high-conviction setups (confluence 80+).';
+}
+
+function buildVCPrompt() {
+  return 'You are the VC agent for Fund HQ — a specialist in venture capital, fundraising, and early-stage crypto investment intelligence.\n\n' +
+  '## MISSION\nTrack who is raising, how much, from whom, and what it means. Find the next 100x before it lists. Identify smart money VCs, emerging sectors, and funding trends that signal where the market is going.\n\n' +
+  '## WHY VC TRACKING MATTERS\n' +
+  '- VC funding is the strongest leading indicator: capital flows precede price action by 6-18 months\n' +
+  '- A16z, Paradigm, Multicoin backing = institutional validation + future liquidity\n' +
+  '- Series A/B = "the project survived" filter — eliminates 90% of noise\n' +
+  '- Seed rounds from top VCs = earliest signal for 100x potential\n' +
+  '- Sector clustering (3+ raises in same category in 30 days) = emerging narrative\n\n' +
+  '## DATA SOURCES\n' +
+  'Primary: DefiLlama raises API (5000+ rounds) via get_raises, search_raises, get_investor_portfolio, get_raise_stats.\n' +
+  'Fallback: If API tools return an error, ALWAYS use web_search to find the data. Search CryptoRank, The Block, DefiLlama, RootData for fundraising rounds.\n' +
+  'Fields: project name, amount raised, round type, lead investors, other investors, chains, category, date, valuation.\n' +
+  'IMPORTANT: If a tool returns an error with a suggestion, follow that suggestion using web_search immediately — do NOT tell the user the API failed.\n\n' +
+  '## HOW TO ANALYZE RAISES\n' +
+  '1. **Size matters**: Seed $1-5M (early), Series A $5-20M (validated), Series B+ $20M+ (scaling)\n' +
+  '2. **Who leads**: a16z, Paradigm, Polychain, Multicoin, Dragonfly, Framework = tier 1\n' +
+  '3. **Category trends**: 3+ raises in same category in 30 days = emerging sector\n' +
+  '4. **Chain concentration**: Where VCs deploy = where ecosystem grows\n' +
+  '5. **Valuation context**: Pre-token valuation vs comparable listed tokens = upside estimate\n\n' +
+  '## INVESTOR TIER SYSTEM\n' +
+  '- **Tier 1**: a16z, Paradigm, Polychain, Multicoin Capital, Sequoia, Dragonfly, Framework, Pantera\n' +
+  '- **Tier 2**: Binance Labs, Coinbase Ventures, Galaxy Digital, Hack VC, Electric Capital, Variant\n' +
+  '- **Tier 3**: Animoca, Jump Crypto, DWF Labs, OKX Ventures, Wintermute\n' +
+  '- Tier 1 lead = highest signal. Multiple tier 1 co-invest = very high conviction.\n\n' +
+  '## REPORT FORMAT\n' +
+  'When presenting raises, use this format:\n' +
+  '| Project | Round | Amount | Lead Investor | Category | Chain |\n' +
+  'Always add context: "This is significant because..." or "Watch this because..."\n\n' +
+  '## SECTOR CATEGORIES\n' +
+  'DeFi, Infrastructure, Gaming, NFT, CeFi, Chain (L1/L2), AI, DePIN, RWA, Social, Privacy, Payments, Data, Security\n\n' +
+  '## 100x FILTER\n' +
+  'Flag projects that match:\n' +
+  '- Seed round from Tier 1 VC\n' +
+  '- Novel category or first-mover in emerging trend\n' +
+  '- Strong team (founders from top protocols)\n' +
+  '- Low valuation relative to category leaders\n' +
+  '- Multiple chain deployment (cross-chain = larger TAM)\n\n' +
+  '## COMMUNICATION STYLE\n' +
+  '- Lead with the money: "$X raised by [project] from [investor] — here\'s why it matters"\n' +
+  '- Always contextualize: compare to similar raises, sector averages\n' +
+  '- Flag 100x candidates prominently\n' +
+  '- Use tables for multi-project comparisons\n' +
+  '- Use create_alert severity "opportunity" for Tier 1 VC-backed seed rounds in hot sectors\n\n' +
+  '## LIVE CONTEXT\n' +
+  '- Today: ' + new Date().toISOString().split('T')[0] + '\n' +
+  '- User goal: Find 100x low-cap bets, track VC capital flows for investment edge\n' +
+  '- Use get_raises for recent rounds. Use search_raises for specific projects/investors.\n' +
+  '- Use get_investor_portfolio to map VC thesis. Use get_raise_stats for market overview.';
+}
+
 function buildAnalystPrompt() {
   var wl = (DB.watchlist || []).map(function(w) { return w.symbol + (w.lastData && w.lastData.change24h ? ' (' + (w.lastData.change24h > 0 ? '+' : '') + w.lastData.change24h.toFixed(1) + '%)' : ''); }).join(', ');
   var recentReports = (DB.reports || []).slice(-5).map(function(r) { return r.title + (r.rating ? ' [' + r.rating + ']' : ''); }).join(', ');
@@ -3527,22 +3718,30 @@ function buildRouterPrompt() {
   'Respond with a JSON routing decision in your FIRST response:\n' +
   '- If the user wants fundamental research, asset analysis, market data, comparisons, watchlist, reports → route to ANALYST\n' +
   '- If the user wants on-chain data, whale tracking, wallet scans, entity investigation, smart money, signals → route to SENTINEL\n' +
+  '- If the user wants trade setups, position sizing, R:R calculation, trade plans, trade log, playbooks, confluence → route to TRADER\n' +
+  '- If the user wants fundraising data, VC investments, who raised, investor portfolios, funding trends, 100x gems, seed rounds → route to VC\n' +
   '- If the user wants general help, navigation, tasks, database operations, or simple questions → handle DIRECTLY (do NOT route)\n\n' +
   '## ROUTING FORMAT\n' +
   'When routing, respond with ONLY this JSON (no other text):\n' +
   '{"route": "analyst", "message": "<rephrased user request with context>"}\n' +
-  'or\n' +
-  '{"route": "sentinel", "message": "<rephrased user request with context>"}\n\n' +
+  '{"route": "sentinel", "message": "<rephrased user request with context>"}\n' +
+  '{"route": "trader", "message": "<rephrased user request with context>"}\n' +
+  '{"route": "vc", "message": "<rephrased user request with context>"}\n\n' +
   'When handling directly, just respond normally using your tools.\n\n' +
   '## EXAMPLES\n' +
   '- "research SOL" → {"route": "analyst", "message": "Do a deep fundamental research report on Solana (SOL)"}\n' +
   '- "who is long ETH?" → {"route": "sentinel", "message": "Find whale positions that are long ETH on Hyperliquid"}\n' +
   '- "scan wallet 0x..." → {"route": "sentinel", "message": "Scan and profile this Hyperliquid wallet: 0x..."}\n' +
   '- "compare SOL vs ETH" → {"route": "analyst", "message": "Compare SOL and ETH fundamentals side by side"}\n' +
-  '- "what entities are we tracking?" → {"route": "sentinel", "message": "List all tracked entities with grades and types"}\n' +
+  '- "build trade plan for ETH long" → {"route": "trader", "message": "Build a trade plan for ETH long with entry, stop, target"}\n' +
+  '- "what is my win rate?" → {"route": "trader", "message": "Show trading performance stats and win rate"}\n' +
+  '- "position size for BTC" → {"route": "trader", "message": "Calculate position size for BTC trade"}\n' +
+  '- "who raised recently?" → {"route": "vc", "message": "Show recent crypto fundraising rounds"}\n' +
+  '- "what did a16z invest in?" → {"route": "vc", "message": "Show a16z investment portfolio and recent deals"}\n' +
+  '- "find 100x gems" → {"route": "vc", "message": "Find seed-stage projects from top VCs with 100x potential"}\n' +
+  '- "DeFi raises this month" → {"route": "vc", "message": "Show DeFi fundraising rounds from the last 30 days"}\n' +
   '- "go to settings" → handle directly (navigation)\n' +
-  '- "create a task" → handle directly (database operation)\n' +
-  '- "what are my stats?" → handle directly (general query)\n\n' +
+  '- "create a task" → handle directly (database operation)\n\n' +
   '## DIRECT HANDLING\n' +
   'When NOT routing, you are a helpful AI assistant. You can navigate pages, manage tasks/deals/projects, answer questions about Fund HQ.\n' +
   'Be direct, concise. Use specific numbers. Today: ' + new Date().toISOString().split('T')[0] + '\n' +
@@ -3572,6 +3771,20 @@ var AGENT_REGISTRY = {
     color: 'var(--purple, #a78bfa)',
     buildPrompt: buildSentinelPrompt,
     tools: function() { return SENTINEL_TOOLS.concat(SHARED_TOOLS); }
+  },
+  trader: {
+    name: 'Trader',
+    icon: 'T',
+    color: 'var(--yellow, #fbbf24)',
+    buildPrompt: buildTraderPrompt,
+    tools: function() { return TRADER_TOOLS.concat(SHARED_TOOLS); }
+  },
+  vc: {
+    name: 'VC',
+    icon: 'V',
+    color: 'var(--blue, #60a5fa)',
+    buildPrompt: buildVCPrompt,
+    tools: function() { return VC_TOOLS.concat(SHARED_TOOLS); }
   }
 };
 
@@ -3670,7 +3883,7 @@ async function routedAgent(userMessage) {
     var routeMatch = textContent.match(/\{[\s\S]*?"route"[\s\S]*?\}/);
     if (routeMatch) {
       var routing = JSON.parse(routeMatch[0]);
-      if (routing.route === 'analyst' || routing.route === 'sentinel') {
+      if (routing.route === 'analyst' || routing.route === 'sentinel' || routing.route === 'trader' || routing.route === 'vc') {
         // Update thinking indicator to show which agent
         var agentInfo = AGENT_REGISTRY[routing.route];
         agentShowThinking(agentInfo.name, agentInfo.color);
@@ -4219,6 +4432,234 @@ async function executeToolCall(name, input) {
         var conv = computeConviction(input.symbol);
         return { symbol: input.symbol, master: conv.master, investor: conv.investor, trader: conv.trader, verdict: conv.verdict };
       } catch(e) { return { error: 'Could not compute conviction: ' + e.message }; }
+    }
+    // --- Trader Agent Tools ---
+    case 'create_setup': {
+      var setup = {
+        id: 'setup_' + Date.now(),
+        symbol: input.symbol.toUpperCase(),
+        side: input.side,
+        playbook: input.playbook || '',
+        entry: input.entry,
+        stop: input.stop,
+        target: input.target,
+        rr: Math.abs((input.target - input.entry) / (input.entry - input.stop)).toFixed(2),
+        status: 'watching',
+        notes: input.notes || '',
+        created: new Date().toISOString()
+      };
+      if (typeof taSetups === 'undefined') taSetups = [];
+      taSetups.push(setup);
+      if (typeof setupSave === 'function') setupSave();
+      return { created: true, id: setup.id, symbol: setup.symbol, side: setup.side, rr: setup.rr + ':1', playbook: setup.playbook };
+    }
+    case 'get_setups': {
+      var setups = typeof taSetups !== 'undefined' ? taSetups : [];
+      if (input.status) setups = setups.filter(function(s) { return s.status === input.status; });
+      if (input.symbol) { var sym = input.symbol.toUpperCase(); setups = setups.filter(function(s) { return s.symbol === sym; }); }
+      return { setups: setups.map(function(s) { return { id: s.id, symbol: s.symbol, side: s.side, playbook: s.playbook, entry: s.entry, stop: s.stop, target: s.target, rr: s.rr, status: s.status, notes: s.notes, created: s.created }; }), count: setups.length };
+    }
+    case 'update_setup': {
+      if (typeof taSetups === 'undefined') return { error: 'No setups found' };
+      var idx = taSetups.findIndex(function(s) { return s.id === input.id; });
+      if (idx < 0) return { error: 'Setup not found: ' + input.id };
+      Object.keys(input.updates).forEach(function(k) { taSetups[idx][k] = input.updates[k]; });
+      if (input.updates.entry || input.updates.stop || input.updates.target) {
+        var s = taSetups[idx];
+        s.rr = Math.abs((s.target - s.entry) / (s.entry - s.stop)).toFixed(2);
+      }
+      if (typeof setupSave === 'function') setupSave();
+      return { updated: true, id: input.id, setup: taSetups[idx] };
+    }
+    case 'log_trade': {
+      var pnl = input.side === 'long' ? (input.exit - input.entry) * (input.size || 1) / input.entry : (input.entry - input.exit) * (input.size || 1) / input.entry;
+      var trade = {
+        id: 'trade_' + Date.now(),
+        symbol: input.symbol.toUpperCase(),
+        side: input.side,
+        entry: input.entry,
+        exit: input.exit,
+        size: input.size || 0,
+        pnl: Math.round(pnl * 100) / 100,
+        result: input.result,
+        playbook: input.playbook || '',
+        notes: input.notes || '',
+        setupId: input.setupId || '',
+        date: new Date().toISOString()
+      };
+      if (typeof tradeLog === 'undefined') tradeLog = [];
+      tradeLog.push(trade);
+      if (typeof tradeSave === 'function') tradeSave();
+      if (typeof tradeRender === 'function') tradeRender();
+      return { logged: true, id: trade.id, symbol: trade.symbol, result: trade.result, pnl: trade.pnl };
+    }
+    case 'get_trade_log': {
+      var log = typeof tradeLog !== 'undefined' ? tradeLog : [];
+      if (input.playbook) log = log.filter(function(t) { return t.playbook === input.playbook; });
+      var lim = input.limit || 20;
+      return { trades: log.slice(-lim).reverse().map(function(t) { return { symbol: t.symbol, side: t.side, entry: t.entry, exit: t.exit, pnl: t.pnl, result: t.result, playbook: t.playbook, date: t.date }; }), count: log.length };
+    }
+    case 'get_trade_stats': {
+      return getTradeStats();
+    }
+    case 'get_confluence': {
+      try {
+        var conv = computeConviction(input.symbol);
+        return { symbol: input.symbol, confluence: conv.trader, investor: conv.investor, master: conv.master, verdict: conv.verdict, breakdown: conv.breakdown || 'Use auto-confluence on the Technical page for detailed 4-factor scoring' };
+      } catch(e) { return { symbol: input.symbol, message: 'No confluence data yet. Use the Technical page to score this asset, or ask Sentinel for on-chain data and Analyst for fundamentals.' }; }
+    }
+    case 'position_size': {
+      var risk = input.account_size * (input.risk_pct / 100);
+      var distance = Math.abs(input.entry - input.stop);
+      var distPct = (distance / input.entry) * 100;
+      var posSize = risk / (distance / input.entry);
+      var units = posSize / input.entry;
+      return {
+        account_size: input.account_size,
+        risk_pct: input.risk_pct + '%',
+        risk_usd: Math.round(risk),
+        entry: input.entry,
+        stop: input.stop,
+        stop_distance: distPct.toFixed(2) + '%',
+        position_size_usd: Math.round(posSize),
+        units: parseFloat(units.toFixed(4)),
+        leverage_needed: parseFloat((posSize / input.account_size).toFixed(2)) + 'x'
+      };
+    }
+    // --- VC Agent Tools ---
+    case 'get_raises': {
+      try {
+        var raises = await fetchDefiLlamaRaises();
+        if (!raises) return { error: 'Raises data not available from API. Use web_search to find recent crypto fundraising rounds from CryptoRank, The Block, or DefiLlama.', suggestion: 'Search: "crypto fundraising rounds ' + new Date().toISOString().split('T')[0].substring(0,7) + '"' };
+        var now = Date.now();
+        var daysFilter = (input.days || 30) * 86400000;
+        var filtered = raises.filter(function(r) {
+          if (r.date && (now - r.date * 1000) > daysFilter) return false;
+          if (input.category && r.category && r.category.toLowerCase().indexOf(input.category.toLowerCase()) === -1) return false;
+          if (input.chain && r.chains && !r.chains.some(function(c) { return c.toLowerCase().indexOf(input.chain.toLowerCase()) >= 0; })) return false;
+          if (input.round && r.round && r.round.toLowerCase().indexOf(input.round.toLowerCase()) === -1) return false;
+          if (input.min_amount && (!r.amount || r.amount < input.min_amount)) return false;
+          return true;
+        });
+        filtered.sort(function(a, b) { return (b.date || 0) - (a.date || 0); });
+        var lim = input.limit || 25;
+        return {
+          raises: filtered.slice(0, lim).map(function(r) {
+            return {
+              project: r.name,
+              amount: r.amount ? '$' + r.amount + 'M' : 'undisclosed',
+              round: r.round || 'unknown',
+              lead_investors: (r.leadInvestors || []).join(', ') || 'undisclosed',
+              other_investors: (r.otherInvestors || []).slice(0, 5).join(', '),
+              category: r.category || '',
+              chains: (r.chains || []).join(', '),
+              date: r.date ? new Date(r.date * 1000).toISOString().split('T')[0] : '',
+              valuation: r.valuation ? '$' + r.valuation + 'M' : null,
+              source: r.source || ''
+            };
+          }),
+          total_matching: filtered.length,
+          period_days: input.days || 30
+        };
+      } catch(e) { return { error: e.message }; }
+    }
+    case 'search_raises': {
+      try {
+        var raises = await fetchDefiLlamaRaises();
+        if (!raises) return { error: 'Raises data not available. Use web_search to find fundraising info for "' + input.query + '".', suggestion: 'Search: "' + input.query + ' crypto fundraising round investors"' };
+        var q = input.query.toLowerCase();
+        var matches = raises.filter(function(r) {
+          if (r.name && r.name.toLowerCase().indexOf(q) >= 0) return true;
+          if (r.leadInvestors && r.leadInvestors.some(function(i) { return i.toLowerCase().indexOf(q) >= 0; })) return true;
+          if (r.otherInvestors && r.otherInvestors.some(function(i) { return i.toLowerCase().indexOf(q) >= 0; })) return true;
+          return false;
+        });
+        matches.sort(function(a, b) { return (b.date || 0) - (a.date || 0); });
+        return {
+          results: matches.slice(0, 20).map(function(r) {
+            return {
+              project: r.name,
+              amount: r.amount ? '$' + r.amount + 'M' : 'undisclosed',
+              round: r.round || '',
+              lead_investors: (r.leadInvestors || []).join(', '),
+              category: r.category || '',
+              chains: (r.chains || []).join(', '),
+              date: r.date ? new Date(r.date * 1000).toISOString().split('T')[0] : '',
+              valuation: r.valuation ? '$' + r.valuation + 'M' : null
+            };
+          }),
+          total_matches: matches.length
+        };
+      } catch(e) { return { error: e.message }; }
+    }
+    case 'get_investor_portfolio': {
+      try {
+        var raises = await fetchDefiLlamaRaises();
+        if (!raises) return { error: 'Raises data not available. Use web_search to find portfolio for "' + input.investor + '".', suggestion: 'Search: "' + input.investor + ' crypto investments portfolio 2026"' };
+        var inv = input.investor.toLowerCase();
+        var deals = raises.filter(function(r) {
+          if (r.leadInvestors && r.leadInvestors.some(function(i) { return i.toLowerCase().indexOf(inv) >= 0; })) return true;
+          if (r.otherInvestors && r.otherInvestors.some(function(i) { return i.toLowerCase().indexOf(inv) >= 0; })) return true;
+          return false;
+        });
+        deals.sort(function(a, b) { return (b.date || 0) - (a.date || 0); });
+        // Category breakdown
+        var cats = {};
+        var totalInvested = 0;
+        var leadCount = 0;
+        deals.forEach(function(d) {
+          if (d.category) cats[d.category] = (cats[d.category] || 0) + 1;
+          if (d.amount) totalInvested += d.amount;
+          if (d.leadInvestors && d.leadInvestors.some(function(i) { return i.toLowerCase().indexOf(inv) >= 0; })) leadCount++;
+        });
+        var lim = input.limit || 20;
+        return {
+          investor: input.investor,
+          total_deals: deals.length,
+          lead_rounds: leadCount,
+          total_invested_millions: Math.round(totalInvested),
+          top_categories: Object.entries(cats).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 5).map(function(e) { return e[0] + ' (' + e[1] + ')'; }),
+          recent_deals: deals.slice(0, lim).map(function(r) {
+            return {
+              project: r.name,
+              amount: r.amount ? '$' + r.amount + 'M' : 'undisclosed',
+              round: r.round || '',
+              role: (r.leadInvestors && r.leadInvestors.some(function(i) { return i.toLowerCase().indexOf(inv) >= 0; })) ? 'LEAD' : 'participant',
+              category: r.category || '',
+              date: r.date ? new Date(r.date * 1000).toISOString().split('T')[0] : ''
+            };
+          })
+        };
+      } catch(e) { return { error: e.message }; }
+    }
+    case 'get_raise_stats': {
+      try {
+        var raises = await fetchDefiLlamaRaises();
+        if (!raises) return { error: 'Raises data not available. Use web_search for fundraising market overview.', suggestion: 'Search: "crypto fundraising market overview ' + new Date().toISOString().split('T')[0].substring(0,7) + ' total raised"' };
+        var now = Date.now();
+        var days = input.days || 30;
+        var recent = raises.filter(function(r) { return r.date && (now - r.date * 1000) < days * 86400000; });
+        var totalRaised = 0;
+        var cats = {};
+        var investors = {};
+        var rounds = {};
+        recent.forEach(function(r) {
+          if (r.amount) totalRaised += r.amount;
+          if (r.category) cats[r.category] = (cats[r.category] || 0) + 1;
+          if (r.round) rounds[r.round] = (rounds[r.round] || 0) + 1;
+          (r.leadInvestors || []).forEach(function(i) { investors[i] = (investors[i] || 0) + 1; });
+        });
+        var avgRound = recent.filter(function(r) { return r.amount; }).length > 0 ? totalRaised / recent.filter(function(r) { return r.amount; }).length : 0;
+        return {
+          period: days + ' days',
+          total_rounds: recent.length,
+          total_raised: '$' + Math.round(totalRaised) + 'M',
+          avg_round_size: '$' + avgRound.toFixed(1) + 'M',
+          top_categories: Object.entries(cats).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 8).map(function(e) { return { category: e[0], count: e[1] }; }),
+          most_active_investors: Object.entries(investors).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 10).map(function(e) { return { investor: e[0], deals: e[1] }; }),
+          round_breakdown: Object.entries(rounds).sort(function(a,b) { return b[1] - a[1]; }).map(function(e) { return { round: e[0], count: e[1] }; })
+        };
+      } catch(e) { return { error: e.message }; }
     }
     default: return { error: 'Unknown tool: ' + name };
   }
