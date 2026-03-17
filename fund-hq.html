@@ -2752,7 +2752,8 @@ const STAGE_COLORS = { 'Sourcing': '#3b82f6', 'Due Diligence': '#f59e0b', 'Term 
 const SECTORS = ['Stocks', 'Crypto', 'AI', 'DeFi', 'AI Crypto', 'Privacy', 'Other'];
 const SECTOR_TAG = { 'Stocks': 'stocks', 'AI': 'ai', 'DeFi': 'defi', 'AI Crypto': 'aicrypto', 'Privacy': 'privacy', 'Other': 'other' };
 
-let DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [], progress: [], alerts: [] };
+var DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchlist: [], progress: [], alerts: [] };
+window.DB = DB;
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function fmtDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
@@ -2778,6 +2779,285 @@ function fmtPct(n) {
   return (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
 }
 function pctClass(n) { return n >= 0 ? 'up' : 'down'; }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══ CRUD HELPERS — Standardized data access for all collections ═══════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Generic CRUD for DB collections (deals, projects, research, reports, tasks, watchlist, progress, alerts)
+function dbGet(collection, id) {
+  return DB[collection] ? DB[collection].find(function(item) { return item.id === id; }) : null;
+}
+function dbFind(collection, filterFn) {
+  return DB[collection] ? DB[collection].filter(filterFn) : [];
+}
+function dbAdd(collection, item) {
+  if (!item.id) item.id = genId();
+  if (!item.created) item.created = new Date().toISOString();
+  DB[collection].push(item);
+  dbSync(collection, item.id, item);
+  return item;
+}
+function dbUpdate(collection, id, updates) {
+  var item = dbGet(collection, id);
+  if (!item) return null;
+  Object.assign(item, updates);
+  dbSync(collection, id, item);
+  return item;
+}
+function dbRemove(collection, id) {
+  var idx = DB[collection].findIndex(function(item) { return item.id === id; });
+  if (idx < 0) return false;
+  DB[collection].splice(idx, 1);
+  if (typeof dbRef !== 'undefined' && dbRef) {
+    try { dbRef.child(collection).child(id).remove(); } catch(e) {}
+  }
+  return true;
+}
+function dbSync(collection, id, data) {
+  try {
+    if (typeof dbRef !== 'undefined' && dbRef && typeof firebaseReady !== 'undefined' && firebaseReady) {
+      dbRef.child(collection).child(id).set(data);
+    }
+  } catch(e) { /* Firebase not ready */ }
+}
+
+// Entity CRUD (wraps etEntities array with Firebase sync)
+function getEntities(filterFn) {
+  if (typeof etEntities === 'undefined') return [];
+  return filterFn ? etEntities.filter(filterFn) : etEntities.slice();
+}
+function getEntity(id) {
+  if (typeof etEntities === 'undefined') return null;
+  return etEntities.find(function(e) { return e.id === id; });
+}
+function getEntityByAddress(addr) {
+  if (typeof etEntities === 'undefined' || !addr) return null;
+  var lower = addr.toLowerCase();
+  return etEntities.find(function(e) { return (e.address || '').toLowerCase() === lower; });
+}
+function addEntity(data) {
+  if (!data.id) data.id = 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  if (!data.addedAt) data.addedAt = new Date().toISOString();
+  if (!data.venues) data.venues = [];
+  if (!data.type) data.type = 'whale';
+  if (!data.grade) data.grade = 'B';
+  etEntities.push(data);
+  if (typeof etSave === 'function') etSave();
+  return data;
+}
+function updateEntity(id, updates) {
+  var entity = getEntity(id);
+  if (!entity) return null;
+  Object.assign(entity, updates);
+  if (typeof etSave === 'function') etSave();
+  return entity;
+}
+
+// Signal CRUD (wraps ocSignals array)
+function getSignals(filterFn) {
+  if (typeof ocSignals === 'undefined') return [];
+  return filterFn ? ocSignals.filter(filterFn) : ocSignals.slice();
+}
+function addSignal(data) {
+  if (!data.id) data.id = 'sig_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  if (!data.created) data.created = new Date().toISOString();
+  if (!data.status) data.status = 'new';
+  if (typeof ocSignals !== 'undefined') ocSignals.push(data);
+  if (typeof sigSave === 'function') sigSave();
+  return data;
+}
+
+// Watchlist helpers
+function getWatchlist() { return DB.watchlist || []; }
+function getWatchlistItem(symbol) {
+  return DB.watchlist.find(function(w) { return w.symbol === symbol; });
+}
+
+// Report helpers
+function getReports(filterFn) {
+  var reports = DB.reports.filter(function(r) { return !r.deletedAt; });
+  return filterFn ? reports.filter(filterFn) : reports;
+}
+
+// Trade log helpers
+function getTradeLog() {
+  if (typeof tradeLog === 'undefined') return [];
+  return tradeLog.slice();
+}
+function getTradeStats() {
+  var trades = getTradeLog();
+  if (!trades.length) return { total: 0, wins: 0, losses: 0, winRate: 0, totalPnl: 0, avgRR: 0, bestPlaybook: null };
+  var wins = trades.filter(function(t) { return t.pnl > 0; });
+  var losses = trades.filter(function(t) { return t.pnl <= 0; });
+  var totalPnl = trades.reduce(function(s, t) { return s + (t.pnl || 0); }, 0);
+  var avgRR = trades.reduce(function(s, t) { return s + (t.rMultiple || 0); }, 0) / trades.length;
+  // Best playbook by win rate
+  var pbStats = {};
+  trades.forEach(function(t) {
+    if (!t.playbook) return;
+    if (!pbStats[t.playbook]) pbStats[t.playbook] = { wins: 0, total: 0 };
+    pbStats[t.playbook].total++;
+    if (t.pnl > 0) pbStats[t.playbook].wins++;
+  });
+  var bestPlaybook = null, bestWR = 0;
+  Object.keys(pbStats).forEach(function(pb) {
+    var wr = pbStats[pb].wins / pbStats[pb].total;
+    if (wr > bestWR && pbStats[pb].total >= 3) { bestWR = wr; bestPlaybook = pb; }
+  });
+  return { total: trades.length, wins: wins.length, losses: losses.length, winRate: wins.length / trades.length * 100, totalPnl: totalPnl, avgRR: avgRR, bestPlaybook: bestPlaybook };
+}
+
+// Setup helpers
+function getSetups(filterFn) {
+  if (typeof setupList === 'undefined') return [];
+  return filterFn ? setupList.filter(filterFn) : setupList.slice();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══ CONVICTION ENGINE — Unified scoring across all agents ═════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Investor Score: Is this a good asset to own? (0-100)
+// Factors: Fundamental Quality (25%), Valuation (20%), Catalyst Strength (15%), On-Chain Conviction (20%), Narrative & Momentum (20%)
+function computeInvestorScore(symbol) {
+  var factors = [];
+
+  // 1. Fundamental Quality (25%) — from existing crypto/stock score
+  var wl = getWatchlistItem(symbol);
+  var fundScore = 50; // default
+  if (wl && wl.scores) {
+    var rawScore = wl.scores.overall || wl.scores.crypto || wl.scores.stock;
+    if (rawScore) fundScore = (rawScore / 5) * 100; // convert 0-5 star to 0-100
+  }
+  factors.push({ name: 'Fundamental', weight: 0.25, score: fundScore, icon: '\u{1F4CA}' });
+
+  // 2. Valuation (20%) — from crypto score "Value" category or stock "Valuation"
+  var valScore = 50;
+  if (wl && wl.scores && wl.scores.categories) {
+    var valCat = wl.scores.categories.find(function(c) { return c.name === 'Value' || c.name === 'Valuation'; });
+    if (valCat) valScore = valCat.score * 100;
+  }
+  factors.push({ name: 'Valuation', weight: 0.20, score: valScore, icon: '\u{1F4B0}' });
+
+  // 3. Catalyst Strength (15%) — count upcoming catalysts for this asset
+  var catScore = 0;
+  if (typeof catList !== 'undefined') {
+    var now = new Date();
+    var upcoming = catList.filter(function(c) {
+      return c.asset && c.asset.toUpperCase() === symbol.toUpperCase() && new Date(c.date) > now;
+    });
+    if (upcoming.length >= 3) catScore = 100;
+    else if (upcoming.length >= 2) catScore = 75;
+    else if (upcoming.length >= 1) catScore = 50;
+    var highImpact = upcoming.filter(function(c) { return c.impact === 'high'; });
+    if (highImpact.length > 0) catScore = Math.min(100, catScore + 25);
+  }
+  factors.push({ name: 'Catalyst', weight: 0.15, score: catScore, icon: '\u{26A1}' });
+
+  // 4. On-Chain Conviction (20%) — tracked entities holding this asset
+  var onchainScore = 0;
+  var entities = getEntities(function(e) { return e.positions && e.positions.some(function(p) { return p.coin && p.coin.toUpperCase() === symbol.toUpperCase(); }); });
+  if (entities.length >= 5) onchainScore = 100;
+  else if (entities.length >= 3) onchainScore = 75;
+  else if (entities.length >= 1) onchainScore = 50;
+  // Boost for high-grade entities
+  var aGrade = entities.filter(function(e) { return e.grade === 'A+' || e.grade === 'A'; });
+  if (aGrade.length > 0) onchainScore = Math.min(100, onchainScore + 15);
+  factors.push({ name: 'On-Chain', weight: 0.20, score: onchainScore, icon: '\u{1F50D}' });
+
+  // 5. Narrative & Momentum (20%) — from momentum score category
+  var momoScore = 50;
+  if (wl && wl.scores && wl.scores.categories) {
+    var momoCat = wl.scores.categories.find(function(c) { return c.name === 'Momentum'; });
+    if (momoCat) momoScore = momoCat.score * 100;
+  }
+  factors.push({ name: 'Momentum', weight: 0.20, score: momoScore, icon: '\u{1F680}' });
+
+  var weighted = factors.reduce(function(sum, f) { return sum + f.score * f.weight; }, 0);
+  return { score: Math.round(weighted), factors: factors, type: 'investor', updatedAt: Date.now() };
+}
+
+// Trader Score: Should I trade this now? (0-100)
+// Factors: Setup Quality (30%), Regime Alignment (20%), Confluence (25%), On-Chain Timing (15%), Execution Readiness (10%)
+function computeTraderScore(symbol) {
+  var factors = [];
+
+  // 1. Setup Quality (30%) — active setups for this asset
+  var setupScore = 0;
+  var setups = getSetups(function(s) { return s.asset && s.asset.toUpperCase() === symbol.toUpperCase() && (s.status === 'watching' || s.status === 'active'); });
+  if (setups.length > 0) {
+    var bestSetup = setups.reduce(function(best, s) { return (s.rr || 0) > (best.rr || 0) ? s : best; }, setups[0]);
+    var rr = bestSetup.rr || 0;
+    if (rr >= 5) setupScore = 100;
+    else if (rr >= 3) setupScore = 80;
+    else if (rr >= 2) setupScore = 60;
+    else if (rr >= 1) setupScore = 30;
+  }
+  factors.push({ name: 'Setup', weight: 0.30, score: setupScore, icon: '\u{1F3AF}' });
+
+  // 2. Regime Alignment (20%)
+  var regimeScore = 50; // neutral default
+  var regimeEl = document.getElementById('ta-btc-regime');
+  if (regimeEl) {
+    var regime = regimeEl.textContent.trim().toLowerCase();
+    if (regime === 'risk-on') regimeScore = 85;
+    else if (regime === 'neutral') regimeScore = 50;
+    else if (regime === 'risk-off') regimeScore = 15;
+  }
+  factors.push({ name: 'Regime', weight: 0.20, score: regimeScore, icon: '\u{1F30D}' });
+
+  // 3. Confluence (25%) — from auto-confluence if available
+  var confScore = 0;
+  if (typeof autoConfluenceScore !== 'undefined') {
+    confScore = typeof autoConfluenceScore === 'number' ? autoConfluenceScore : 0;
+  }
+  factors.push({ name: 'Confluence', weight: 0.25, score: confScore, icon: '\u{1F504}' });
+
+  // 4. On-Chain Timing (15%) — recent signals for this asset
+  var timingScore = 0;
+  var recentSignals = getSignals(function(s) {
+    return s.asset && s.asset.toUpperCase() === symbol.toUpperCase() && s.status === 'new';
+  });
+  if (recentSignals.length >= 3) timingScore = 100;
+  else if (recentSignals.length >= 2) timingScore = 70;
+  else if (recentSignals.length >= 1) timingScore = 40;
+  factors.push({ name: 'Timing', weight: 0.15, score: timingScore, icon: '\u{23F0}' });
+
+  // 5. Execution Readiness (10%) — has position sizing, liquidity
+  var execScore = 50; // default to "ready"
+  factors.push({ name: 'Execution', weight: 0.10, score: execScore, icon: '\u{2705}' });
+
+  var weighted = factors.reduce(function(sum, f) { return sum + f.score * f.weight; }, 0);
+  return { score: Math.round(weighted), factors: factors, type: 'trader', updatedAt: Date.now() };
+}
+
+// Master Conviction Score
+function computeConviction(symbol) {
+  var investor = computeInvestorScore(symbol);
+  var trader = computeTraderScore(symbol);
+  var master = Math.max(investor.score, trader.score);
+  var verdict = 'Low Conviction';
+  var verdictColor = 'var(--red)';
+  if (master >= 75) { verdict = 'High Conviction'; verdictColor = 'var(--green)'; }
+  else if (master >= 50) { verdict = 'Medium Conviction'; verdictColor = 'var(--yellow)'; }
+  return {
+    master: master,
+    investor: investor,
+    trader: trader,
+    verdict: verdict,
+    verdictColor: verdictColor,
+    updatedAt: Date.now()
+  };
+}
+
+// Render conviction badge (reusable component)
+function convictionBadge(score) {
+  var color = score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--yellow)' : 'var(--red)';
+  return '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:' + color + '22;color:' + color + ';">' + score + '/100</span>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // ===== MARKET DATA API LAYER =====
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
@@ -4280,6 +4560,7 @@ function renderMarketData() {
       (changeStr ? '<div class="wc-change ' + cls + '">' + changeStr + '</div>' : '') +
       (keyMetric ? '<div class="wc-metric">' + keyMetric + '</div>' : '') +
       (ld.score != null ? '<div class="wc-score">' + renderStars(ld.score, 12) + '<span class="wc-score-num">' + ld.score.toFixed(1) + '</span></div>' : '') +
+      (function() { try { var c = computeInvestorScore(w.symbol); return '<div style="margin-top:4px;">' + convictionBadge(c.score) + '</div>'; } catch(e) { return ''; } })() +
       '</div>';
   }).join('');
 }
@@ -9799,6 +10080,21 @@ function hlToggleSave(addr, acctVal) {
     hlSavedWallets.splice(idx, 1);
   } else {
     hlSavedWallets.push({ address: addr, savedAt: new Date().toISOString(), lastValue: acctVal, label: '' });
+    // Auto-sync to Entity Tracker (unified entity store)
+    if (typeof getEntityByAddress === 'function' && !getEntityByAddress(addr)) {
+      addEntity({
+        name: typeof hlAddr === 'function' ? hlAddr(addr) : addr.slice(0,8) + '...',
+        address: addr,
+        type: 'whale',
+        grade: 'B',
+        venues: ['hyperliquid'],
+        notes: 'Auto-tracked from HL wallet save',
+        accountValue: acctVal || 0,
+        positions: [],
+        positionCount: 0,
+        totalPnl: 0
+      });
+    }
   }
   hlSaveWallets();
   hlRenderSaved();
