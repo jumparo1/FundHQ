@@ -70,6 +70,8 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-17: **500-wallet Token Intel scan** — expanded from 30→500 wallets ($10K min), concurrent batches of 5 for speed, coin-specific scoring (filters fills by scanned ticker), coin stats row in results
+- 2026-03-17: **Track Entity in Wallet Scanner** — Track Entity button + quality score card (grade, type, trades/day, consistency, leverage) on wallet profile page
 - 2026-03-17: **Arkham Intelligence integration** — wallet identity labels on Token Intel whales + entities, Arkham token holders endpoint, Alpha Summary identity insights, Wallet Hunter Arkham enrichment, Settings key + test
 - 2026-03-17: **Wallet Hunter** — new HL sub-tab: systematically scans leaderboard, fetches trade history, scores wallets (0-100), auto-classifies (Fund/Insider/MM/Copyable/Degen/Whale), Arkham identity enrichment, bulk import to Entity Tracker
 - 2026-03-17: **Whale Quality Scoring** — `whaleScoreWallet()` engine: win rate, PnL consistency, trade frequency, leverage analysis → composite quality score + auto-grade (A+ to C) + auto-type classification
