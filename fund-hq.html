@@ -3422,7 +3422,7 @@ var ANALYST_TOOLS = [
 
 var SENTINEL_TOOLS = [
   { name: 'hl_scan_wallet', description: 'Scan a Hyperliquid wallet: positions, PnL, win rate, trade history.', input_schema: { type: 'object', properties: { address: { type: 'string', description: 'Wallet address (0x...)' } }, required: ['address'] } },
-  { name: 'hl_whale_positions', description: 'Find whale positions on Hyperliquid for a specific coin. Returns: perp market data (OI, funding, volume, price), long/short ratio from scanned wallets, and top 10 notable positions. Use this for "who is long X?", "whale activity on X", "perp positioning on X".', input_schema: { type: 'object', properties: { coin: { type: 'string', description: 'Coin to scan (e.g. ETH, BTC, SOL, ZEC)' }, min_size: { type: 'number', description: 'Min position size USD (default 50000)' } } } },
+  { name: 'hl_whale_positions', description: 'Find whale positions and perp market data across Hyperliquid + Binance. Returns: HL perp data (OI, funding, volume), Binance top trader long/short ratio + global ratio + smart money divergence, HL whale positions (top 20 by size), and long/short breakdown. Always use for "who is long X?", "perp positioning", "whale activity".', input_schema: { type: 'object', properties: { coin: { type: 'string', description: 'Coin to scan (e.g. ETH, BTC, SOL, ZEC)' }, min_size: { type: 'number', description: 'Min position size USD (default 50000)' } } } },
   { name: 'hl_saved_wallets', description: 'Get all saved/tracked HL wallets with labels and last known values.', input_schema: { type: 'object', properties: {} } },
   { name: 'get_entities', description: 'Get tracked entities from Entity Tracker, optionally filtered by type or grade.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter by type: whale/fund/insider/mm/copyable/degen' }, grade: { type: 'string', description: 'Minimum grade: A+/A/B+/B/C' } } } },
   { name: 'get_signals', description: 'Get on-chain signals, optionally filtered by type or status.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter: accumulation/distribution/whale_entry/whale_exit' }, status: { type: 'string', description: 'Filter: new/reviewing/acted/dismissed' } } } },
@@ -3497,6 +3497,14 @@ function buildSentinelPrompt() {
   '- Win rate 35pts, PnL consistency 25pts, trade frequency 20pts, leverage discipline 20pts\n' +
   '- Bonus for selectivity (<120 trades). Penalty for overtrading (>400 trades).\n' +
   '- Always report: quality score, grade, type, trades/day, consistency, avg leverage\n\n' +
+  '## MULTI-VENUE DATA\n' +
+  'hl_whale_positions returns data from BOTH Hyperliquid and Binance:\n' +
+  '- market_hl: HL perp data (OI, funding, volume, price)\n' +
+  '- market_binance: Binance top trader long/short ratio, global ratio, smart money divergence\n' +
+  '- positioning: aggregated long/short from scanned HL wallets\n' +
+  '- top_positions: individual whale positions on HL\n' +
+  'ALWAYS present Binance top trader ratio and smart money divergence when available — this is the strongest signal.\n' +
+  'Format: "Binance top traders: 62% long (bullish) | Retail: 55% short (bearish) | DIVERGENCE DETECTED"\n\n' +
   '## COMMUNICATION STYLE\n' +
   '- Lead with the signal, not the process: "3 whales accumulating SOL — $4.2M total"\n' +
   '- Always include: wallet grade, position size, regime context\n' +
@@ -4119,7 +4127,8 @@ async function executeToolCall(name, input) {
         // Add perp market data if scanning specific coin
         if (coin && marketData[coin]) {
           var md = marketData[coin];
-          result.market = {
+          result.market_hl = {
+            venue: 'Hyperliquid',
             mark_price: md.mark_price,
             open_interest_usd: Math.round(md.open_interest * md.mark_price),
             funding_rate_8h: parseFloat((md.funding_rate * 100).toFixed(4)) + '%',
@@ -4128,6 +4137,52 @@ async function executeToolCall(name, input) {
             premium: parseFloat((md.premium * 100).toFixed(3)) + '%'
           };
         }
+
+        // Step 5: Binance Futures data (free, no API key)
+        if (coin) {
+          var bnSymbol = coin + 'USDT';
+          try {
+            var [bnOI, bnFunding, bnTopTraderRatio, bnGlobalRatio] = await Promise.all([
+              fetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=' + bnSymbol).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+              fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=' + bnSymbol + '&limit=1').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+              fetch('https://fapi.binance.com/futures/data/topLongShortPositionRatio?symbol=' + bnSymbol + '&period=1h&limit=1').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+              fetch('https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=' + bnSymbol + '&period=1h&limit=1').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+            ]);
+            var bnData = { venue: 'Binance' };
+            if (bnOI && bnOI.openInterest) {
+              var bnPrice = result.market_hl ? result.market_hl.mark_price : 0;
+              bnData.open_interest = parseFloat(bnOI.openInterest);
+              bnData.open_interest_usd = Math.round(parseFloat(bnOI.openInterest) * bnPrice);
+            }
+            if (bnFunding && bnFunding[0]) {
+              var fr = parseFloat(bnFunding[0].fundingRate);
+              bnData.funding_rate_8h = parseFloat((fr * 100).toFixed(4)) + '%';
+              bnData.funding_annualized = parseFloat((fr * 100 * 3 * 365).toFixed(1)) + '%';
+            }
+            if (bnTopTraderRatio && bnTopTraderRatio[0]) {
+              var ttr = bnTopTraderRatio[0];
+              bnData.top_trader_long_ratio = parseFloat(parseFloat(ttr.longAccount || ttr.longPosition || 0).toFixed(3));
+              bnData.top_trader_short_ratio = parseFloat(parseFloat(ttr.shortAccount || ttr.shortPosition || 0).toFixed(3));
+              bnData.top_trader_ls_ratio = parseFloat(parseFloat(ttr.longShortRatio || 0).toFixed(3));
+              bnData.top_trader_bias = parseFloat(ttr.longShortRatio || 1) > 1.2 ? 'bullish' : parseFloat(ttr.longShortRatio || 1) < 0.8 ? 'bearish' : 'neutral';
+            }
+            if (bnGlobalRatio && bnGlobalRatio[0]) {
+              var glr = bnGlobalRatio[0];
+              bnData.global_long_ratio = parseFloat(parseFloat(glr.longAccount || 0).toFixed(3));
+              bnData.global_short_ratio = parseFloat(parseFloat(glr.shortAccount || 0).toFixed(3));
+              bnData.global_ls_ratio = parseFloat(parseFloat(glr.longShortRatio || 0).toFixed(3));
+              bnData.retail_bias = parseFloat(glr.longShortRatio || 1) > 1.2 ? 'bullish' : parseFloat(glr.longShortRatio || 1) < 0.8 ? 'bearish' : 'neutral';
+            }
+            // Smart money divergence: top traders vs retail
+            if (bnData.top_trader_bias && bnData.retail_bias && bnData.top_trader_bias !== bnData.retail_bias) {
+              bnData.smart_money_divergence = 'YES — top traders ' + bnData.top_trader_bias + ' while retail ' + bnData.retail_bias;
+            }
+            result.market_binance = bnData;
+          } catch(e) {
+            result.market_binance = { venue: 'Binance', error: 'Failed to fetch: ' + e.message };
+          }
+        }
+
         return result;
       } catch(e) { return { error: 'Whale scan failed: ' + e.message }; }
     }
