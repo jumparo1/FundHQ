@@ -1,24 +1,25 @@
 # Fund HQ
 
-AI-powered fundamental research engine — discovers asymmetric opportunities in crypto and equities before the market prices them in.
+AI-powered Conviction Engine for asymmetric trades — 5 AI agents discover, research, score, and execute high-conviction opportunities in crypto and equities.
 
 ## Stack
 - **Frontend:** `fund-hq.html` (single file, vanilla JS, dark theme)
 - **Database:** Firebase Realtime Database + localStorage fallback
 - **Hosting:** GitHub Pages (free) — `jumparo1.github.io/JumpTools/fund-hq.html`
-- **AI Agent:** "Pamela" — Claude Haiku via tool_use API, 17 tools, multi-turn loop (max 8 turns)
+- **AI Agents:** 5-agent system via Claude Haiku tool_use API, 8-turn multi-tool loop, intent-based routing
 - **Scheduled Tasks:** 3 Claude Code cron jobs writing alerts via Firebase REST API
 - **APIs:** CoinGecko (crypto), FMP `/stable/` (stocks), Arkham Intelligence (wallet identity/labels), Moralis (EVM holders), Dexscreener (DEX pairs), Hyperliquid (perps/whales), Anthropic Claude (AI research + web search)
 - **Knowledge Base:** 4 SKILL.md files (MISSION, TRADING-EDGE, ASYMMETRIC-SETUPS, FUNDAMENTAL-ANALYSIS)
 - **Users:** Jumparo (crypto) & Tihomir (equities)
 
-## Architecture — 4 Agent Pillars (planned)
-| Agent | Division | Mission |
-|-------|----------|---------|
-| **Analyst** | Research | Fundamental deep dives, tokenomics, catalysts, valuation |
-| **Sentinel** | On-Chain Intel | Smart money tracking, flow analysis, venue intelligence |
-| **Trader** | Execution | Setup detection, entry/exit optimization, learning from outcomes |
-| **Orchestrator** | Alerts | Cross-agent signal synthesis, priority alerting |
+## Architecture — 5-Agent Intelligence OS (Live)
+| Agent | Icon | Tools | Mission |
+|-------|------|-------|---------|
+| **Pamela** (Router) | P | 8 shared | Intent classification, delegates to specialists, handles general queries |
+| **Analyst** | A | 10 | Fundamental research, 5-lens filter, reports, valuations, peer comparison |
+| **Sentinel** | S | 8 | On-chain intelligence, whale tracking, entity profiling, HL + Binance data |
+| **Trader** | T | 10 | Trade setups, position sizing, confluence scoring, learning loop from trade log |
+| **VC** | V | 6 | Fundraising rounds, investor portfolios, VC trends, 100x gem filtering |
 
 ## Pages (Restructured)
 | Page | Section | Description |
@@ -35,10 +36,16 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Docs | — | GitBook-style docs + Operations sub-tabs (About, Tasks, Roadmap, Progress) |
 | Settings | — | API status grid, keys by category (AI/Research/On-Chain), Firebase sync, backup |
 
-## Pamela (AI Agent)
+## Agent System
 - **Model:** Claude Haiku 4.5 (fast + cheap, ~$0.005/query)
-- **20 tools:** search_crypto, get_crypto_data, search_stocks, get_stock_data, create_item, update_item, delete_item, find_items, search_all, add_to_watchlist, get_watchlist, navigate_to_page, get_fund_stats, save_research, get_reports, get_report_content, create_alert, hl_scan_wallet, hl_whale_positions, hl_saved_wallets + web_search
-- **System prompt:** 5-lens filter scoring, setup archetypes, anti-patterns, position sizing, live context injection (watchlist prices, recent reports, open tasks, unread alerts)
+- **Pattern:** Agent Registry — `AGENT_REGISTRY` with shared `runAgent(agentName, message)` runner
+- **Routing:** `routedAgent(message)` → Router classifies intent → delegates to specialist
+- **Shared tools (8):** create_item, update_item, delete_item, find_items, search_all, navigate_to_page, get_fund_stats, create_alert
+- **Analyst tools (10):** search_crypto, get_crypto_data, search_stocks, get_stock_data, add_to_watchlist, get_watchlist, save_research, get_reports, get_report_content, get_conviction
+- **Sentinel tools (8):** hl_scan_wallet, hl_whale_positions, hl_saved_wallets, get_entities, get_signals, create_signal, search_crypto, get_crypto_data
+- **Trader tools (10):** create_setup, get_setups, update_setup, log_trade, get_trade_log, get_trade_stats, get_confluence, position_size, search_crypto, get_crypto_data
+- **VC tools (6):** get_raises, search_raises, get_investor_portfolio, get_raise_stats, search_crypto, get_crypto_data
+- **All agents** also get web_search (Claude built-in, max 3 per conversation)
 - **Multi-turn:** Up to 8 tool-use turns per conversation
 
 ## Scheduled Tasks (Claude Code)
@@ -65,6 +72,9 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-17: **Trader agent** — 10 tools: create_setup, get_setups, update_setup, log_trade, get_trade_log, get_trade_stats, get_confluence, position_size. Dynamic learning loop injects win rate + playbook stats into system prompt. 7 playbook archetypes.
+- 2026-03-17: **VC/Fundraising agent** — 6 tools: get_raises, search_raises, get_investor_portfolio, get_raise_stats. DefiLlama raises API with Firebase cache + web_search fallback (CORS/paywall workaround). Investor tier system (Tier 1-3). 100x gem filter.
+- 2026-03-17: **5-agent system complete** — Router routes to analyst, sentinel, trader, VC. Colored agent badges in chat. Each agent has dedicated system prompt with domain expertise.
 - 2026-03-17: **Stage 4: Agentify** — Agent Registry pattern with `runAgent(agentName, message)`. Router (Pamela) classifies intent and delegates to Analyst or Sentinel. Analyst agent: fundamental research with 5-lens filter, crypto income statement, report template (10 tools). Sentinel agent: on-chain intelligence with Senpi learnings, signal hierarchy, wallet scoring (8 tools). New tools: get_entities, get_signals, create_signal, get_conviction. Agent badge on chat responses. Saved Wallets / Entity Tracker separation with name prompt on save and Promote to Entity flow. Source tags on entities.
 - 2026-03-17: **Stage 3: Modularize** — 22 CRUD helper functions (dbGet/dbFind/dbAdd/dbUpdate/dbRemove/dbSync + entity/signal/watchlist/report/trade/setup helpers). Unified Conviction Engine: Investor Score (/100, 5 factors) + Trader Score (/100, 5 factors) replacing 5 disconnected scoring systems. Entity auto-sync from HL wallet saves. Conviction badge on watchlist cards.
 - 2026-03-17: **Stage 2: Simplify (Intelligence OS restructure)** — sidebar reorganized: Command Center / Discover / Research / Execute / Alerts. Pages reduced from 17 to 11. Templates merged into Reports as tab. Signal Feed + Flow Monitor merged into Signals & Alerts page. About, Tasks, Roadmap, Progress moved under Docs as sub-tabs. Legacy URL redirects for all moved pages.
