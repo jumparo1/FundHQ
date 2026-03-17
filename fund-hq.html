@@ -734,7 +734,6 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-section">Research</div>
     <div class="nav-item" data-page="watchlist"><span class="icon">&#128065;</span> Watchlist <span class="badge" id="badge-watchlist">0</span></div>
     <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
-    <div class="nav-item" data-page="catalysts"><span class="icon">&#128197;</span> Catalysts <span class="badge" id="badge-catalysts">0</span></div>
 
     <div class="nav-section">Execute</div>
     <div class="nav-item" data-page="technical"><span class="icon">&#128202;</span> Trading</div>
@@ -742,6 +741,7 @@ tbody tr:hover { background: var(--bg3); }
 
     <div class="nav-section">Alerts</div>
     <div class="nav-item" data-page="alerts"><span class="icon">&#128276;</span> Signals & Alerts <span class="badge" id="badge-alerts">0</span></div>
+    <div class="nav-item" data-page="catalysts"><span class="icon">&#128197;</span> Catalysts <span class="badge" id="badge-catalysts">0</span></div>
 
     <div class="nav-item" data-page="help"><span class="icon">&#128218;</span> Docs</div>
     <div class="nav-item" data-page="settings"><span class="icon">&#9881;</span> Settings</div>
@@ -1300,6 +1300,7 @@ tbody tr:hover { background: var(--bg3); }
             <input type="text" id="hl-wallet-input" placeholder="Paste wallet address (0x...)" autocomplete="off" style="font-family:monospace;font-size:13px;">
           </div>
           <button class="btn btn-primary" onclick="hlScanWallet()">Scan Wallet</button>
+          <button class="btn btn-ghost" id="hl-save-scanned-btn" style="display:none;" onclick="hlSaveScannedWallet()">&#128190; Save Wallet</button>
         </div>
         <div id="hl-scanner-result"></div>
       </div>
@@ -2837,6 +2838,7 @@ function getEntityByAddress(addr) {
   return etEntities.find(function(e) { return (e.address || '').toLowerCase() === lower; });
 }
 function addEntity(data) {
+  if (!Array.isArray(etEntities)) etEntities = [];
   if (!data.id) data.id = 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
   if (!data.addedAt) data.addedAt = new Date().toISOString();
   if (!data.venues) data.venues = [];
@@ -9966,10 +9968,33 @@ async function hlScanWallet() {
   }
 }
 
+// Save the last scanned wallet so the top button can save it
+var hlLastScannedAddr = null;
+var hlLastScannedAcctVal = 0;
+
+function hlSaveScannedWallet() {
+  if (!hlLastScannedAddr) return;
+  hlToggleSave(hlLastScannedAddr, hlLastScannedAcctVal);
+  hlUpdateSaveScannedBtn();
+}
+
+function hlUpdateSaveScannedBtn() {
+  var btn = document.getElementById('hl-save-scanned-btn');
+  if (!btn || !hlLastScannedAddr) return;
+  hlEnsureVars();
+  var isSaved = hlSavedWallets.some(function(w) { return w.address.toLowerCase() === hlLastScannedAddr.toLowerCase(); });
+  btn.style.display = '';
+  btn.innerHTML = isSaved ? '&#10003; Saved' : '&#128190; Save Wallet';
+  btn.className = 'btn ' + (isSaved ? 'btn-ghost' : 'btn-primary');
+}
+
 function hlRenderWalletProfile(addr, state, fills) {
   hlEnsureVars();
   const mg = state.marginSummary || {};
   const acctVal = parseFloat(mg.accountValue || 0);
+  hlLastScannedAddr = addr;
+  hlLastScannedAcctVal = acctVal;
+  hlUpdateSaveScannedBtn();
   const totalPnl = parseFloat(mg.totalRawUsd || 0);
   const positions = (state.assetPositions || []).map(p => p.position).filter(p => parseFloat(p.szi) !== 0);
 
