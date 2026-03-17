@@ -28,7 +28,7 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 | Watchlist | Pipeline | Tracked assets with scores, detail view, Firebase sync |
 | Alerts | Pipeline | Signals from scheduled scans + Pamela, severity levels, browser notifications |
 | Portfolio | Pipeline | Holdings tracker, allocation breakdown, P&L tracking, cash management |
-| On-Chain Intel | On-Chain | 7 tabs: Overview, Token Intel (multi-source scanner with wallet detail modals), Hyperliquid, Entity Tracker, Dexscreener, Flow Monitor, Signal Feed |
+| On-Chain Intel | On-Chain | 7 tabs: Overview, Token Intel (multi-source scanner with quality scoring), Hyperliquid (5 sub-tabs incl. Wallet Hunter), Entity Tracker, Dexscreener, Flow Monitor, Signal Feed |
 | Market Data | Research | Live search/discovery, CoinGecko + FMP fundamentals |
 | Templates | Research | 4 templates (Crypto 16s, Stock 14s, Quick Thesis 5s, Commodity 12s), view/edit modes |
 | Reports | Research | AI-generated research reports, rating, conviction, Substack, Trash |
@@ -70,6 +70,10 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-17: **Wallet Hunter** — new HL sub-tab: systematically scans leaderboard, fetches trade history, scores wallets (0-100), auto-classifies (Fund/Insider/MM/Copyable/Degen/Whale), bulk import to Entity Tracker
+- 2026-03-17: **Whale Quality Scoring** — `whaleScoreWallet()` engine: win rate, PnL consistency, trade frequency, leverage analysis → composite quality score + auto-grade (A+ to C) + auto-type classification
+- 2026-03-17: **Token Intel whale scoring** — discovered whales now scored & classified with quality badge, type tag, win rate, trade stats; sorted by quality; one-click Track with auto-grade
+- 2026-03-17: **Degen entity type** — 7th entity type added across all selects and displays (orange badge)
 - 2026-03-17: **Wallet detail modal** — click any address in Token Intel to see full profile: account value, all positions, win rate, PnL, last 30 trades, + Track Entity button
 - 2026-03-17: **Clickable addresses** — HL whale addresses open wallet modal, Moralis holder addresses link to block explorer (Etherscan, Basescan, etc.)
 - 2026-03-17: **Settings API section** — reorganized into separate card with status grid (green/gray dots), grouped by category (AI, Research, On-Chain Intelligence), auto-populates saved keys

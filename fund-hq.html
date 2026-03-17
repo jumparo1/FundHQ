@@ -1288,6 +1288,7 @@ tbody tr:hover { background: var(--bg3); }
           <button class="market-tab" onclick="hlShowTab('whales')" id="hl-tab-whales">Whale Discovery</button>
           <button class="market-tab" onclick="hlShowTab('saved')" id="hl-tab-saved">Saved Wallets</button>
           <button class="market-tab" onclick="hlShowTab('perps')" id="hl-tab-perps">Perp Positioning</button>
+          <button class="market-tab" onclick="hlShowTab('hunter')" id="hl-tab-hunter">&#127919; Wallet Hunter</button>
         </div>
 
       <!-- SCANNER TAB -->
@@ -1372,6 +1373,62 @@ tbody tr:hover { background: var(--bg3); }
         <div id="hl-perp-summary"></div>
         <div id="hl-perp-result"></div>
       </div>
+      <!-- WALLET HUNTER TAB -->
+      <div id="hl-panel-hunter" style="display:none;">
+        <div class="card" style="padding:18px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">&#127919; Wallet Hunter</div>
+              <div style="font-size:11px;color:var(--text3);">Systematically scan HL leaderboard, score wallets by trade history, auto-classify and import the best.</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <div style="font-size:11px;color:var(--text3);">
+                <label>Min Acct: </label>
+                <select id="hunter-min-acct" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:3px 6px;border-radius:4px;font-size:11px;">
+                  <option value="50000">$50K+</option>
+                  <option value="100000" selected>$100K+</option>
+                  <option value="500000">$500K+</option>
+                  <option value="1000000">$1M+</option>
+                  <option value="5000000">$5M+</option>
+                </select>
+              </div>
+              <div style="font-size:11px;color:var(--text3);">
+                <label>Scan top: </label>
+                <select id="hunter-scan-count" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:3px 6px;border-radius:4px;font-size:11px;">
+                  <option value="30">30 wallets</option>
+                  <option value="50" selected>50 wallets</option>
+                  <option value="100">100 wallets</option>
+                  <option value="200">200 wallets</option>
+                </select>
+              </div>
+              <div style="font-size:11px;color:var(--text3);">
+                <label>Min quality: </label>
+                <select id="hunter-min-quality" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:3px 6px;border-radius:4px;font-size:11px;">
+                  <option value="0">All</option>
+                  <option value="30">30+ (B+)</option>
+                  <option value="50" selected>50+ (B+)</option>
+                  <option value="65">65+ (A)</option>
+                  <option value="80">80+ (A+)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="hlWalletHunt()" id="hunter-start-btn">&#128011; Start Hunt</button>
+            </div>
+          </div>
+        </div>
+        <div id="hunter-progress" style="display:none;margin-bottom:16px;">
+          <div class="card" style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:12px;color:var(--text2);font-weight:600;" id="hunter-status-text">Scanning...</span>
+              <span style="font-size:11px;color:var(--text3);" id="hunter-progress-pct">0%</span>
+            </div>
+            <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;">
+              <div id="hunter-progress-bar" style="height:100%;background:var(--accent2);border-radius:3px;width:0%;transition:width 0.3s;"></div>
+            </div>
+          </div>
+        </div>
+        <div id="hunter-results"></div>
+      </div>
+
       </div><!-- /oc-panel-hyperliquid -->
 
       <!-- ENTITY TRACKER -->
@@ -8008,8 +8065,8 @@ function etRender() {
   }
   if (emptyEl) emptyEl.style.display = 'none';
 
-  var typeColors = {whale:'var(--accent2)',fund:'var(--purple)',mm:'var(--yellow)',protocol:'var(--green)',insider:'var(--red)',copyable:'var(--blue, #60a5fa)'};
-  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable'};
+  var typeColors = {whale:'var(--accent2)',fund:'var(--purple)',mm:'var(--yellow)',protocol:'var(--green)',insider:'var(--red)',copyable:'var(--blue, #60a5fa)',degen:'#f97316'};
+  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable',degen:'Degen'};
 
   var html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
   html += '<tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">';
@@ -8088,7 +8145,7 @@ function etShowDetail(id) {
   if (!detailEl) return;
   detailEl.style.display = '';
 
-  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable'};
+  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable',degen:'Degen'};
   var html = '<div class="card" style="padding:20px;">';
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
   html += '<div><h3 style="margin:0;font-size:16px;">'+esc(entity.name)+'</h3>';
@@ -8178,13 +8235,13 @@ function etAddEntity() {
 function etEdit(id) {
   var entity = etEntities.find(function(e) { return e.id === id; });
   if (!entity) return;
-  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable'};
+  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable',degen:'Degen'};
   var html = '<h2>Edit Entity</h2>';
   html += '<div class="form-group"><label>Name / Label</label><input type="text" id="et-edit-name" value="'+esc(entity.name)+'"></div>';
   html += '<div class="form-group"><label>Address</label><input type="text" value="'+entity.address+'" disabled style="font-family:monospace;opacity:0.6;"></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
   html += '<div class="form-group"><label>Type</label><select id="et-edit-type">';
-  ['whale','fund','mm','protocol','insider','copyable'].forEach(function(t) { html += '<option value="'+t+'"'+(entity.type===t?' selected':'')+'>'+typeLabels[t]+'</option>'; });
+  ['whale','fund','mm','protocol','insider','copyable','degen'].forEach(function(t) { html += '<option value="'+t+'"'+(entity.type===t?' selected':'')+'>'+typeLabels[t]+'</option>'; });
   html += '</select></div>';
   html += '<div class="form-group"><label>Grade</label><select id="et-edit-grade">';
   ['A+','A','B+','B','C'].forEach(function(g) { html += '<option value="'+g+'"'+(entity.grade===g?' selected':'')+'>'+g+'</option>'; });
@@ -9193,12 +9250,256 @@ function ocShowDivision(div) {
 }
 
 function hlShowTab(tab) {
-  ['scanner','whales','saved','perps'].forEach(t => {
+  ['scanner','whales','saved','perps','hunter'].forEach(t => {
     document.getElementById('hl-panel-' + t).style.display = t === tab ? '' : 'none';
     document.getElementById('hl-tab-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'saved') hlRenderSaved();
   if (tab === 'perps' && Array.isArray(hlPerpsData) && !hlPerpsData.length) hlLoadPerps();
+}
+
+// ===== WALLET HUNTER =====
+var hlHunterResults = [];
+var hlHunterRunning = false;
+
+async function hlWalletHunt() {
+  if (hlHunterRunning) return;
+  hlHunterRunning = true;
+  var btn = document.getElementById('hunter-start-btn');
+  btn.disabled = true; btn.textContent = 'Hunting...';
+  var progress = document.getElementById('hunter-progress');
+  progress.style.display = '';
+  var results = document.getElementById('hunter-results');
+  results.innerHTML = '';
+
+  var minAcct = parseInt(document.getElementById('hunter-min-acct').value) || 100000;
+  var scanCount = parseInt(document.getElementById('hunter-scan-count').value) || 50;
+  var minQuality = parseInt(document.getElementById('hunter-min-quality').value) || 0;
+
+  try {
+    // Step 1: Fetch leaderboard
+    hlHunterUpdateProgress('Fetching HL leaderboard...', 0);
+    var lbResp = await fetch('https://stats-data.hyperliquid.xyz/Mainnet/leaderboard');
+    var lbData = await lbResp.json();
+    var candidates = (lbData.leaderboardRows || [])
+      .map(function(r) { return { addr: r.ethAddress, acctVal: parseFloat(r.accountValue || 0), displayName: r.displayName || '' }; })
+      .filter(function(r) { return r.acctVal >= minAcct; })
+      .sort(function(a,b) { return b.acctVal - a.acctVal; })
+      .slice(0, scanCount);
+
+    hlHunterUpdateProgress('Found ' + candidates.length + ' candidates. Scanning...', 5);
+
+    // Step 2: Scan each wallet — state + fills + score
+    hlHunterResults = [];
+    var alreadyTracked = (typeof etEntities !== 'undefined') ? etEntities.map(function(e) { return (e.address||'').toLowerCase(); }) : [];
+
+    for (var i = 0; i < candidates.length; i++) {
+      var c = candidates[i];
+      var pct = Math.round(5 + (i / candidates.length) * 90);
+      hlHunterUpdateProgress('Scanning ' + (i+1) + '/' + candidates.length + ' — ' + c.addr.slice(0,8) + '...', pct);
+
+      try {
+        var state = await hlPost({ type:'clearinghouseState', user: c.addr });
+        var fills = await hlPost({ type:'userFills', user: c.addr });
+        var quality = whaleScoreWallet(c.addr, state, fills);
+        var positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
+        var isTracked = alreadyTracked.indexOf(c.addr.toLowerCase()) >= 0;
+
+        hlHunterResults.push({
+          address: c.addr, displayName: c.displayName,
+          accountValue: quality.acctVal, quality: quality,
+          positionCount: positions.length,
+          topPositions: positions.sort(function(a,b) { return Math.abs(parseFloat(b.szi)*parseFloat(b.entryPx||0)) - Math.abs(parseFloat(a.szi)*parseFloat(a.entryPx||0)); }).slice(0,3),
+          isTracked: isTracked
+        });
+      } catch(e) { console.warn('Hunter scan error:', c.addr, e); }
+
+      // Rate limit: 200ms between wallets
+      if (i < candidates.length - 1) await new Promise(function(r) { setTimeout(r, 200); });
+    }
+
+    // Step 3: Filter by min quality and sort
+    hlHunterResults = hlHunterResults.filter(function(r) { return r.quality.qualityScore >= minQuality; });
+    hlHunterResults.sort(function(a,b) { return b.quality.qualityScore - a.quality.qualityScore; });
+
+    hlHunterUpdateProgress('Hunt complete! Found ' + hlHunterResults.length + ' quality wallets.', 100);
+    hlHunterRender();
+
+  } catch(e) {
+    results.innerHTML = '<div class="card" style="padding:30px;text-align:center;color:var(--red);">Hunt failed: ' + esc(e.message) + '</div>';
+  }
+
+  hlHunterRunning = false;
+  btn.disabled = false; btn.textContent = '\uD83C\uDFAF Start Hunt';
+}
+
+function hlHunterUpdateProgress(text, pct) {
+  var el = document.getElementById('hunter-status-text');
+  var bar = document.getElementById('hunter-progress-bar');
+  var pctEl = document.getElementById('hunter-progress-pct');
+  if (el) el.textContent = text;
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+function hlHunterRender() {
+  var container = document.getElementById('hunter-results');
+  if (!hlHunterResults.length) {
+    container.innerHTML = '<div class="card" style="padding:30px;text-align:center;color:var(--text3);">No wallets found matching your criteria. Try lowering the minimum quality score.</div>';
+    return;
+  }
+
+  var html = '';
+  var typeColors = {whale:'var(--accent2)',fund:'var(--purple)',mm:'var(--yellow)',protocol:'var(--green)',insider:'var(--red)',copyable:'var(--blue, #60a5fa)',degen:'#f97316'};
+  var typeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable',degen:'Degen'};
+
+  // Summary stats
+  var typeCounts = {}, gradeCounts = {};
+  var totalUntracked = 0;
+  hlHunterResults.forEach(function(r) {
+    var t = r.quality.type; typeCounts[t] = (typeCounts[t]||0) + 1;
+    var g = r.quality.grade; gradeCounts[g] = (gradeCounts[g]||0) + 1;
+    if (!r.isTracked) totalUntracked++;
+  });
+
+  html += '<div class="card" style="padding:16px;margin-bottom:16px;">';
+  html += '<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">';
+  html += '<div><span style="font-size:11px;color:var(--text3);">Total Found</span><br><span style="font-size:20px;font-weight:800;">' + hlHunterResults.length + '</span></div>';
+  html += '<div><span style="font-size:11px;color:var(--text3);">Untracked</span><br><span style="font-size:20px;font-weight:800;color:var(--accent2);">' + totalUntracked + '</span></div>';
+  // Grade breakdown
+  html += '<div style="display:flex;gap:8px;">';
+  ['A+','A','B+','B','C'].forEach(function(g) {
+    if (gradeCounts[g]) {
+      var gc = g==='A+'||g==='A' ? 'var(--green)' : g==='B+' ? 'var(--yellow)' : 'var(--text3)';
+      html += '<span style="padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:color-mix(in srgb, '+gc+' 15%, transparent);color:'+gc+';">' + g + ': ' + gradeCounts[g] + '</span>';
+    }
+  });
+  html += '</div>';
+  // Type breakdown
+  html += '<div style="display:flex;gap:6px;">';
+  Object.keys(typeCounts).forEach(function(t) {
+    html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:color-mix(in srgb, '+(typeColors[t]||'var(--text3)')+' 15%, transparent);color:'+(typeColors[t]||'var(--text3)')+';">'+(typeLabels[t]||t)+': '+typeCounts[t]+'</span>';
+  });
+  html += '</div>';
+  // Bulk import buttons
+  if (totalUntracked > 0) {
+    html += '<div style="margin-left:auto;display:flex;gap:8px;">';
+    var aPlus = hlHunterResults.filter(function(r){return !r.isTracked && (r.quality.grade==='A+'||r.quality.grade==='A');}).length;
+    if (aPlus > 0) html += '<button class="btn btn-primary btn-sm admin-only" onclick="hlHunterBulkImport(\'A\')">Import A+/A (' + aPlus + ')</button>';
+    html += '<button class="btn btn-ghost btn-sm admin-only" onclick="hlHunterBulkImport(\'all\')">Import All (' + totalUntracked + ')</button>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+
+  // Results table
+  html += '<div class="card" style="padding:18px;">';
+  html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+  html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">Address</th><th style="padding:8px;text-align:center;color:var(--text3);">Quality</th><th style="padding:8px;text-align:center;color:var(--text3);">Type</th><th style="padding:8px;text-align:center;color:var(--text3);">Win Rate</th><th style="padding:8px;text-align:right;color:var(--text3);">Closed PnL</th><th style="padding:8px;text-align:right;color:var(--text3);">Trades/Day</th><th style="padding:8px;text-align:right;color:var(--text3);">Acct Value</th><th style="padding:8px;text-align:center;color:var(--text3);">Positions</th><th style="padding:8px;text-align:center;color:var(--text3);">Status</th></tr>';
+
+  hlHunterResults.forEach(function(r, idx) {
+    var q = r.quality;
+    var qColor = q.qualityScore >= 65 ? 'var(--green)' : q.qualityScore >= 40 ? 'var(--yellow)' : 'var(--red)';
+    var tColor = typeColors[q.type] || 'var(--text3)';
+
+    html += '<tr style="border-bottom:1px solid var(--border);' + (r.isTracked ? 'opacity:0.5;' : '') + '">';
+    // Address
+    html += '<td style="padding:8px;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(r.address) + '\')" style="color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2);font-family:monospace;font-size:11px;">' + hlAddr(r.address) + '</a>';
+    if (r.displayName) html += '<br><span style="font-size:10px;color:var(--text3);">' + esc(r.displayName) + '</span>';
+    html += '</td>';
+    // Quality
+    html += '<td style="padding:8px;text-align:center;"><span style="display:inline-block;min-width:44px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:color-mix(in srgb, '+qColor+' 15%, transparent);color:'+qColor+';">' + q.grade + ' (' + q.qualityScore + ')</span></td>';
+    // Type
+    html += '<td style="padding:8px;text-align:center;"><span style="font-size:10px;padding:2px 6px;border-radius:4px;background:color-mix(in srgb, '+tColor+' 15%, transparent);color:'+tColor+';">'+(typeLabels[q.type]||q.type)+'</span></td>';
+    // Win rate
+    html += '<td style="padding:8px;text-align:center;font-weight:600;color:' + (q.winRate >= 50 ? 'var(--green)' : 'var(--red)') + ';">' + q.winRate + '%<br><span style="font-size:10px;font-weight:400;color:var(--text3);">' + q.wins + 'W/' + q.losses + 'L</span></td>';
+    // Closed PnL
+    html += '<td style="padding:8px;text-align:right;font-weight:600;color:' + (q.totalClosedPnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (q.totalClosedPnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(q.totalClosedPnl)) + '</td>';
+    // Trades/day
+    html += '<td style="padding:8px;text-align:right;">' + q.tradesPerDay + '<br><span style="font-size:10px;color:var(--text3);">' + q.totalTrades + ' total</span></td>';
+    // Account value
+    html += '<td style="padding:8px;text-align:right;font-weight:600;">$' + dexFmt(r.accountValue) + '</td>';
+    // Top positions
+    html += '<td style="padding:8px;text-align:center;font-size:10px;">';
+    if (r.topPositions.length > 0) {
+      r.topPositions.forEach(function(p) {
+        var sz = parseFloat(p.szi);
+        var side = sz > 0 ? 'L' : 'S';
+        var sideColor = sz > 0 ? 'var(--green)' : 'var(--red)';
+        html += '<span style="color:'+sideColor+';font-weight:600;">' + side + '</span> ' + esc(p.coin) + ' ';
+      });
+    } else { html += '--'; }
+    html += '</td>';
+    // Status / Action
+    html += '<td style="padding:8px;text-align:center;">';
+    if (r.isTracked) {
+      html += '<span style="font-size:10px;padding:2px 6px;background:rgba(99,102,241,0.12);color:var(--accent2);border-radius:4px;">TRACKED</span>';
+    } else {
+      html += '<button class="btn btn-sm btn-ghost admin-only" onclick="hlHunterTrack(' + idx + ')" style="font-size:10px;padding:2px 8px;">+ Track</button>';
+    }
+    html += '</td></tr>';
+  });
+  html += '</table></div></div>';
+
+  container.innerHTML = html;
+  updateAdminUI();
+}
+
+function hlHunterTrack(idx) {
+  var r = hlHunterResults[idx];
+  if (!r || r.isTracked) return;
+  var q = r.quality;
+  var typeLabelsMap = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',insider:'Insider',copyable:'Copyable',degen:'Degen'};
+  var suggestedName = (typeLabelsMap[q.type] || 'Whale') + ' ' + r.address.slice(0,6);
+  if (r.displayName) suggestedName = r.displayName;
+  var label = prompt('Name this entity:', suggestedName);
+  if (!label) return;
+  if (typeof etEntities === 'undefined') return;
+  var exists = etEntities.find(function(e) { return e.address && e.address.toLowerCase() === r.address.toLowerCase(); });
+  if (exists) { alert('Already tracked!'); return; }
+  etEntities.push({
+    id: 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    name: label, address: r.address, type: q.type, grade: q.grade,
+    venues: ['hyperliquid'],
+    notes: 'Hunter Q' + q.qualityScore + ' | WR ' + q.winRate + '% | ' + q.tradesPerDay + ' trades/day | PnL $' + dexFmt(Math.abs(q.totalClosedPnl)),
+    addedAt: new Date().toISOString(), lastScan: null,
+    accountValue: r.accountValue, positions: [], positionCount: r.positionCount, totalPnl: q.totalClosedPnl
+  });
+  etSave();
+  r.isTracked = true;
+  hlHunterRender();
+}
+
+function hlHunterBulkImport(mode) {
+  if (typeof etEntities === 'undefined') return;
+  var typeLabelsMap = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',insider:'Insider',copyable:'Copyable',degen:'Degen'};
+  var toImport = hlHunterResults.filter(function(r) {
+    if (r.isTracked) return false;
+    if (mode === 'A') return r.quality.grade === 'A+' || r.quality.grade === 'A';
+    return true;
+  });
+  if (!toImport.length) { alert('No wallets to import.'); return; }
+  if (!confirm('Import ' + toImport.length + ' wallets into Entity Tracker?')) return;
+
+  var imported = 0;
+  toImport.forEach(function(r) {
+    var exists = etEntities.find(function(e) { return e.address && e.address.toLowerCase() === r.address.toLowerCase(); });
+    if (exists) return;
+    var q = r.quality;
+    etEntities.push({
+      id: 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      name: (r.displayName || (typeLabelsMap[q.type]||'Whale') + ' ' + r.address.slice(0,6)),
+      address: r.address, type: q.type, grade: q.grade,
+      venues: ['hyperliquid'],
+      notes: 'Hunter Q' + q.qualityScore + ' | WR ' + q.winRate + '% | ' + q.tradesPerDay + ' trades/day',
+      addedAt: new Date().toISOString(), lastScan: null,
+      accountValue: r.accountValue, positions: [], positionCount: r.positionCount, totalPnl: q.totalClosedPnl
+    });
+    r.isTracked = true;
+    imported++;
+  });
+  etSave();
+  hlHunterRender();
+  alert('Imported ' + imported + ' entities!');
 }
 
 async function hlPost(body) {
@@ -10320,6 +10621,8 @@ async function tiScan() {
       .sort(function(a,b) { return b.acctVal - a.acctVal; })
       .slice(0, 30);
 
+    // Pass 1: Find which whales hold the ticker
+    var matchedWhales = [];
     for (var w = 0; w < topWallets.length; w++) {
       document.getElementById('ti-status').textContent = 'Scanning whale ' + (w+1) + '/' + topWallets.length + ' for ' + ticker + '...';
       try {
@@ -10327,20 +10630,31 @@ async function tiScan() {
         var wPos = (wState.assetPositions || []).map(function(p) { return p.position; });
         var match = wPos.find(function(p) { return p.coin && p.coin.toUpperCase() === ticker && parseFloat(p.szi) !== 0; });
         if (match) {
-          var szi = parseFloat(match.szi);
-          var ep = parseFloat(match.entryPx || 0);
-          // Check if already in our entity list
-          var isTracked = results.entities.find(function(e) { return e.address === topWallets[w].addr; });
-          discoveredWhales.push({
-            address: topWallets[w].addr, accountValue: topWallets[w].acctVal,
-            side: szi > 0 ? 'LONG' : 'SHORT', size: szi, notional: Math.abs(szi) * ep,
-            entryPx: ep, pnl: parseFloat(match.unrealizedPnl || 0),
-            leverage: parseFloat(match.leverage?.value || match.leverage || 0),
-            isTracked: !!isTracked
-          });
+          matchedWhales.push({ addr: topWallets[w].addr, state: wState, match: match, acctVal: topWallets[w].acctVal });
         }
       } catch(e) {}
       if (w < topWallets.length - 1) await new Promise(function(r) { setTimeout(r, 150); });
+    }
+    // Pass 2: Fetch fills + score matched whales
+    for (var m = 0; m < matchedWhales.length; m++) {
+      var mw = matchedWhales[m];
+      document.getElementById('ti-status').textContent = 'Scoring whale ' + (m+1) + '/' + matchedWhales.length + '...';
+      var quality = null;
+      try {
+        var wFills = await hlPost({ type:'userFills', user: mw.addr });
+        quality = whaleScoreWallet(mw.addr, mw.state, wFills);
+      } catch(e) { console.warn('Fill fetch error for', mw.addr, e); }
+      var szi = parseFloat(mw.match.szi);
+      var ep = parseFloat(mw.match.entryPx || 0);
+      var isTracked = results.entities.find(function(e) { return e.address === mw.addr; });
+      discoveredWhales.push({
+        address: mw.addr, accountValue: mw.acctVal,
+        side: szi > 0 ? 'LONG' : 'SHORT', size: szi, notional: Math.abs(szi) * ep,
+        entryPx: ep, pnl: parseFloat(mw.match.unrealizedPnl || 0),
+        leverage: parseFloat(mw.match.leverage?.value || mw.match.leverage || 0),
+        isTracked: !!isTracked, quality: quality
+      });
+      if (m < matchedWhales.length - 1) await new Promise(function(r) { setTimeout(r, 150); });
     }
   } catch(e) { console.warn('Leaderboard error:', e); results._errors.push('Whale Discovery: ' + e.message); }
 
@@ -10433,24 +10747,47 @@ function tiRender(r, whales) {
   // === SECTION: Discovered Whales (from leaderboard) ===
   var newWhales = whales.filter(function(w) { return !w.isTracked; });
   if (newWhales.length > 0) {
-    newWhales.sort(function(a,b) { return b.notional - a.notional; });
+    // Sort by quality score (best first), fallback to notional
+    newWhales.sort(function(a,b) { return ((b.quality?b.quality.qualityScore:0) - (a.quality?a.quality.qualityScore:0)) || b.notional - a.notional; });
     html += '<div class="card" style="padding:18px;margin-bottom:16px;">';
-    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128011; Discovered Whales — Not Yet Tracked (' + newWhales.length + ')</h3>';
-    html += '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Top HL leaderboard wallets holding ' + esc(r.ticker) + '. Add to Entity Tracker to monitor them.</div>';
+    html += '<h3 style="margin:0 0 12px;font-size:14px;color:var(--text2);">&#128011; Discovered Whales — Scored & Classified (' + newWhales.length + ')</h3>';
+    html += '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Top HL leaderboard wallets holding ' + esc(r.ticker) + ', auto-scored by trade history. Higher Q = better edge.</div>';
     html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
-    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">Address</th><th style="padding:8px;text-align:center;color:var(--text3);">Side</th><th style="padding:8px;text-align:right;color:var(--text3);">Size</th><th style="padding:8px;text-align:right;color:var(--text3);">Entry</th><th style="padding:8px;text-align:right;color:var(--text3);">Lev</th><th style="padding:8px;text-align:right;color:var(--text3);">uPnL</th><th style="padding:8px;text-align:right;color:var(--text3);">Acct Value</th><th style="padding:8px;text-align:center;color:var(--text3);">Action</th></tr>';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:8px;text-align:left;color:var(--text3);">Address</th><th style="padding:8px;text-align:center;color:var(--text3);">Quality</th><th style="padding:8px;text-align:center;color:var(--text3);">Type</th><th style="padding:8px;text-align:center;color:var(--text3);">Win Rate</th><th style="padding:8px;text-align:center;color:var(--text3);">Side</th><th style="padding:8px;text-align:right;color:var(--text3);">Size</th><th style="padding:8px;text-align:right;color:var(--text3);">uPnL</th><th style="padding:8px;text-align:right;color:var(--text3);">Acct Value</th><th style="padding:8px;text-align:center;color:var(--text3);">Action</th></tr>';
+    var _whaleQualityMap = {};
     newWhales.forEach(function(w) {
+      var q = w.quality;
+      var qScore = q ? q.qualityScore : 0;
+      var qColor = qScore >= 65 ? 'var(--green)' : qScore >= 40 ? 'var(--yellow)' : 'var(--red)';
+      var qGrade = q ? q.grade : '?';
+      var qType = q ? q.type : 'whale';
+      var qTypeColors = {whale:'var(--accent2)',fund:'var(--purple)',mm:'var(--yellow)',protocol:'var(--green)',insider:'var(--red)',copyable:'var(--blue, #60a5fa)',degen:'#f97316'};
+      var qTypeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable',degen:'Degen'};
+      _whaleQualityMap[w.address] = q;
       html += '<tr style="border-bottom:1px solid var(--border);">';
       html += '<td style="padding:8px;font-family:monospace;font-size:11px;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(w.address) + '\')" style="color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + hlAddr(w.address) + '</a></td>';
+      // Quality score badge
+      html += '<td style="padding:8px;text-align:center;"><span style="display:inline-block;min-width:44px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:color-mix(in srgb, ' + qColor + ' 15%, transparent);color:' + qColor + ';">' + qGrade + ' (' + qScore + ')</span></td>';
+      // Type
+      html += '<td style="padding:8px;text-align:center;"><span style="font-size:10px;padding:2px 6px;border-radius:4px;background:color-mix(in srgb, ' + (qTypeColors[qType]||'var(--text3)') + ' 15%, transparent);color:' + (qTypeColors[qType]||'var(--text3)') + ';">' + (qTypeLabels[qType]||qType) + '</span></td>';
+      // Win rate
+      html += '<td style="padding:8px;text-align:center;font-weight:600;color:' + (q && q.winRate >= 50 ? 'var(--green)' : 'var(--red)') + ';">' + (q ? q.winRate + '%' : '--') + '</td>';
       html += '<td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + (w.side==='LONG'?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)') + ';color:' + (w.side==='LONG'?'var(--green)':'var(--red)') + ';">' + w.side + '</span></td>';
       html += '<td style="padding:8px;text-align:right;color:var(--text);font-weight:600;">$' + dexFmt(w.notional) + '</td>';
-      html += '<td style="padding:8px;text-align:right;color:var(--text);font-family:monospace;">$' + w.entryPx.toFixed(2) + '</td>';
-      html += '<td style="padding:8px;text-align:right;color:var(--text);">' + (w.leverage > 0 ? w.leverage.toFixed(1) + 'x' : '--') + '</td>';
       html += '<td style="padding:8px;text-align:right;font-weight:600;color:' + (w.pnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (w.pnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(w.pnl)) + '</td>';
       html += '<td style="padding:8px;text-align:right;color:var(--text2);">$' + dexFmt(w.accountValue) + '</td>';
-      html += '<td style="padding:8px;text-align:center;"><button class="btn btn-sm btn-ghost admin-only" onclick="tiAddEntity(\'' + esc(w.address) + '\',' + w.accountValue + ')" style="font-size:10px;padding:2px 8px;">+ Track</button></td>';
+      html += '<td style="padding:8px;text-align:center;"><button class="btn btn-sm btn-ghost admin-only" onclick="tiAddEntity(\'' + esc(w.address) + '\',' + w.accountValue + ',_whaleQualityMap[\'' + esc(w.address) + '\'])" style="font-size:10px;padding:2px 8px;">+ Track</button></td>';
       html += '</tr>';
+      // Quality details row
+      if (q && !q.insufficientData) {
+        html += '<tr style="border-bottom:1px solid var(--border);background:var(--bg2);"><td colspan="9" style="padding:4px 8px 6px 28px;font-size:10px;color:var(--text3);">';
+        html += 'Trades: ' + q.totalTrades + ' | PnL: <span style="color:' + (q.totalClosedPnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (q.totalClosedPnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(q.totalClosedPnl)) + '</span>';
+        html += ' | Avg: $' + dexFmt(Math.abs(q.avgPnl)) + '/trade | ' + q.tradesPerDay + ' trades/day | Lev: ' + q.avgLeverage + 'x';
+        html += '</td></tr>';
+      }
     });
+    // Store quality map on window for Track button access
+    window._whaleQualityMap = _whaleQualityMap;
     html += '</table></div></div>';
   }
 
@@ -10702,21 +11039,117 @@ function tiRender(r, whales) {
   updateAdminUI();
 }
 
-function tiAddEntity(address, acctVal) {
+// ===== WHALE QUALITY SCORING ENGINE =====
+function whaleScoreWallet(addr, state, fills) {
+  var mg = state.marginSummary || {};
+  var acctVal = parseFloat(mg.accountValue || 0);
+  var positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
+
+  // Trade stats from fills
+  var wins = 0, losses = 0, totalClosedPnl = 0, pnlValues = [];
+  var firstTime = null, lastTime = null, totalLev = 0, levCount = 0;
+  (fills || []).forEach(function(f) {
+    var pnl = parseFloat(f.closedPnl || 0);
+    if (pnl > 0) { wins++; pnlValues.push(pnl); }
+    else if (pnl < 0) { losses++; pnlValues.push(pnl); }
+    totalClosedPnl += pnl;
+    var t = new Date(f.time).getTime();
+    if (!firstTime || t < firstTime) firstTime = t;
+    if (!lastTime || t > lastTime) lastTime = t;
+  });
+
+  // Avg leverage from open positions
+  positions.forEach(function(p) {
+    var lv = parseFloat(p.leverage?.value || p.leverage || 0);
+    if (lv > 0) { totalLev += lv; levCount++; }
+  });
+
+  var totalTrades = wins + losses;
+  var winRate = totalTrades > 0 ? (wins / totalTrades * 100) : 0;
+  var avgPnl = totalTrades > 0 ? totalClosedPnl / totalTrades : 0;
+  var avgLeverage = levCount > 0 ? totalLev / levCount : 0;
+
+  // Trades per day
+  var daySpan = (firstTime && lastTime && lastTime > firstTime) ? (lastTime - firstTime) / 86400000 : 1;
+  if (daySpan < 1) daySpan = 1;
+  var tradesPerDay = (fills || []).length / daySpan;
+
+  // Consistency: coefficient of variation of PnL (lower = more consistent)
+  var consistency = 0;
+  if (pnlValues.length >= 5) {
+    var mean = pnlValues.reduce(function(a,b){return a+b;},0) / pnlValues.length;
+    var variance = pnlValues.reduce(function(a,v){return a + (v-mean)*(v-mean);},0) / pnlValues.length;
+    var stddev = Math.sqrt(variance);
+    // Normalize: low CV = high consistency. Cap at 1.0
+    consistency = mean !== 0 ? Math.max(0, Math.min(1, 1 - Math.abs(stddev / mean) * 0.3)) : 0;
+  }
+
+  // === AUTO-CLASSIFICATION ===
+  var type = 'whale'; // default
+  if (totalTrades >= 10) {
+    if (tradesPerDay > 50 && Math.abs(avgPnl) < acctVal * 0.001) {
+      type = 'mm'; // Market maker: high frequency, tiny avg PnL relative to account
+    } else if (acctVal >= 1000000 && tradesPerDay < 5 && winRate > 55) {
+      type = 'fund'; // Fund: large account, low frequency, decent win rate
+    } else if (winRate > 70 && avgPnl > 0 && tradesPerDay < 10) {
+      type = 'insider'; // Insider: very high win rate, profitable, not hyperactive
+    } else if (winRate > 55 && tradesPerDay >= 2 && tradesPerDay <= 30 && consistency > 0.3) {
+      type = 'copyable'; // Copyable: good win rate, reasonable frequency, consistent
+    } else if (avgLeverage > 10 && winRate < 45) {
+      type = 'degen'; // Degen: high leverage, low win rate
+    }
+  }
+
+  // === QUALITY SCORE (0-100) ===
+  var wrScore = Math.min(winRate, 100); // 0-100
+  var consistencyScore = consistency * 100; // 0-100
+  var pnlScore = totalClosedPnl > 0 ? Math.min(100, Math.log10(totalClosedPnl + 1) * 20) : 0;
+  var freqScore = tradesPerDay >= 1 && tradesPerDay <= 50 ? 80 : tradesPerDay > 50 ? 40 : tradesPerDay * 80;
+  var dataScore = totalTrades >= 50 ? 100 : totalTrades >= 20 ? 70 : totalTrades >= 10 ? 40 : 10; // penalize low sample
+
+  var qualityScore = Math.round(
+    wrScore * 0.30 + consistencyScore * 0.20 + pnlScore * 0.20 + freqScore * 0.10 + dataScore * 0.20
+  );
+  if (totalTrades < 5) qualityScore = Math.min(qualityScore, 20); // cap if insufficient data
+
+  // Grade from score
+  var grade = qualityScore >= 80 ? 'A+' : qualityScore >= 65 ? 'A' : qualityScore >= 50 ? 'B+' : qualityScore >= 35 ? 'B' : 'C';
+
+  return {
+    qualityScore: qualityScore, grade: grade, type: type,
+    winRate: parseFloat(winRate.toFixed(1)), avgPnl: avgPnl,
+    consistency: consistency, tradesPerDay: parseFloat(tradesPerDay.toFixed(1)),
+    avgLeverage: parseFloat(avgLeverage.toFixed(1)),
+    totalTrades: totalTrades, totalClosedPnl: totalClosedPnl,
+    wins: wins, losses: losses, acctVal: acctVal,
+    insufficientData: totalTrades < 10
+  };
+}
+
+function tiAddEntity(address, acctVal, qualityData) {
   if (typeof etEntities === 'undefined') return;
   var exists = etEntities.find(function(e) { return e.address === address; });
   if (exists) { alert('Already tracking this entity'); return; }
-  var label = prompt('Name this entity (e.g. "Whale #12", "Unknown Fund"):');
+  // If quality data from window map
+  if (!qualityData && window._whaleQualityMap) qualityData = window._whaleQualityMap[address];
+  var typeLabelsMap = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',insider:'Insider',copyable:'Copyable',degen:'Degen'};
+  var suggestedName = qualityData ? (typeLabelsMap[qualityData.type] || 'Whale') + ' ' + address.slice(0,6) : '';
+  var label = prompt('Name this entity:', suggestedName);
   if (!label) return;
+  var type = qualityData ? qualityData.type : 'whale';
+  var grade = qualityData ? qualityData.grade : '?';
+  var notes = qualityData
+    ? 'Auto-scored Q' + qualityData.qualityScore + ' | WR ' + qualityData.winRate + '% | ' + qualityData.tradesPerDay + ' trades/day | PnL $' + dexFmt(Math.abs(qualityData.totalClosedPnl))
+    : 'Discovered via Token Intel scan';
   etEntities.push({
     id: 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-    name: label, address: address, type: 'whale', grade: '?',
-    venues: ['hyperliquid'], notes: 'Discovered via Token Intel scan',
+    name: label, address: address, type: type, grade: grade,
+    venues: ['hyperliquid'], notes: notes,
     addedAt: new Date().toISOString(), lastScan: null,
     accountValue: acctVal, positions: [], positionCount: 0, totalPnl: 0
   });
   etSave();
-  alert(label + ' added to Entity Tracker!');
+  alert(label + ' added as ' + grade + ' ' + (typeLabelsMap[type]||type) + '!');
 }
 
 async function tiOpenWallet(addr) {
