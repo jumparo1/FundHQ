@@ -9601,8 +9601,13 @@ function hlRenderWalletProfile(addr, state, fills) {
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">';
   html += '<div><span style="font-family:monospace;font-size:15px;color:var(--accent);">'+addr+'</span>';
   html += ' <a href="https://app.hyperliquid.xyz/explorer/address/'+addr+'" target="_blank" style="font-size:11px;color:var(--text3);">Explorer &#8599;</a></div>';
+  var isTracked = typeof etEntities !== 'undefined' && etEntities.find(function(e) { return e.address && e.address.toLowerCase() === addr.toLowerCase(); });
+  // Run quality scoring
+  var walletQuality = whaleScoreWallet(addr, state, fills);
   html += '<div style="display:flex;gap:8px;">';
   html += '<button class="btn btn-sm '+(isSaved?'btn-ghost':'btn-primary')+'" onclick="hlToggleSave(\''+addr+'\','+acctVal+')">'+(isSaved?'&#10003; Saved':'&#128190; Save Wallet')+'</button>';
+  if (!isTracked) html += '<button class="btn btn-sm btn-primary admin-only" onclick="tiAddEntity(\''+addr+'\','+acctVal+')">&#128373; Track Entity</button>';
+  else html += '<span style="font-size:10px;padding:4px 8px;background:rgba(99,102,241,0.12);color:var(--accent2);border-radius:4px;display:flex;align-items:center;">TRACKED: ' + esc(isTracked.name) + '</span>';
   html += '</div></div>';
 
   // Stats row
@@ -9613,6 +9618,16 @@ function hlRenderWalletProfile(addr, state, fills) {
   html += hlStatCard('Win Rate', wr === 'N/A' ? wr : wr+'%', parseFloat(wr) >= 50 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)');
   html += hlStatCard('Wins / Losses', wins+' / '+losses, 'var(--text2)');
   html += hlStatCard('Total Trades', fills.length, 'var(--text2)');
+  html += '</div>';
+  // Quality scoring card
+  var qColor = walletQuality.qualityScore >= 65 ? 'var(--green)' : walletQuality.qualityScore >= 40 ? 'var(--yellow)' : 'var(--red)';
+  var qTypeColors = {whale:'var(--accent2)',fund:'var(--purple)',mm:'var(--yellow)',protocol:'var(--green)',insider:'var(--red)',copyable:'var(--blue, #60a5fa)',degen:'#f97316'};
+  var qTypeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable',degen:'Degen'};
+  html += '<div style="display:flex;gap:12px;align-items:center;margin-top:12px;padding:10px 14px;background:var(--bg2);border-radius:8px;flex-wrap:wrap;">';
+  html += '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;">Quality Score</div>';
+  html += '<span style="padding:3px 10px;border-radius:4px;font-size:13px;font-weight:700;background:color-mix(in srgb, '+qColor+' 15%, transparent);color:'+qColor+';">'+walletQuality.grade+' ('+walletQuality.qualityScore+')</span>';
+  html += '<span style="padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;background:color-mix(in srgb, '+(qTypeColors[walletQuality.type]||'var(--text3)')+' 15%, transparent);color:'+(qTypeColors[walletQuality.type]||'var(--text3)')+';">'+(qTypeLabels[walletQuality.type]||walletQuality.type)+'</span>';
+  html += '<span style="font-size:11px;color:var(--text3);">'+walletQuality.tradesPerDay+' trades/day | Consistency: '+(walletQuality.consistency*100).toFixed(0)+'% | Avg Lev: '+walletQuality.avgLeverage+'x</span>';
   html += '</div>';
   html += '</div>';
 
@@ -10724,23 +10739,24 @@ async function tiScan() {
     var lbData = await lbResp.json();
     var topWallets = (lbData.leaderboardRows || [])
       .map(function(r) { return { addr: r.ethAddress, acctVal: parseFloat(r.accountValue || 0) }; })
-      .filter(function(r) { return r.acctVal >= 100000; })
+      .filter(function(r) { return r.acctVal >= 10000; })
       .sort(function(a,b) { return b.acctVal - a.acctVal; })
-      .slice(0, 30);
+      .slice(0, 500);
 
-    // Pass 1: Find which whales hold the ticker
+    // Pass 1: Find which whales hold the ticker (batch 5 concurrent for speed)
     var matchedWhales = [];
-    for (var w = 0; w < topWallets.length; w++) {
-      document.getElementById('ti-status').textContent = 'Scanning whale ' + (w+1) + '/' + topWallets.length + ' for ' + ticker + '...';
-      try {
-        var wState = await hlPost({ type:'clearinghouseState', user: topWallets[w].addr });
-        var wPos = (wState.assetPositions || []).map(function(p) { return p.position; });
-        var match = wPos.find(function(p) { return p.coin && p.coin.toUpperCase() === ticker && parseFloat(p.szi) !== 0; });
-        if (match) {
-          matchedWhales.push({ addr: topWallets[w].addr, state: wState, match: match, acctVal: topWallets[w].acctVal });
-        }
-      } catch(e) {}
-      if (w < topWallets.length - 1) await new Promise(function(r) { setTimeout(r, 150); });
+    for (var w = 0; w < topWallets.length; w += 5) {
+      var batch = topWallets.slice(w, w + 5);
+      document.getElementById('ti-status').textContent = 'Scanning wallets ' + (w+1) + '-' + Math.min(w+5, topWallets.length) + '/' + topWallets.length + ' for ' + ticker + '...';
+      var batchPromises = batch.map(function(wallet) {
+        return hlPost({ type:'clearinghouseState', user: wallet.addr }).then(function(wState) {
+          var wPos = (wState.assetPositions || []).map(function(p) { return p.position; });
+          var match = wPos.find(function(p) { return p.coin && p.coin.toUpperCase() === ticker && parseFloat(p.szi) !== 0; });
+          if (match) matchedWhales.push({ addr: wallet.addr, state: wState, match: match, acctVal: wallet.acctVal });
+        }).catch(function(e) {});
+      });
+      await Promise.all(batchPromises);
+      if (w + 5 < topWallets.length) await new Promise(function(r) { setTimeout(r, 100); });
     }
     // Pass 2: Fetch fills + score matched whales
     for (var m = 0; m < matchedWhales.length; m++) {
@@ -10749,7 +10765,7 @@ async function tiScan() {
       var quality = null;
       try {
         var wFills = await hlPost({ type:'userFills', user: mw.addr });
-        quality = whaleScoreWallet(mw.addr, mw.state, wFills);
+        quality = whaleScoreWallet(mw.addr, mw.state, wFills, ticker);
       } catch(e) { console.warn('Fill fetch error for', mw.addr, e); }
       var szi = parseFloat(mw.match.szi);
       var ep = parseFloat(mw.match.entryPx || 0);
@@ -10918,6 +10934,12 @@ function tiRender(r, whales) {
       // Quality details row
       if (q && !q.insufficientData) {
         html += '<tr style="border-bottom:1px solid var(--border);background:var(--bg2);"><td colspan="9" style="padding:4px 8px 6px 28px;font-size:10px;color:var(--text3);">';
+        // Show coin-specific stats if available
+        if (q.coinStats && q.coinStats.trades > 0) {
+          var cs = q.coinStats;
+          html += '<strong style="color:var(--accent2);">' + esc(cs.coin) + ':</strong> ' + cs.trades + ' trades, WR <span style="color:' + (cs.winRate >= 50 ? 'var(--green)' : 'var(--red)') + ';">' + cs.winRate + '%</span>, PnL <span style="color:' + (cs.pnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (cs.pnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(cs.pnl)) + '</span>';
+          html += ' | <span style="color:var(--text3);">Overall:</span> ';
+        }
         html += 'Trades: ' + q.totalTrades + ' | PnL: <span style="color:' + (q.totalClosedPnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (q.totalClosedPnl >= 0 ? '+' : '') + '$' + dexFmt(Math.abs(q.totalClosedPnl)) + '</span>';
         html += ' | Avg: $' + dexFmt(Math.abs(q.avgPnl)) + '/trade | ' + q.tradesPerDay + ' trades/day | Lev: ' + q.avgLeverage + 'x';
         html += '</td></tr>';
@@ -11185,15 +11207,19 @@ function tiRender(r, whales) {
 }
 
 // ===== WHALE QUALITY SCORING ENGINE =====
-function whaleScoreWallet(addr, state, fills) {
+function whaleScoreWallet(addr, state, fills, coinFilter) {
   var mg = state.marginSummary || {};
   var acctVal = parseFloat(mg.accountValue || 0);
   var positions = (state.assetPositions || []).map(function(p) { return p.position; }).filter(function(p) { return parseFloat(p.szi) !== 0; });
 
-  // Trade stats from fills
+  // If coinFilter provided, compute coin-specific stats too
+  var coinFills = coinFilter ? (fills || []).filter(function(f) { return f.coin && f.coin.toUpperCase() === coinFilter.toUpperCase(); }) : null;
+
+  // Trade stats from fills (use coinFills if available for primary scoring, else all fills)
+  var scoringFills = coinFills && coinFills.length >= 3 ? coinFills : (fills || []);
   var wins = 0, losses = 0, totalClosedPnl = 0, pnlValues = [];
   var firstTime = null, lastTime = null, totalLev = 0, levCount = 0;
-  (fills || []).forEach(function(f) {
+  scoringFills.forEach(function(f) {
     var pnl = parseFloat(f.closedPnl || 0);
     if (pnl > 0) { wins++; pnlValues.push(pnl); }
     else if (pnl < 0) { losses++; pnlValues.push(pnl); }
@@ -11260,6 +11286,21 @@ function whaleScoreWallet(addr, state, fills) {
   // Grade from score
   var grade = qualityScore >= 80 ? 'A+' : qualityScore >= 65 ? 'A' : qualityScore >= 50 ? 'B+' : qualityScore >= 35 ? 'B' : 'C';
 
+  // Coin-specific stats (if filtered)
+  var coinStats = null;
+  if (coinFills && coinFills.length > 0) {
+    var cWins = 0, cLosses = 0, cPnl = 0;
+    coinFills.forEach(function(f) { var p = parseFloat(f.closedPnl||0); if(p>0) cWins++; else if(p<0) cLosses++; cPnl += p; });
+    var cTotal = cWins + cLosses;
+    coinStats = {
+      coin: coinFilter, fills: coinFills.length, trades: cTotal,
+      wins: cWins, losses: cLosses, pnl: cPnl,
+      winRate: cTotal > 0 ? parseFloat((cWins/cTotal*100).toFixed(1)) : 0,
+      avgPnl: cTotal > 0 ? cPnl / cTotal : 0,
+      usedForScoring: coinFills.length >= 3
+    };
+  }
+
   return {
     qualityScore: qualityScore, grade: grade, type: type,
     winRate: parseFloat(winRate.toFixed(1)), avgPnl: avgPnl,
@@ -11267,7 +11308,8 @@ function whaleScoreWallet(addr, state, fills) {
     avgLeverage: parseFloat(avgLeverage.toFixed(1)),
     totalTrades: totalTrades, totalClosedPnl: totalClosedPnl,
     wins: wins, losses: losses, acctVal: acctVal,
-    insufficientData: totalTrades < 10
+    insufficientData: totalTrades < 10,
+    coinStats: coinStats
   };
 }
 
