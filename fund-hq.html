@@ -4035,19 +4035,39 @@ async function executeToolCall(name, input) {
           }
         } catch(e) {}
 
-        // Step 2: Discover addresses from recent trades
+        // Step 2: Discover addresses from recent trades + leaderboard + saved wallets
         const addresses = new Set();
+        // 2a: Recent trades for the coin
         for (const c of coins) {
           try {
             const trades = await hlPost({ type: 'recentTrades', coin: c });
             if (Array.isArray(trades)) trades.forEach(t => { if (t.users) t.users.forEach(u => { if (u && u.startsWith('0x')) addresses.add(u); }); });
           } catch(e) {}
         }
+        // 2b: Leaderboard top traders (wide net — these are the biggest accounts)
+        try {
+          var lbResp = await fetch('https://stats-data.hyperliquid.xyz/Mainnet/leaderboard');
+          if (lbResp.ok) {
+            var lbData = await lbResp.json();
+            var lbList = lbData.leaderboardRows || lbData;
+            if (Array.isArray(lbList)) {
+              lbList.slice(0, 200).forEach(function(r) {
+                var addr = r.ethAddress || r.address;
+                if (addr && addr.startsWith('0x')) addresses.add(addr);
+              });
+            }
+          }
+        } catch(e) {}
+        // 2c: Saved wallets from HL tracker
+        try {
+          hlEnsureVars();
+          hlSavedWallets.forEach(function(w) { if (w.address) addresses.add(w.address); });
+        } catch(e) {}
 
-        // Step 3: Scan wallets for positions (up to 50)
+        // Step 3: Scan wallets for positions (up to 100)
         const whalePositions = [];
         var longNotional = 0, shortNotional = 0, longCount = 0, shortCount = 0;
-        const checked = Array.from(addresses).slice(0, 50);
+        const checked = Array.from(addresses).slice(0, 100);
         for (const addr of checked) {
           try {
             const state = await hlPost({ type: 'clearinghouseState', user: addr });
@@ -4094,7 +4114,7 @@ async function executeToolCall(name, input) {
             long_short_ratio: shortNotional > 0 ? parseFloat((longNotional / shortNotional).toFixed(2)) : longCount > 0 ? 'all_long' : 'no_positions',
             bias: longNotional > shortNotional * 1.5 ? 'bullish' : shortNotional > longNotional * 1.5 ? 'bearish' : 'neutral'
           },
-          top_positions: whalePositions.slice(0, 10)
+          top_positions: whalePositions.slice(0, 20)
         };
         // Add perp market data if scanning specific coin
         if (coin && marketData[coin]) {
