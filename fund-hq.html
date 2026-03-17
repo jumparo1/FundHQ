@@ -212,6 +212,7 @@ tbody tr:hover { background: var(--bg3); }
 .template-type-crypto { background: var(--purple-bg); color: var(--purple); }
 .template-type-substack { background: rgba(255,140,0,0.15); color: #ff8c00; }
 .template-type-commodity { background: rgba(218,165,32,0.15); color: #daa520; }
+.template-type-vc { background: rgba(96,165,250,0.15); color: #60a5fa; }
 .template-sections { list-style: none; padding: 0; margin: 16px 0; }
 .template-sections li { font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
 .template-sections li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
@@ -739,6 +740,7 @@ tbody tr:hover { background: var(--bg3); }
     <div class="nav-item" data-page="portfolio"><span class="icon">&#128176;</span> Portfolio <span class="badge" id="badge-portfolio">0</span></div>
 
     <div class="nav-section"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--blue, #60a5fa);color:#000;font-size:8px;font-weight:700;text-align:center;line-height:14px;margin-right:5px;">V</span> VC</div>
+    <div class="nav-item" data-page="vcwatchlist"><span class="icon">&#128176;</span> VC Watchlist <span class="badge" id="badge-vc">0</span></div>
     <div class="nav-item" data-page="catalysts"><span class="icon">&#128197;</span> Catalysts <span class="badge" id="badge-catalysts">0</span></div>
 
     <div class="nav-section">Alerts</div>
@@ -1085,6 +1087,91 @@ tbody tr:hover { background: var(--bg3); }
       <div id="cat-empty" style="display:none;padding:40px;text-align:center;">
         <div style="font-size:32px;margin-bottom:8px;">&#128197;</div>
         <p style="color:var(--text3);font-size:13px;">No catalysts tracked yet. Click <strong>+ Add Catalyst</strong> to track upcoming events.</p>
+      </div>
+    </div>
+
+    <!-- ===== VC WATCHLIST ===== -->
+    <div id="page-vcwatchlist" class="page hidden">
+      <div class="page-header">
+        <h1>&#128176; VC Watchlist</h1>
+        <p>Track fundraising channels, saved raises, and VC-backed projects</p>
+        <div class="header-actions">
+          <button class="btn btn-primary admin-only" onclick="vcShowAddRaise()">+ Add Raise</button>
+          <button class="btn btn-ghost" onclick="vcRefreshFeed()">&#128260; Refresh Feed</button>
+        </div>
+      </div>
+
+      <!-- Sources / Channels -->
+      <div class="card" style="padding:16px;margin-bottom:20px;">
+        <h3 style="font-size:13px;color:var(--text2);margin-bottom:12px;">Intelligence Sources</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="https://x.com/CryptoRank_VCs" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#120143; CryptoRank VCs</a>
+          <a href="https://defillama.com/raises" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#128142; DefiLlama Raises</a>
+          <a href="https://cryptorank.io/funding-rounds" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#128200; CryptoRank Rounds</a>
+          <a href="https://rootdata.com/Fundraising" target="_blank" class="btn btn-ghost" style="font-size:12px;">&#127793; RootData</a>
+          <button class="btn btn-ghost admin-only" style="font-size:12px;" onclick="vcAddSource()">+ Add Source</button>
+        </div>
+        <div id="vc-custom-sources" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Tracked Raises</div>
+          <div style="font-size:20px;font-weight:700;color:var(--blue, #60a5fa);" id="vc-stat-total">0</div>
+        </div>
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total Raised</div>
+          <div style="font-size:20px;font-weight:700;color:var(--green);" id="vc-stat-raised">$0M</div>
+        </div>
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Tier 1 Backed</div>
+          <div style="font-size:20px;font-weight:700;color:var(--yellow, #fbbf24);" id="vc-stat-tier1">0</div>
+        </div>
+        <div class="card" style="padding:12px 16px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">100x Candidates</div>
+          <div style="font-size:20px;font-weight:700;color:var(--accent);" id="vc-stat-gems">0</div>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <select id="vc-filter-round" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
+          <option value="all">All Rounds</option>
+          <option value="Seed">Seed</option>
+          <option value="Series A">Series A</option>
+          <option value="Series B">Series B</option>
+          <option value="Strategic">Strategic</option>
+          <option value="Other">Other</option>
+        </select>
+        <select id="vc-filter-category" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
+          <option value="all">All Categories</option>
+          <option value="DeFi">DeFi</option>
+          <option value="Infrastructure">Infrastructure</option>
+          <option value="Gaming">Gaming</option>
+          <option value="AI">AI</option>
+          <option value="Chain">Chain / L1/L2</option>
+          <option value="NFT">NFT</option>
+          <option value="CeFi">CeFi</option>
+          <option value="DePIN">DePIN</option>
+          <option value="RWA">RWA</option>
+          <option value="Social">Social</option>
+        </select>
+        <select id="vc-filter-status" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:8px 12px;border-radius:8px;font-size:12px;" onchange="vcRender()">
+          <option value="all">All Status</option>
+          <option value="watching">Watching</option>
+          <option value="researching">Researching</option>
+          <option value="invested">Invested</option>
+          <option value="passed">Passed</option>
+        </select>
+        <span id="vc-count" style="font-size:12px;color:var(--text3);"></span>
+      </div>
+
+      <!-- Raises List -->
+      <div id="vc-raises-list"></div>
+      <div id="vc-empty" style="display:none;padding:40px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">&#128176;</div>
+        <p style="color:var(--text3);font-size:13px;">No raises tracked yet. Click <strong>+ Add Raise</strong> or ask Pamela <em>"who raised recently?"</em></p>
       </div>
     </div>
 
@@ -3452,6 +3539,8 @@ var VC_TOOLS = [
   { name: 'search_raises', description: 'Search fundraising rounds by project name or investor name.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Project or investor name to search' } }, required: ['query'] } },
   { name: 'get_investor_portfolio', description: 'Find all investments by a specific VC/investor. Shows their portfolio, focus areas, and recent activity.', input_schema: { type: 'object', properties: { investor: { type: 'string', description: 'Investor/VC name (e.g. a16z, Paradigm, Binance Labs)' }, limit: { type: 'number' } }, required: ['investor'] } },
   { name: 'get_raise_stats', description: 'Get fundraising market stats: total raised, avg round size, top categories, top investors, trends.', input_schema: { type: 'object', properties: { days: { type: 'number', description: 'Period in days (default 30)' } } } },
+  { name: 'track_raise', description: 'Save a fundraising round to the VC Watchlist for tracking. Use after discovering interesting raises.', input_schema: { type: 'object', properties: { project: { type: 'string', description: 'Project name' }, amount: { type: 'number', description: 'Amount raised in millions USD' }, round: { type: 'string', description: 'Round type: Seed, Series A, Series B, Strategic, Other' }, investors: { type: 'string', description: 'Key investors (comma-separated)' }, category: { type: 'string', description: 'Category: DeFi, Infrastructure, Gaming, AI, Chain, etc.' }, chains: { type: 'string', description: 'Chains: Ethereum, Solana, Base, etc.' }, notes: { type: 'string', description: 'Why this is interesting' }, date: { type: 'string', description: 'Date of raise (YYYY-MM-DD)' } }, required: ['project'] } },
+  { name: 'get_vc_watchlist', description: 'Get all tracked raises from the VC Watchlist with status and notes.', input_schema: { type: 'object', properties: { status: { type: 'string', description: 'Filter: watching/researching/invested/passed' } } } },
   { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker.', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
   { name: 'get_crypto_data', description: 'Get detailed crypto data from CoinGecko.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string' } }, required: ['coingecko_id'] } }
 ];
@@ -4662,6 +4751,31 @@ async function executeToolCall(name, input) {
         };
       } catch(e) { return { error: e.message }; }
     }
+    case 'track_raise': {
+      if (typeof vcAddFromAgent === 'function') {
+        return vcAddFromAgent({
+          project: input.project,
+          amount: input.amount || 0,
+          round: input.round || '',
+          investors: input.investors || '',
+          category: input.category || '',
+          chains: input.chains || '',
+          notes: input.notes || '',
+          date: input.date || ''
+        });
+      }
+      return { error: 'VC Watchlist not loaded' };
+    }
+    case 'get_vc_watchlist': {
+      var list = typeof vcRaises !== 'undefined' ? vcRaises : [];
+      if (input.status) list = list.filter(function(r) { return r.status === input.status; });
+      return {
+        raises: list.map(function(r) {
+          return { project: r.project, amount: r.amount, round: r.round, investors: r.investors, category: r.category, chains: r.chains, status: r.status, date: r.date, notes: r.notes };
+        }),
+        count: list.length
+      };
+    }
     default: return { error: 'Unknown tool: ' + name };
   }
 }
@@ -5735,6 +5849,13 @@ function showPage(pageName) {
     var kc = document.getElementById('settings-coinglass-key'); if (kc && !kc.value) kc.value = localStorage.getItem('coinglassKey') || '';
     if (typeof refreshApiStatus === 'function') refreshApiStatus();
   }
+  if (pageName === 'vcwatchlist') {
+    setTimeout(function() {
+      try { if (typeof vcRender === 'function') vcRender(); } catch(e) {}
+      try { if (typeof vcRenderSources === 'function') vcRenderSources(); } catch(e) {}
+      try { if (typeof vcLoadFromFirebase === 'function') vcLoadFromFirebase(); } catch(e) {}
+    }, 50);
+  }
   return true;
 }
 
@@ -5847,7 +5968,7 @@ function renderDashboard() {
   const dashRp = document.getElementById('dash-reports');
   if (dashRp) dashRp.innerHTML = rSorted.length ? rSorted.map(r => {
     const scoreHtml = r.score != null ? renderStars(r.score, 11) : '';
-    const typeLabel = r.template === 'crypto' ? '🪙' : r.template === 'stock' ? '📈' : r.template === 'quick' ? '⚡' : '📄';
+    const typeLabel = r.template === 'crypto' ? '🪙' : r.template === 'stock' ? '📈' : r.template === 'quick' ? '⚡' : r.template === 'vc' ? '💰' : '📄';
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openModal(\'report\',\'' + r.id + '\')">' +
       '<div><div style="font-size:13px;font-weight:600;">' + typeLabel + ' ' + esc(r.title || r.project || 'Untitled') + '</div>' +
       '<div style="font-size:11px;color:var(--text3);">' + fmtDate(r.created) + (r.editedBy ? ' · by ' + esc(r.editedBy) : '') + '</div></div>' +
@@ -6947,6 +7068,234 @@ const SUBSTACK_TEMPLATE = `# [TOKEN NAME] ($[TICKER]) — [Provocative Title Her
 
 const SUBSTACK_SECTIONS = ['Title & Hook', 'Introduction', 'One-Liner', 'Overview', 'TL;DR', 'Product & Features', 'Moats', 'Ecosystem Data', 'Tokenomics', 'Backers & Smart Money', 'Valuation vs Peers', 'Perp Positioning', 'Chart & Technical', 'Catalysts & FUD', 'The Verdict'];
 
+const VC_TEMPLATE = `PROJECT: [PROJECT NAME] | CATEGORY: [DeFi/Infra/AI/Gaming/Social] | CHAIN: [Chain] | DATE: ${today()} | ANALYST: ${MY_NAME}
+ROUND: [Pre-Seed / Seed / Series A / Series B / Strategic] | AMOUNT: $[X]M | VALUATION: $[X]M FDV
+
+═══════════════════════════════════════════════════
+0. EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════
+Project: [Name]
+Category: [DeFi / Infra / AI / Gaming / Social / etc.]
+Stage: [Pre-Seed / Seed / Series A / B / Strategic]
+Raising: $[X]M at $[X]M FDV (pre/post-money)
+Lead: [Lead Investor]
+Co-investors: [Notable names]
+Recommendation: [INVEST / PASS / WATCH]
+One-line thesis: [Why this deal matters]
+
+═══════════════════════════════════════════════════
+1. DEAL TERMS & CAP TABLE
+═══════════════════════════════════════════════════
+Round size: $[X]M
+Valuation: $[X]M pre-money / $[X]M post-money FDV
+Token price at round: $[X]
+Instrument: [SAFT / SAFE / Equity / Token Warrant]
+Vesting: [X] month cliff, [X] month linear, [X] months total
+TGE unlock: [X]%
+Prior rounds: [Seed $XM at $XM FDV, Private $XM at $XM FDV]
+
+Cap Table:
+Team: [X]% | Investors: [X]% | Community: [X]% | Treasury: [X]% | Ecosystem: [X]%
+
+Dilution risk: [Low / Medium / High — reasoning]
+
+═══════════════════════════════════════════════════
+2. TEAM & FOUNDERS
+═══════════════════════════════════════════════════
+* Founder 1: [Name] — [Role] — [Background, prev companies]
+* Founder 2: [Name] — [Role] — [Background]
+* Team size: [X] people
+* Key hires: [Notable recent additions]
+* Advisors: [Names + actual involvement level]
+* Founder-market fit: [Why THIS team for THIS problem?]
+* Red flags: [Anon? Single founder? Serial pivoter? None?]
+
+═══════════════════════════════════════════════════
+3. PROBLEM & MARKET OPPORTUNITY
+═══════════════════════════════════════════════════
+* Problem: [Clear, specific problem statement]
+* Who: [Users, protocols, institutions affected]
+* TAM: $[X]B | SAM: $[X]B | SOM: $[X]M
+* Why now: [Tech enabler, regulatory shift, demand wave]
+* Why existing solutions fail: [Gaps in current market]
+
+═══════════════════════════════════════════════════
+4. PRODUCT & TECHNOLOGY
+═══════════════════════════════════════════════════
+* Status: [Live Mainnet / Testnet / MVP / Whitepaper]
+* Core architecture: [How it works, 2-3 sentences]
+* Technical moat: [What's novel or hard to replicate]
+* Tech stack: [Chains, languages, frameworks]
+* GitHub: [Activity level — commits/week, contributors]
+* Audit: [Audited by X / Pending / Not audited]
+* PMF signals: [Usage, retention, organic growth metrics]
+
+═══════════════════════════════════════════════════
+5. TRACTION & METRICS
+═══════════════════════════════════════════════════
+* Users: [DAU/MAU] | Growth: [X]% MoM
+* TVL: $[X]M | 30d change: [+/-X]%
+* Volume: $[X]M daily
+* Revenue: $[X]M annualized run rate
+* Organic vs incentivized: [X]% organic
+* Retention: [X]% 30-day
+* Unit economics: [CAC vs LTV if available]
+
+═══════════════════════════════════════════════════
+6. TOKENOMICS & VALUE ACCRUAL
+═══════════════════════════════════════════════════
+Max supply: [X] | Emission schedule: [description]
+Distribution: Team [X]% | Investors [X]% | Community [X]% | Treasury [X]%
+Inflation rate: [X]% annually | Burns: [mechanism or none]
+Value accrual: [How token captures value — fees, buyback, staking]
+Demand drivers: [Staking / Governance / Fee payment / Access]
+Revenue share: [X]% to stakers/holders
+Token necessity: [Essential / Useful / Unnecessary]
+FDV/Revenue: [X]x vs peers at [X]x
+
+═══════════════════════════════════════════════════
+7. COMPETITIVE LANDSCAPE
+═══════════════════════════════════════════════════
+| Project | Funding | FDV | Users | TVL | Edge |
+|---------|---------|-----|-------|-----|------|
+| [This]  | $[X]M   | $[X]M | [X] | $[X]M | — |
+| [Peer1] | $[X]M   | $[X]M | [X] | $[X]M | [?] |
+| [Peer2] | $[X]M   | $[X]M | [X] | $[X]M | [?] |
+| [Peer3] | $[X]M   | $[X]M | [X] | $[X]M | [?] |
+
+Moat: [Network effects / Data / Switching costs / Brand / None]
+Fork resistance: [High / Medium / Low]
+
+═══════════════════════════════════════════════════
+8. EXISTING BACKERS & SIGNAL
+═══════════════════════════════════════════════════
+* Tier 1: [a16z, Paradigm, Polychain — if any]
+* Tier 2: [Binance Labs, Coinbase Ventures — if any]
+* Strategic: [Exchanges, protocols — listing/integration signal]
+* Angels: [Notable founders/builders]
+* Total raised to date: $[X]M
+* Signal strength: [Strong / Moderate / Weak]
+
+═══════════════════════════════════════════════════
+9. GO-TO-MARKET & DISTRIBUTION
+═══════════════════════════════════════════════════
+* Acquisition strategy: [Organic / Paid / Incentivized]
+* Partnerships: [Announced + pipeline]
+* Community: [Discord X, Telegram Y, X followers Z]
+* Distribution moat: [Integrations, SDKs, composability]
+* Airdrop risk: [Farming dilution risk assessment]
+
+═══════════════════════════════════════════════════
+10. ROADMAP & MILESTONES
+═══════════════════════════════════════════════════
+* Delivered: [What's actually shipped to date]
+* Next 3 months: [Key milestones with dates]
+* Next 6-12 months: [Major unlocks]
+* Execution track record: [On time / Delayed / Mixed]
+* Post-funding plan: [Where does the money go?]
+
+═══════════════════════════════════════════════════
+11. RISK ASSESSMENT
+═══════════════════════════════════════════════════
+| Risk Dimension | Score (1-5) | Notes |
+|---------------|-------------|-------|
+| Technical     | [X]         | [Unproven tech, audit gaps] |
+| Market        | [X]         | [Timing, competition, narrative] |
+| Regulatory    | [X]         | [Securities risk, jurisdiction] |
+| Team          | [X]         | [Key-person, retention] |
+| Token         | [X]         | [Dilution, unlocks, value accrual] |
+| Execution     | [X]         | [Ambitious roadmap, resources] |
+| COMPOSITE     | [X]/30      | |
+
+Deal-breaker flags: [Any single risk that kills the deal? Y/N + detail]
+
+═══════════════════════════════════════════════════
+12. LEGAL & REGULATORY
+═══════════════════════════════════════════════════
+* Entity: [Foundation / Company / DAO / Offshore]
+* Jurisdiction: [Country, regulatory environment]
+* Token classification: [Security / Utility / Commodity risk]
+* KYC/AML: [Compliant / Partial / None]
+* Litigation: [Pending / None]
+* IP ownership: [Who owns the code?]
+
+═══════════════════════════════════════════════════
+13. RETURN MODELING
+═══════════════════════════════════════════════════
+Entry FDV: $[X]M (this round)
+Comparable TGE FDVs: [Project A $XM, Project B $XM]
+
+| Scenario | FDV Target | Multiple | Return | Probability |
+|----------|-----------|----------|--------|-------------|
+| Bull     | $[X]M     | [X]x     | [X]%   | [X]%        |
+| Base     | $[X]M     | [X]x     | [X]%   | [X]%        |
+| Bear     | $[X]M     | [X]x     | [X]%   | [X]%        |
+
+Probability-weighted return: [X]x / [X]%
+Break-even FDV: $[X]M
+Time to liquidity: [X] months (vesting + TGE)
+
+═══════════════════════════════════════════════════
+14. 100x FILTER
+═══════════════════════════════════════════════════
+| Factor | Score (1-5) | Reasoning |
+|--------|-------------|-----------|
+| Tier 1 VC backing | [X] | [Details] |
+| Novel category / first-mover | [X] | [Details] |
+| Low valuation vs leaders | [X] | [Details] |
+| Multi-chain potential | [X] | [Details] |
+| Strong founding team | [X] | [Details] |
+| TOTAL | [X]/25 | |
+
+20+ = 🔥 High conviction 100x candidate
+15-19 = ⚡ Moderate potential
+<15 = Standard investment (unlikely 100x)
+
+═══════════════════════════════════════════════════
+15. DD CHECKLIST
+═══════════════════════════════════════════════════
+[ ] Team doxxed & verifiable
+[ ] Product exists (not just whitepaper)
+[ ] Smart contract audited
+[ ] Tokenomics sustainable
+[ ] Vesting investor-friendly
+[ ] Cap table clean (<30% insider)
+[ ] Legal structure sound
+[ ] Competitive moat exists
+[ ] Unit economics work without incentives
+[ ] 12+ months runway post-raise
+
+═══════════════════════════════════════════════════
+16. INVESTMENT VERDICT
+═══════════════════════════════════════════════════
+VERDICT: [INVEST / PASS / WATCH]
+CONVICTION: [High / Medium / Low]
+ALLOCATION: [X]% of fund / $[X]
+
+Top 3 reasons to INVEST:
+1. [Reason]
+2. [Reason]
+3. [Reason]
+
+Top 3 reasons to PASS:
+1. [Reason]
+2. [Reason]
+3. [Reason]
+
+What would change my mind: [Specific trigger]
+Follow-on strategy: [Reserve for next round? Y/N]
+Re-evaluate if: [Specific monitoring triggers]
+
+═══════════════════════════════════════════════════
+17. SOURCES & REFERENCES
+═══════════════════════════════════════════════════
+* CryptoRank VCs, DefiLlama Raises, RootData
+* Messari, Token Terminal, DeFi Llama
+* GitHub, documentation, whitepaper
+* CoinGecko, Dexscreener, Arkham
+* X, Discord, Telegram
+* Pitch deck reviewed: [Y/N]`;
+
 // ===== STRUCTURED TEMPLATE DEFINITIONS =====
 const TEMPLATE_DEFS = {
   crypto: {
@@ -7038,6 +7387,30 @@ const TEMPLATE_DEFS = {
       { id: 'thesis', title: 'Trade Thesis', prompt: 'Present the bull case (3 arguments) and bear case (3 arguments). State the base case scenario with probability-weighted expected return over the specified timeframe.', bullets: ['Bull case: 3 key arguments', 'Bear case: 3 key arguments', 'Base case scenario & probability', 'Timeframe (days/weeks/months)', 'Conviction level (High/Medium/Low)'] },
       { id: 'trade_plan', title: 'Trade Setup & Execution', prompt: 'Provide a specific trade plan: instrument (futures, ETF, options, equity), direction (long/short), entry zone, stop loss, take profit targets, position sizing guidance, and R/R ratio. Include alternative setups if primary entry is missed.', bullets: ['Instrument (futures ticker / ETF / equity)', 'Direction (Long / Short)', 'Entry zone (price range or trigger)', 'Stop loss (price & % risk)', 'Take profit targets (TP1, TP2, TP3)', 'R/R ratio', 'Position sizing (% of portfolio)', 'Alternative setup if entry missed'] },
       { id: 'sources', title: 'Sources & Data', prompt: 'List all data sources and tools used for this research.', bullets: ['EIA, IEA, OPEC (oil)', 'USDA (agriculture)', 'World Gold Council, LBMA (metals)', 'CFTC COT reports', 'TradingView, Finviz, Bloomberg', 'Baker Hughes rig count (oil)', 'Weather data sources'] }
+    ]
+  },
+  vc: {
+    id: 'vc', label: 'VC Due Diligence', badge: 'VC / FUNDRAISING', badgeClass: 'template-type-vc',
+    desc: 'Professional venture capital due diligence — 18 sections covering team, product-market fit, tokenomics, cap table, legal, and return modeling.',
+    sections: [
+      { id: 'summary', title: 'Executive Summary', prompt: 'Write a 1-paragraph executive summary: project name, category, chain, stage (pre-seed/seed/A/B), amount raising, valuation, lead investors, and the core thesis for why this deal is interesting. End with a clear INVEST / PASS / WATCH recommendation.', bullets: ['Project name, ticker (if any), chain', 'Category (DeFi/Infra/AI/Gaming/Social/etc.)', 'Stage & round (pre-seed/seed/Series A/strategic)', 'Amount raising & valuation (pre/post-money)', 'Lead investors & notable co-investors', 'One-line thesis: why this deal matters', 'Recommendation: INVEST / PASS / WATCH'] },
+      { id: 'deal_terms', title: 'Deal Terms & Cap Table', prompt: 'Detail the investment terms: round size, valuation (pre/post-money FDV), token price at round, instrument (SAFT/SAFE/equity/token warrant), vesting schedule (cliff, linear, milestone), TGE unlock %, and estimated FDV at listing. Include cap table breakdown if available.', bullets: ['Round size & valuation (pre/post-money FDV)', 'Token price at this round vs expected listing price', 'Instrument type (SAFT / SAFE / equity / token warrant)', 'Vesting: cliff length, linear period, total lockup', 'TGE unlock % (how much liquid at launch)', 'Prior rounds (seed, private, public — prices & sizes)', 'Cap table: team %, investors %, community %, treasury %', 'Dilution risk from future rounds'] },
+      { id: 'team', title: 'Team & Founders', prompt: 'Deep-dive on the founding team: names, roles, LinkedIn/X, previous companies/protocols, crypto-native vs Web2 background, technical depth, and founder-market fit. Flag any red flags (serial pivoters, anonymous teams, single-person teams).', bullets: ['Founders (names, roles, background)', 'Previous companies & exits (if any)', 'Crypto-native or Web2 crossover?', 'Technical depth (built before? open-source contributions?)', 'Founder-market fit (why THIS team for THIS problem?)', 'Team size & key hires', 'Advisors (notable names, actual involvement)', 'Red flags (anon team, single founder, pivot history)'] },
+      { id: 'problem', title: 'Problem & Market Opportunity', prompt: 'Define the problem being solved, who has this problem, how big the market is (TAM/SAM/SOM), and why existing solutions fail. Include bottom-up market sizing, not just top-down TAM claims.', bullets: ['Problem statement (clear, specific)', 'Who has this problem? (users, protocols, institutions)', 'TAM / SAM / SOM with methodology', 'Why existing solutions fail or are insufficient', 'Market timing: why now? (tech enabler, regulatory shift, demand wave)', 'Competition landscape (who else is building here)'] },
+      { id: 'product', title: 'Product & Technology', prompt: 'Evaluate the product: what exists today (live/testnet/whitepaper), core architecture, technical differentiation, developer experience, and product-market fit signals. Include GitHub activity if open-source.', bullets: ['Product status (live mainnet / testnet / whitepaper / MVP)', 'Core architecture & how it works', 'Technical differentiation (what\'s novel?)', 'Tech stack (chains, languages, frameworks)', 'GitHub activity (commits, contributors, frequency)', 'Developer experience & documentation quality', 'Audit status (audited? by whom? findings?)', 'Product-market fit signals (usage, retention, organic growth)'] },
+      { id: 'traction', title: 'Traction & Metrics', prompt: 'Quantify current traction: users (DAU/MAU/WAU), TVL, transaction volume, revenue, growth rates (WoW/MoM), retention, and unit economics. Separate organic vs incentivized metrics.', bullets: ['Users: DAU / MAU / WAU with growth rate', 'TVL (if DeFi) with 30d/90d trend', 'Transaction volume (daily/monthly)', 'Revenue: protocol fees, annualized run rate', 'Growth rate: WoW or MoM % (organic vs incentivized)', 'Retention / churn metrics', 'Unit economics (cost to acquire vs LTV)', 'Vanity metrics flagged (followers ≠ users)'] },
+      { id: 'tokenomics', title: 'Tokenomics & Value Accrual', prompt: 'Analyze the token model: supply schedule, distribution, emission curve, demand drivers, value accrual mechanism, and whether the token is necessary or bolted-on. Score token necessity (essential / useful / unnecessary).', bullets: ['Max supply & emission schedule', 'Distribution: team / investors / community / treasury / ecosystem %', 'Vesting schedule (all tranches)', 'Inflation rate & burn mechanisms', 'Value accrual: how does the token capture value?', 'Demand drivers: staking, governance, fee payment, access', 'Revenue share / buyback mechanism', 'Token necessity score: Essential / Useful / Unnecessary', 'FDV/revenue ratio vs comparable projects'] },
+      { id: 'competitive', title: 'Competitive Analysis', prompt: 'Map the competitive landscape: direct competitors, indirect competitors, peer comparison table with key metrics (funding, valuation, traction, team size), and moat assessment. What is defensible?', bullets: ['Direct competitors (3-5 projects in same category)', 'Indirect competitors (adjacent solutions)', 'Peer comparison table:', '  | Project | Funding | FDV | Users | TVL | Team | Edge |', 'Moat assessment (network effects, data, switching costs, brand)', 'First-mover advantage or fast-follower risk?', 'Fork resistance (easily replicated?)', 'What happens if a bigger player enters?'] },
+      { id: 'backers', title: 'Existing Backers & Social Proof', prompt: 'List all existing investors by tier, check for smart money signal strength. Note any strategic investors (exchanges, protocols) that could drive distribution or integration.', bullets: ['Tier 1 investors (a16z, Paradigm, Polychain, etc.)', 'Tier 2 investors (Binance Labs, Coinbase Ventures, etc.)', 'Strategic investors (exchanges → listing signal?)', 'Angel investors (notable founders/builders)', 'Total raised to date across all rounds', 'Investor overlap with successful projects', 'Signal strength: Tier 1 lead = strong, no-name only = weak'] },
+      { id: 'go_to_market', title: 'Go-to-Market & Distribution', prompt: 'Evaluate the GTM strategy: how will they acquire users, partnerships pipeline, ecosystem grants, marketing approach, community building, and distribution advantages.', bullets: ['User acquisition strategy (organic, paid, incentivized)', 'Partnerships (announced, pipeline, LOIs)', 'Ecosystem grants & programs', 'Community size & engagement quality (Discord, X, Telegram)', 'Marketing approach (KOL, content, events)', 'Distribution moat (integrations, SDKs, composability)', 'Airdrop strategy (if applicable — farming risk?)'] },
+      { id: 'roadmap', title: 'Roadmap & Milestones', prompt: 'Evaluate the development roadmap: what\'s been delivered vs promised, upcoming milestones with dates, and execution track record. Flag any delays or missed deadlines.', bullets: ['Delivered milestones (what\'s actually shipped)', 'Upcoming milestones with target dates', 'Key unlocks: mainnet, token launch, major integration', 'Execution track record (on time? delayed?)', 'Dependency risks (what could block progress?)', 'Post-funding plan: where does the money go?'] },
+      { id: 'risks', title: 'Risk Assessment', prompt: 'Comprehensive risk analysis across 6 dimensions: technical, market, regulatory, team, token, and execution. Score each 1-5 (1=low risk, 5=high risk). Calculate composite risk score.', bullets: ['Technical risk (unproven tech, audit gaps, complexity)', 'Market risk (timing, competition, narrative dependency)', 'Regulatory risk (securities classification, jurisdiction)', 'Team risk (key-person dependency, retention, alignment)', 'Token risk (dilution, unlock cliffs, low float, value accrual)', 'Execution risk (ambitious roadmap, resource constraints)', 'Risk score: each dimension 1-5, composite /30', 'Deal-breaker flags (any single risk that kills the deal)'] },
+      { id: 'legal', title: 'Legal & Regulatory', prompt: 'Assess legal structure, token classification risk, jurisdiction, and regulatory exposure. Note any pending litigation, regulatory inquiries, or structural red flags.', bullets: ['Legal entity (foundation, company, DAO, offshore)', 'Jurisdiction & regulatory environment', 'Token classification risk (security vs utility vs commodity)', 'KYC/AML compliance', 'Pending litigation or regulatory inquiry', 'IP ownership (who owns the code?)', 'Terms of token sale (restrictions, lockups, clawbacks)'] },
+      { id: 'return_model', title: 'Return Modeling', prompt: 'Model potential returns across scenarios. Use comparable project FDVs at similar stages to estimate realistic outcomes. Include break-even analysis and multiple scenarios.', bullets: ['Entry valuation (this round FDV)', 'Comparable FDVs at TGE for similar projects', 'Scenario analysis:', '  Bull case: FDV target, multiple, return %', '  Base case: FDV target, multiple, return %', '  Bear case: FDV target, multiple, return %', 'Probability-weighted expected return', 'Break-even: what FDV needed to return 1x', 'Time to liquidity (vesting + TGE timeline)', 'Opportunity cost consideration'] },
+      { id: 'hundred_x', title: '100x Filter', prompt: 'Score this project against the 100x gem criteria. Each factor scored 1-5. Total /25. Only projects scoring 20+ warrant deep conviction.', bullets: ['Tier 1 VC backing (1-5): seed from top VC = 5', 'Novel category / first-mover (1-5): new narrative = 5', 'Low valuation vs category leaders (1-5): <$50M seed FDV = 5', 'Multi-chain potential (1-5): cross-chain TAM = 5', 'Strong founding team (1-5): ex-top-protocol founders = 5', 'Total score /25', '20+ = High conviction 100x candidate', '15-19 = Moderate potential, needs catalyst', '<15 = Unlikely 100x, may still be good investment'] },
+      { id: 'due_diligence', title: 'DD Checklist', prompt: 'Run through the due diligence checklist. Mark each item as PASS / FLAG / FAIL. Any FAIL is a potential deal-breaker.', bullets: ['Team doxxed & verifiable: PASS / FLAG / FAIL', 'Product exists (not just whitepaper): PASS / FLAG / FAIL', 'Smart contract audited: PASS / FLAG / FAIL', 'Tokenomics are sustainable: PASS / FLAG / FAIL', 'Vesting is investor-friendly: PASS / FLAG / FAIL', 'Cap table is clean (no excessive insider %): PASS / FLAG / FAIL', 'Legal structure is sound: PASS / FLAG / FAIL', 'Competitive moat exists: PASS / FLAG / FAIL', 'Unit economics work without token incentives: PASS / FLAG / FAIL', 'Team has runway (12+ months post-raise): PASS / FLAG / FAIL'] },
+      { id: 'verdict', title: 'Investment Verdict', prompt: 'Final investment decision: INVEST / PASS / WATCH with conviction level, recommended allocation size, and key conditions. Include the one thing that would change your mind.', bullets: ['Verdict: INVEST / PASS / WATCH', 'Conviction: High / Medium / Low', 'Recommended allocation (% of fund / $ amount)', 'Key thesis in one sentence', 'Top 3 reasons to invest', 'Top 3 reasons to pass', 'What would change your mind (bull → bear or bear → bull)', 'Follow-on strategy (reserve for next round?)', 'Monitoring triggers (re-evaluate if...)'] },
+      { id: 'sources', title: 'Sources & References', prompt: 'List all sources used for this due diligence, including data platforms, documents reviewed, and conversations.', bullets: ['CryptoRank VCs, DefiLlama Raises, RootData', 'Messari, Token Terminal, DeFi Llama', 'GitHub, documentation, whitepaper', 'CoinGecko, Dexscreener, Arkham', 'X (Twitter), Discord, Telegram analysis', 'Pitch deck / investor materials (if reviewed)', 'Conversations / references (if any)'] }
     ]
   }
 };
@@ -7353,7 +7726,7 @@ function openTemplateWorkspace(templateId, projectName) {
   const tpl = getTemplateDef(templateId);
   if (!tpl) return;
   if (!projectName) {
-    const placeholder = templateId === 'stock' ? 'e.g. Tesla (TSLA)' : templateId === 'crypto' ? 'e.g. Ethereum (ETH)' : 'e.g. Bitcoin (BTC)';
+    const placeholder = templateId === 'stock' ? 'e.g. Tesla (TSLA)' : templateId === 'vc' ? 'e.g. Hyperlane (seed round)' : templateId === 'crypto' ? 'e.g. Ethereum (ETH)' : 'e.g. Bitcoin (BTC)';
     projectName = prompt('Enter the name of the project/company:', '');
     if (!projectName || !projectName.trim()) return;
     projectName = projectName.trim();
@@ -7783,7 +8156,7 @@ function rwExportAsReport() {
 
   const id = genId();
   const data = {
-    id, title: _rwState.projectName, type: _rwState.templateId === 'stock' ? 'stock' : _rwState.templateId === 'substack' ? 'substack' : 'crypto',
+    id, title: _rwState.projectName, type: _rwState.templateId === 'stock' ? 'stock' : _rwState.templateId === 'substack' ? 'substack' : _rwState.templateId === 'vc' ? 'vc' : _rwState.templateId === 'commodity' ? 'commodity' : 'crypto',
     content, rating: '', conviction: '',
     created: today(), updated: today(), editedBy: MY_NAME,
     score: scoreInfo ? scoreInfo.overall : null
@@ -7806,7 +8179,7 @@ function rwExportAsReport() {
 }
 
 // ===== RENDER REPORTS =====
-let currentReportTab = 'research';
+var currentReportTab = 'research';
 
 function switchReportTab(tab) {
   currentReportTab = tab;
@@ -7852,7 +8225,7 @@ function renderReports(filter = '') {
         const deletedDate = new Date(r.deletedAt);
         const expiresDate = new Date(deletedDate.getTime() + 30*24*60*60*1000);
         const daysLeft = Math.max(0, Math.ceil((expiresDate - Date.now()) / (24*60*60*1000)));
-        const typeLabel = r.type === 'stock' ? 'STOCK' : r.type === 'substack' ? 'SUBSTACK' : r.type === 'commodity' ? 'COMMODITY' : 'CRYPTO';
+        const typeLabel = r.type === 'stock' ? 'STOCK' : r.type === 'substack' ? 'SUBSTACK' : r.type === 'commodity' ? 'COMMODITY' : r.type === 'vc' ? 'VC DD' : 'CRYPTO';
         const typeClass = r.type === 'stock' ? 'template-type-stock' : r.type === 'substack' ? '' : r.type === 'commodity' ? 'template-type-commodity' : 'template-type-crypto';
         const typeStyle = r.type === 'substack' ? 'style="background:rgba(255,140,0,0.15);color:#ff8c00;"' : '';
         return `<div class="report-card" style="opacity:0.7;">
@@ -7925,14 +8298,14 @@ function renderReports(filter = '') {
 
 // ===== USE TEMPLATE =====
 function useTemplate(type) {
-  const placeholder = type === 'substack' ? 'e.g. Bittensor (TAO)' : type === 'stock' ? 'e.g. Tesla (TSLA)' : 'e.g. Ethereum (ETH)';
+  const placeholder = type === 'substack' ? 'e.g. Bittensor (TAO)' : type === 'vc' ? 'e.g. Hyperlane (seed round)' : type === 'stock' ? 'e.g. Tesla (TSLA)' : 'e.g. Ethereum (ETH)';
   const title = prompt('Enter the name of the project/company:', '');
   if (!title || !title.trim()) return;
   const id = genId();
-  const content = type === 'stock' ? STOCK_TEMPLATE : type === 'substack' ? SUBSTACK_TEMPLATE : CRYPTO_TEMPLATE;
+  const content = type === 'stock' ? STOCK_TEMPLATE : type === 'substack' ? SUBSTACK_TEMPLATE : type === 'vc' ? VC_TEMPLATE : CRYPTO_TEMPLATE;
   const data = {
     id, title: title.trim(), type,
-    content: content.replace(/\[TOKEN NAME\]/g, title.trim()).replace(/\[Company name[^\]]*\]/g, title.trim()),
+    content: content.replace(/\[PROJECT NAME\]/g, title.trim()).replace(/\[TOKEN NAME\]/g, title.trim()).replace(/\[Company name[^\]]*\]/g, title.trim()),
     rating: '', conviction: '',
     created: today(), updated: today(), editedBy: MY_NAME
   };
@@ -8619,13 +8992,14 @@ const PAGE_ALIASES = {
   'on-chain': 'onchain', 'on chain': 'onchain', onchain: 'onchain', 'smart money': 'onchain', sentinel: 'onchain', 'entity tracker': 'onchain', flows: 'onchain',
   technical: 'technical', ta: 'technical', 'technical analysis': 'technical', setups: 'technical', playbooks: 'technical', confluence: 'technical', 'trade log': 'technical', regime: 'technical', quant: 'technical',
   catalysts: 'catalysts', catalyst: 'catalysts', unlocks: 'catalysts', events: 'catalysts', 'token unlock': 'catalysts',
-  portfolio: 'portfolio', holdings: 'portfolio', positions: 'portfolio', allocation: 'portfolio', 'my portfolio': 'portfolio', pnl: 'portfolio'
+  portfolio: 'portfolio', holdings: 'portfolio', positions: 'portfolio', allocation: 'portfolio', 'my portfolio': 'portfolio', pnl: 'portfolio',
+  'vc watchlist': 'vcwatchlist', vcwatchlist: 'vcwatchlist', vc: 'vcwatchlist', raises: 'vcwatchlist', fundraising: 'vcwatchlist', 'vc deals': 'vcwatchlist', 'venture capital': 'vcwatchlist'
 };
 
 const PAGE_LABELS = {
   dashboard: 'Dashboard', dealflow: 'Deal Flow', projects: 'Project Dump',
   watchlist: 'Watchlist', research: 'Research Notes', templates: 'Templates', reports: 'Reports',
-  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel', technical: 'Technical Analysis', catalysts: 'Catalysts', portfolio: 'Portfolio'
+  alerts: 'Alerts', tasks: 'Tasks', roadmap: 'Roadmap', progress: 'Progress', about: 'About', settings: 'Settings', marketdata: 'Market Data', help: 'Docs', onchain: 'On-Chain Intel', technical: 'Technical Analysis', catalysts: 'Catalysts', portfolio: 'Portfolio', vcwatchlist: 'VC Watchlist'
 };
 
 function toggleChat() {
@@ -9742,6 +10116,260 @@ function setupDelete(id) {
   if (!confirm('Delete this setup?')) return;
   taSetups = taSetups.filter(function(s) { return s.id !== id; });
   setupSave(); setupRender();
+}
+
+// ===== VC WATCHLIST =====
+var vcRaises = [];
+try { vcRaises = JSON.parse(localStorage.getItem('vc_raises') || '[]'); } catch(e) { vcRaises = []; }
+var vcSources = [];
+try { vcSources = JSON.parse(localStorage.getItem('vc_sources') || '[]'); } catch(e) { vcSources = []; }
+
+function vcSave() {
+  localStorage.setItem('vc_raises', JSON.stringify(vcRaises));
+  if (typeof dbRef !== 'undefined' && dbRef) {
+    var fbData = {};
+    vcRaises.forEach(function(r) { fbData[r.id] = r; });
+    dbRef.child('vcRaises_watchlist').set(fbData).catch(function(){});
+  }
+}
+
+function vcLoadFromFirebase() {
+  try {
+    if (!firebaseReady || typeof firebase === 'undefined') return;
+  } catch(e) { return; }
+  firebase.database().ref('vcRaises_watchlist').once('value').then(function(snap) {
+    var data = snap.val();
+    if (data) {
+      if (!Array.isArray(vcRaises)) vcRaises = [];
+      var fbList = Object.values(data);
+      var idSet = new Set(vcRaises.map(function(r) { return r.id; }));
+      fbList.forEach(function(r) {
+        if (r.id && !idSet.has(r.id)) { vcRaises.push(r); idSet.add(r.id); }
+        else if (r.id && idSet.has(r.id)) {
+          var idx = vcRaises.findIndex(function(x) { return x.id === r.id; });
+          if (idx >= 0) vcRaises[idx] = r;
+        }
+      });
+      localStorage.setItem('vc_raises', JSON.stringify(vcRaises));
+      vcRender();
+    }
+  }).catch(function(){});
+}
+
+var VC_TIER1 = ['a16z', 'paradigm', 'polychain', 'multicoin', 'sequoia', 'dragonfly', 'framework', 'pantera'];
+var VC_TIER2 = ['binance labs', 'coinbase ventures', 'galaxy', 'hack vc', 'electric capital', 'variant'];
+
+function vcIsTier1(investors) {
+  if (!investors) return false;
+  var inv = investors.toLowerCase();
+  return VC_TIER1.some(function(t) { return inv.indexOf(t) >= 0; });
+}
+
+function vcIs100x(raise) {
+  return raise.round && raise.round.toLowerCase().indexOf('seed') >= 0 && vcIsTier1(raise.investors);
+}
+
+function vcRender() {
+  if (!Array.isArray(vcRaises)) { try { vcRaises = JSON.parse(localStorage.getItem('vc_raises') || '[]'); } catch(e) { vcRaises = []; } }
+  var list = document.getElementById('vc-raises-list');
+  var empty = document.getElementById('vc-empty');
+  if (!list) return;
+
+  var roundF = document.getElementById('vc-filter-round');
+  var catF = document.getElementById('vc-filter-category');
+  var statusF = document.getElementById('vc-filter-status');
+  var roundFilter = roundF ? roundF.value : 'all';
+  var catFilter = catF ? catF.value : 'all';
+  var statusFilter = statusF ? statusF.value : 'all';
+
+  var filtered = vcRaises.filter(function(r) {
+    if (roundFilter !== 'all' && r.round !== roundFilter) return false;
+    if (catFilter !== 'all' && (!r.category || r.category.indexOf(catFilter) === -1)) return false;
+    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    return true;
+  });
+  filtered.sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+
+  // Stats
+  var totalRaised = 0;
+  var tier1Count = 0;
+  var gemCount = 0;
+  vcRaises.forEach(function(r) {
+    totalRaised += parseFloat(r.amount || 0);
+    if (vcIsTier1(r.investors)) tier1Count++;
+    if (vcIs100x(r)) gemCount++;
+  });
+  var el;
+  el = document.getElementById('vc-stat-total'); if (el) el.textContent = vcRaises.length;
+  el = document.getElementById('vc-stat-raised'); if (el) el.textContent = '$' + Math.round(totalRaised) + 'M';
+  el = document.getElementById('vc-stat-tier1'); if (el) el.textContent = tier1Count;
+  el = document.getElementById('vc-stat-gems'); if (el) el.textContent = gemCount;
+  el = document.getElementById('vc-count'); if (el) el.textContent = filtered.length + ' of ' + vcRaises.length;
+  el = document.getElementById('badge-vc'); if (el) el.textContent = vcRaises.length;
+
+  if (!filtered.length) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  var roundColors = { 'Seed': 'var(--accent)', 'Series A': 'var(--green)', 'Series B': 'var(--blue, #60a5fa)', 'Strategic': 'var(--yellow, #fbbf24)' };
+  var statusColors = { 'watching': 'var(--text3)', 'researching': 'var(--yellow, #fbbf24)', 'invested': 'var(--green)', 'passed': 'var(--red)' };
+
+  list.innerHTML = filtered.map(function(r) {
+    var isTier1 = vcIsTier1(r.investors);
+    var is100x = vcIs100x(r);
+    var roundColor = roundColors[r.round] || 'var(--text3)';
+    var statusColor = statusColors[r.status] || 'var(--text3)';
+    return '<div class="card" style="padding:14px 18px;margin-bottom:10px;border-left:3px solid ' + roundColor + ';">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
+        '<div style="flex:1;">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+            '<strong style="font-size:14px;color:var(--text1);">' + esc(r.project || '') + '</strong>' +
+            '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + roundColor + '20;color:' + roundColor + ';font-weight:600;">' + esc(r.round || '?') + '</span>' +
+            (is100x ? '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--accent)20;color:var(--accent);font-weight:700;">100x</span>' : '') +
+            (isTier1 ? '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--green)20;color:var(--green);font-weight:600;">TIER 1</span>' : '') +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--text2);margin-bottom:4px;">' +
+            (r.amount ? '<strong>$' + r.amount + 'M</strong>' : 'Undisclosed') +
+            (r.category ? ' &middot; ' + esc(r.category) : '') +
+            (r.chains ? ' &middot; ' + esc(r.chains) : '') +
+            (r.date ? ' &middot; ' + r.date : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text3);">' +
+            (r.investors ? esc(r.investors) : 'Investors undisclosed') +
+          '</div>' +
+          (r.notes ? '<div style="font-size:11px;color:var(--text2);margin-top:4px;font-style:italic;">' + esc(r.notes) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">' +
+          '<select onchange="vcUpdateStatus(\'' + r.id + '\',this.value)" style="background:var(--bg3);border:1px solid var(--border);color:' + statusColor + ';padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;text-transform:uppercase;">' +
+            '<option value="watching"' + (r.status === 'watching' ? ' selected' : '') + '>Watching</option>' +
+            '<option value="researching"' + (r.status === 'researching' ? ' selected' : '') + '>Researching</option>' +
+            '<option value="invested"' + (r.status === 'invested' ? ' selected' : '') + '>Invested</option>' +
+            '<option value="passed"' + (r.status === 'passed' ? ' selected' : '') + '>Passed</option>' +
+          '</select>' +
+          '<span class="admin-only" style="cursor:pointer;color:var(--text3);font-size:11px;" onclick="vcDelete(\'' + r.id + '\')" title="Remove">&#10005;</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function vcShowAddRaise() {
+  var html = '<h2>Add Raise to VC Watchlist</h2>' +
+    '<div class="form-group"><label>Project Name</label><input type="text" id="m-vc-project" placeholder="e.g. LayerZero, EigenLayer"></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+      '<div class="form-group"><label>Amount ($M)</label><input type="number" id="m-vc-amount" placeholder="e.g. 15"></div>' +
+      '<div class="form-group"><label>Round</label><select id="m-vc-round"><option>Seed</option><option>Series A</option><option>Series B</option><option>Strategic</option><option>Other</option></select></div>' +
+    '</div>' +
+    '<div class="form-group"><label>Lead Investors</label><input type="text" id="m-vc-investors" placeholder="e.g. a16z, Paradigm"></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+      '<div class="form-group"><label>Category</label><select id="m-vc-category"><option>DeFi</option><option>Infrastructure</option><option>Gaming</option><option>AI</option><option>Chain</option><option>NFT</option><option>CeFi</option><option>DePIN</option><option>RWA</option><option>Social</option><option>Other</option></select></div>' +
+      '<div class="form-group"><label>Chains</label><input type="text" id="m-vc-chains" placeholder="e.g. Ethereum, Solana"></div>' +
+    '</div>' +
+    '<div class="form-group"><label>Notes</label><input type="text" id="m-vc-notes" placeholder="Why is this interesting?"></div>' +
+    '<div class="modal-actions">' +
+      '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="vcSaveRaise()">Save</button>' +
+    '</div>';
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(function() { var el = document.getElementById('m-vc-project'); if (el) el.focus(); }, 100);
+}
+
+function vcSaveRaise() {
+  var project = (document.getElementById('m-vc-project') || {}).value;
+  if (!project) return;
+  var raise = {
+    id: 'vc_' + Date.now(),
+    project: project.trim(),
+    amount: parseFloat((document.getElementById('m-vc-amount') || {}).value) || 0,
+    round: (document.getElementById('m-vc-round') || {}).value || 'Seed',
+    investors: (document.getElementById('m-vc-investors') || {}).value || '',
+    category: (document.getElementById('m-vc-category') || {}).value || '',
+    chains: (document.getElementById('m-vc-chains') || {}).value || '',
+    notes: (document.getElementById('m-vc-notes') || {}).value || '',
+    status: 'watching',
+    date: new Date().toISOString().split('T')[0],
+    addedAt: new Date().toISOString()
+  };
+  vcRaises.push(raise);
+  vcSave();
+  closeModal();
+  vcRender();
+}
+
+function vcUpdateStatus(id, status) {
+  var idx = vcRaises.findIndex(function(r) { return r.id === id; });
+  if (idx >= 0) { vcRaises[idx].status = status; vcSave(); vcRender(); }
+}
+
+function vcDelete(id) {
+  if (!confirm('Remove this raise from watchlist?')) return;
+  vcRaises = vcRaises.filter(function(r) { return r.id !== id; });
+  vcSave();
+  vcRender();
+}
+
+function vcAddSource() {
+  var name = prompt('Source name:');
+  if (!name) return;
+  var url = prompt('URL:');
+  if (!url) return;
+  vcSources.push({ name: name, url: url });
+  localStorage.setItem('vc_sources', JSON.stringify(vcSources));
+  vcRenderSources();
+}
+
+function vcRenderSources() {
+  if (!Array.isArray(vcSources)) { try { vcSources = JSON.parse(localStorage.getItem('vc_sources') || '[]'); } catch(e) { vcSources = []; } }
+  var el = document.getElementById('vc-custom-sources');
+  if (!el) return;
+  el.innerHTML = vcSources.map(function(s, i) {
+    return '<a href="' + esc(s.url) + '" target="_blank" class="btn btn-ghost" style="font-size:12px;">' + esc(s.name) +
+      ' <span onclick="event.preventDefault();event.stopPropagation();vcRemoveSource(' + i + ')" style="margin-left:4px;color:var(--text3);cursor:pointer;">&#10005;</span></a>';
+  }).join('');
+}
+
+function vcRemoveSource(idx) {
+  vcSources.splice(idx, 1);
+  localStorage.setItem('vc_sources', JSON.stringify(vcSources));
+  vcRenderSources();
+}
+
+function vcRefreshFeed() {
+  // Trigger VC agent via chat
+  var chatInput = document.getElementById('chat-input');
+  if (chatInput) {
+    chatInput.value = 'Show me the latest crypto fundraising rounds from the past 7 days — focus on Seed and Series A from top VCs';
+    if (typeof chatSend === 'function') chatSend();
+  }
+}
+
+// Add VC agent tool to save raises from chat
+function vcAddFromAgent(raise) {
+  if (!Array.isArray(vcRaises)) { try { vcRaises = JSON.parse(localStorage.getItem('vc_raises') || '[]'); } catch(e) { vcRaises = []; } }
+  var existing = vcRaises.find(function(r) { return r.project && r.project.toLowerCase() === (raise.project || '').toLowerCase(); });
+  if (existing) return { already_tracked: true, project: existing.project };
+  var entry = {
+    id: 'vc_' + Date.now(),
+    project: raise.project || '',
+    amount: raise.amount || 0,
+    round: raise.round || '',
+    investors: raise.investors || '',
+    category: raise.category || '',
+    chains: raise.chains || '',
+    notes: raise.notes || '',
+    status: 'watching',
+    date: raise.date || new Date().toISOString().split('T')[0],
+    addedAt: new Date().toISOString(),
+    source: 'agent'
+  };
+  vcRaises.push(entry);
+  vcSave();
+  vcRender();
+  return { saved: true, project: entry.project, id: entry.id };
 }
 
 // ===== CATALYST TRACKER =====
