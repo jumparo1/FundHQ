@@ -3389,7 +3389,299 @@ async function callClaude(prompt, model, opts) {
   return { text, sources };
 }
 
-// ===== PAMELA AI AGENT =====
+// ═══════════════════════════════════════════════════════════════
+// AGENT REGISTRY — Intelligence OS Agent Architecture
+// ═══════════════════════════════════════════════════════════════
+// Shared runAgent() function. Each agent is a config: system prompt builder + tool set.
+// Router (Pamela) detects intent and delegates to Analyst or Sentinel.
+
+// --- Tool Sets (grouped by agent) ---
+var SHARED_TOOLS = [
+  { name: 'create_item', description: 'Create a new task, deal, or project in the database.', input_schema: { type: 'object', properties: { type: { type: 'string', enum: ['task', 'deal', 'project'], description: 'Type of item to create' }, name: { type: 'string', description: 'Name/title of the item' }, priority: { type: 'string', enum: ['High', 'Medium', 'Low'] }, assignee: { type: 'string' }, status: { type: 'string' }, dueDate: { type: 'string' }, sector: { type: 'string' }, stage: { type: 'string' }, notes: { type: 'string' } }, required: ['type', 'name'] } },
+  { name: 'update_item', description: 'Update an existing item by fuzzy name match.', input_schema: { type: 'object', properties: { collection: { type: 'string', enum: ['tasks', 'deals', 'projects', 'research', 'reports'] }, query: { type: 'string' }, updates: { type: 'object' } }, required: ['collection', 'query', 'updates'] } },
+  { name: 'delete_item', description: 'Delete an item from the database.', input_schema: { type: 'object', properties: { collection: { type: 'string', enum: ['tasks', 'deals', 'projects', 'research', 'reports'] }, query: { type: 'string' } }, required: ['collection', 'query'] } },
+  { name: 'find_items', description: 'Search for items in a specific database collection.', input_schema: { type: 'object', properties: { collection: { type: 'string', enum: ['tasks', 'deals', 'projects', 'research', 'reports'] }, query: { type: 'string' } }, required: ['collection', 'query'] } },
+  { name: 'search_all', description: 'Full-text search across ALL database collections.', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+  { name: 'navigate_to_page', description: 'Navigate to a page in Fund HQ.', input_schema: { type: 'object', properties: { page: { type: 'string' } }, required: ['page'] } },
+  { name: 'get_fund_stats', description: 'Get summary statistics: deals, tasks, reports, watchlist, alerts.', input_schema: { type: 'object', properties: {} } },
+  { name: 'create_alert', description: 'Create an alert. Use severity "opportunity" for actionable setups, "warning" for risks, "info" for updates.', input_schema: { type: 'object', properties: { title: { type: 'string' }, content: { type: 'string' }, severity: { type: 'string', enum: ['info', 'warning', 'opportunity'] } }, required: ['title', 'content', 'severity'] } }
+];
+
+var ANALYST_TOOLS = [
+  { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker on CoinGecko. Returns top matches with id, symbol, name, and rank.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Crypto name or ticker to search for' } }, required: ['query'] } },
+  { name: 'get_crypto_data', description: 'Get detailed crypto data: price, market cap, FDV, volume, 24h/7d/30d changes, ATH/ATL, supply, categories, links, description. Use search_crypto first to get the coingecko_id.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string', description: 'CoinGecko ID (e.g. "bitcoin", "ethereum", "solana")' } }, required: ['coingecko_id'] } },
+  { name: 'search_stocks', description: 'Search for a stock by name or ticker. Returns matches with symbol, name, exchange.', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+  { name: 'get_stock_data', description: 'Get detailed stock data: price, market cap, P/E, ROE, debt/equity, dividend yield, beta, sector, description.', input_schema: { type: 'object', properties: { symbol: { type: 'string' } }, required: ['symbol'] } },
+  { name: 'add_to_watchlist', description: 'Add a crypto or stock asset to the watchlist.', input_schema: { type: 'object', properties: { asset_type: { type: 'string', enum: ['crypto', 'stock'] }, query: { type: 'string' } }, required: ['asset_type', 'query'] } },
+  { name: 'get_watchlist', description: 'Get all tracked assets in the watchlist with cached price data.', input_schema: { type: 'object', properties: {} } },
+  { name: 'save_research', description: 'Save a research report. Include a clear verdict and conviction level.', input_schema: { type: 'object', properties: { title: { type: 'string' }, type: { type: 'string', enum: ['crypto', 'stock'] }, content: { type: 'string' }, rating: { type: 'string', enum: ['Strong Buy', 'Buy', 'Speculate', 'Hold', 'Sell', 'Avoid'] }, conviction: { type: 'string', enum: ['High', 'Medium', 'Low'] } }, required: ['title', 'content'] } },
+  { name: 'get_reports', description: 'Get recent research reports. Returns title, type, rating, conviction, date.', input_schema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number' } } } },
+  { name: 'get_report_content', description: 'Get full content of a research report by title.', input_schema: { type: 'object', properties: { title: { type: 'string' } }, required: ['title'] } },
+  { name: 'get_conviction', description: 'Get the unified conviction score (Investor + Trader) for an asset.', input_schema: { type: 'object', properties: { symbol: { type: 'string', description: 'Asset symbol (e.g. BTC, ETH, SOL, AAPL)' } }, required: ['symbol'] } }
+];
+
+var SENTINEL_TOOLS = [
+  { name: 'hl_scan_wallet', description: 'Scan a Hyperliquid wallet: positions, PnL, win rate, trade history.', input_schema: { type: 'object', properties: { address: { type: 'string', description: 'Wallet address (0x...)' } }, required: ['address'] } },
+  { name: 'hl_whale_positions', description: 'Find whale positions on Hyperliquid for a specific coin or across top coins. Scans trades to discover large wallets.', input_schema: { type: 'object', properties: { coin: { type: 'string', description: 'Coin to scan (e.g. ETH, BTC, SOL)' }, min_size: { type: 'number', description: 'Min position size USD (default 500000)' } } } },
+  { name: 'hl_saved_wallets', description: 'Get all saved/tracked HL wallets with labels and last known values.', input_schema: { type: 'object', properties: {} } },
+  { name: 'get_entities', description: 'Get tracked entities from Entity Tracker, optionally filtered by type or grade.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter by type: whale/fund/insider/mm/copyable/degen' }, grade: { type: 'string', description: 'Minimum grade: A+/A/B+/B/C' } } } },
+  { name: 'get_signals', description: 'Get on-chain signals, optionally filtered by type or status.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter: accumulation/distribution/whale_entry/whale_exit' }, status: { type: 'string', description: 'Filter: new/reviewing/acted/dismissed' } } } },
+  { name: 'create_signal', description: 'Create a new on-chain signal in the Signal Feed.', input_schema: { type: 'object', properties: { asset: { type: 'string', description: 'Asset symbol' }, type: { type: 'string', enum: ['accumulation', 'distribution', 'whale_entry', 'whale_exit', 'flow', 'breakout', 'breakdown'], description: 'Signal type' }, conviction: { type: 'number', description: 'Conviction 1-5' }, description: { type: 'string', description: 'What happened and why it matters' }, entity_address: { type: 'string', description: 'Related wallet address if applicable' } }, required: ['asset', 'type', 'conviction', 'description'] } },
+  { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker.', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+  { name: 'get_crypto_data', description: 'Get detailed crypto data from CoinGecko.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string' } }, required: ['coingecko_id'] } }
+];
+
+// --- Agent System Prompts ---
+function buildAnalystPrompt() {
+  var wl = (DB.watchlist || []).map(function(w) { return w.symbol + (w.lastData && w.lastData.change24h ? ' (' + (w.lastData.change24h > 0 ? '+' : '') + w.lastData.change24h.toFixed(1) + '%)' : ''); }).join(', ');
+  var recentReports = (DB.reports || []).slice(-5).map(function(r) { return r.title + (r.rating ? ' [' + r.rating + ']' : ''); }).join(', ');
+  return 'You are the ANALYST agent for Fund HQ — a specialist in fundamental research and asset valuation.\n\n' +
+  '## MISSION\nDeep fundamental research — find why an asset is undervalued or has asymmetric upside. You produce research reports, score theses, compare peers, and track conviction.\n\n' +
+  '## THE 5-LENS FILTER\nEvery opportunity MUST be scored:\n' +
+  '1. CATALYST (Why Now?) — upcoming events, narrative shifts, protocol upgrades\n' +
+  '2. VALUATION (Is It Cheap?) — FDV/Revenue < 50x, FDV/TVL < 1.5x, MCap/FDV > 0.5\n' +
+  '3. MOMENTUM (Is It Turning?) — EMA reclaims, volume patterns, RSI divergence\n' +
+  '4. RISK/REWARD (Where\'s My Stop?) — min 3:1 R/R, clear invalidation, 1-2% risk\n' +
+  '5. NARRATIVE (Does the Market Care?) — trending themes, CT sentiment, institutional interest\n\n' +
+  '## CRYPTO FINANCIAL ANALYSIS\nBuild a crypto income statement: Total Fees → minus Supply-Side = Protocol Revenue → minus Token Incentives = Earnings.\n' +
+  'Key ratios: Protocol Margin %, Revenue Multiple (FDV/fees), P/S, P/E, MCap/TVL.\n' +
+  'Projects with earnings > incentives are genuinely profitable and RARE — flag these.\n\n' +
+  '## REPORT TEMPLATE\nWhen asked to do deep research, produce a full report with: Overview, TL;DR, Product & Moats, Team, Tokenomics, Valuation (peer comparison table), On-Chain, Catalysts & FUD, Final Thesis, Verdict.\n' +
+  'Always save the report using save_research tool.\n\n' +
+  '## SETUP ARCHETYPES\n' +
+  '- Mean Reversion Long: Oversold bounce, RSI < 30, hammer candle\n' +
+  '- Breakout: Consolidation → break on 2x volume → retest entry\n' +
+  '- Narrative Front-Run: Catalyst 2-4 weeks out, enter during quiet accumulation\n' +
+  '- Deep Value Recovery: 90%+ below ATH, fundamentals improved, low FDV vs peers\n\n' +
+  '## ANTI-PATTERNS\n- Chasing pumps (up 50%+ in a week)\n- Token unlock cliffs approaching\n- FDV/MC > 3x (massive dilution)\n- Team dumping on-chain\n- Hype without metrics\n\n' +
+  '## COMMUNICATION STYLE\n- Be direct and opinionated: "I like this because..." or "I\'d pass — here\'s why..."\n- ALWAYS use specific numbers. Not "high market cap" → "$2.3B MC, rank #45"\n- Use tables for peer comparisons\n- End research with VERDICT: BUY / SPECULATE / HOLD-WAIT / AVOID with conviction\n\n' +
+  '## LIVE CONTEXT\n- Today: ' + new Date().toISOString().split('T')[0] + '\n' +
+  '- Team: ' + MY_NAME + ' (crypto) + Tihomir (equities)\n' +
+  '- Watchlist: ' + (wl || '(empty)') + '\n' +
+  '- Recent reports: ' + (recentReports || '(none)') + '\n' +
+  '- Use create_alert with severity "opportunity" for setups scoring 18+/25 on the 5-lens filter.';
+}
+
+function buildSentinelPrompt() {
+  var entityCount = typeof etEntities !== 'undefined' ? etEntities.length : 0;
+  var savedCount = typeof hlSavedWallets !== 'undefined' ? hlSavedWallets.length : 0;
+  var signalCount = (DB.signals || []).filter(function(s) { return s.status === 'new'; }).length;
+  return 'You are the SENTINEL agent for Fund HQ — a specialist in on-chain intelligence and smart money tracking.\n\n' +
+  '## MISSION\nFind alpha in smart money behavior. Who\'s buying, who\'s selling, what are insiders doing. You discover whales, score wallets, track entity activity, and generate on-chain signals.\n\n' +
+  '## CORE PRINCIPLES (from Senpi research — 22 agents, $22K real capital, 5000+ trades)\n' +
+  '- Fewer trades + higher conviction = better results. Agents above 400 trades were ALL negative.\n' +
+  '- 3-5 trades produce ALL profit (power law). Everything else is small losses cut fast.\n' +
+  '- Real-time smart money IS the edge. Agents ignoring whale data all lost.\n' +
+  '- Two entry modes: STALKER (quiet accumulation by multiple whales) and STRIKER (violent breakout with volume).\n' +
+  '- Mean reversion struggles on perps — don\'t buy dips in downtrends.\n\n' +
+  '## SIGNAL QUALITY HIERARCHY\n' +
+  '1. A-grade whale opens position on coin with bullish regime — highest conviction\n' +
+  '2. Multiple whales accumulating same coin (stalker mode) — strong\n' +
+  '3. Single whale opens large position, neutral regime — moderate\n' +
+  '4. Whale activity in bearish regime — low conviction, possible contrarian\n' +
+  '5. Raw whale trade with no context — noise, suppress\n\n' +
+  '## MARKET REGIME\n' +
+  '- Risk-On: BTC funding positive, OI rising, volume expanding — favor longs\n' +
+  '- Risk-Off: BTC funding negative/flat, OI declining, volume contracting — favor shorts or cash\n' +
+  '- Squeeze Setup: Extreme funding + high short OI — fade the crowd\n' +
+  '- Neutral: Mixed signals — require higher conviction threshold\n\n' +
+  '## ENTITY INVESTIGATION\n' +
+  'When profiling a wallet:\n' +
+  '1. Scan wallet on HL (positions, PnL, fills)\n' +
+  '2. Compute quality score: win rate, consistency, leverage, trade frequency\n' +
+  '3. Classify: whale/fund/insider/mm/copyable/degen\n' +
+  '4. Grade: A+ (elite, <50 trades, >3x profit) → A → B+ → B → C\n' +
+  '5. Check regime alignment\n' +
+  '6. Recommendation: track / ignore / copy-trade grade\n\n' +
+  '## WALLET SCORING\n' +
+  '- Win rate 35pts, PnL consistency 25pts, trade frequency 20pts, leverage discipline 20pts\n' +
+  '- Bonus for selectivity (<120 trades). Penalty for overtrading (>400 trades).\n' +
+  '- Always report: quality score, grade, type, trades/day, consistency, avg leverage\n\n' +
+  '## COMMUNICATION STYLE\n' +
+  '- Lead with the signal, not the process: "3 whales accumulating SOL — $4.2M total"\n' +
+  '- Always include: wallet grade, position size, regime context\n' +
+  '- Use create_signal for significant findings\n' +
+  '- Use create_alert severity "opportunity" for high-conviction whale signals\n\n' +
+  '## LIVE CONTEXT\n' +
+  '- Today: ' + new Date().toISOString().split('T')[0] + '\n' +
+  '- Tracked entities: ' + entityCount + '\n' +
+  '- Saved HL wallets: ' + savedCount + '\n' +
+  '- Unprocessed signals: ' + signalCount + '\n' +
+  '- Use get_entities and get_signals to check existing data before creating duplicates.';
+}
+
+function buildRouterPrompt() {
+  var wl = (DB.watchlist || []).map(function(w) { return w.symbol; }).join(', ');
+  return 'You are Pamela, the Router agent for Fund HQ — an asymmetric opportunity hunting platform run by ' + MY_NAME + '.\n\n' +
+  '## YOUR ROLE\n' +
+  'You route user requests to the right specialist agent. You also handle general queries directly.\n\n' +
+  '## ROUTING RULES\n' +
+  'Respond with a JSON routing decision in your FIRST response:\n' +
+  '- If the user wants fundamental research, asset analysis, market data, comparisons, watchlist, reports → route to ANALYST\n' +
+  '- If the user wants on-chain data, whale tracking, wallet scans, entity investigation, smart money, signals → route to SENTINEL\n' +
+  '- If the user wants general help, navigation, tasks, database operations, or simple questions → handle DIRECTLY (do NOT route)\n\n' +
+  '## ROUTING FORMAT\n' +
+  'When routing, respond with ONLY this JSON (no other text):\n' +
+  '{"route": "analyst", "message": "<rephrased user request with context>"}\n' +
+  'or\n' +
+  '{"route": "sentinel", "message": "<rephrased user request with context>"}\n\n' +
+  'When handling directly, just respond normally using your tools.\n\n' +
+  '## EXAMPLES\n' +
+  '- "research SOL" → {"route": "analyst", "message": "Do a deep fundamental research report on Solana (SOL)"}\n' +
+  '- "who is long ETH?" → {"route": "sentinel", "message": "Find whale positions that are long ETH on Hyperliquid"}\n' +
+  '- "scan wallet 0x..." → {"route": "sentinel", "message": "Scan and profile this Hyperliquid wallet: 0x..."}\n' +
+  '- "compare SOL vs ETH" → {"route": "analyst", "message": "Compare SOL and ETH fundamentals side by side"}\n' +
+  '- "what entities are we tracking?" → {"route": "sentinel", "message": "List all tracked entities with grades and types"}\n' +
+  '- "go to settings" → handle directly (navigation)\n' +
+  '- "create a task" → handle directly (database operation)\n' +
+  '- "what are my stats?" → handle directly (general query)\n\n' +
+  '## DIRECT HANDLING\n' +
+  'When NOT routing, you are a helpful AI assistant. You can navigate pages, manage tasks/deals/projects, answer questions about Fund HQ.\n' +
+  'Be direct, concise. Use specific numbers. Today: ' + new Date().toISOString().split('T')[0] + '\n' +
+  'Watchlist: ' + (wl || '(empty)') + '\n' +
+  'Unread alerts: ' + (DB.alerts || []).filter(function(a) { return !a.dismissed; }).length;
+}
+
+// --- Agent Registry ---
+var AGENT_REGISTRY = {
+  router: {
+    name: 'Pamela',
+    icon: 'P',
+    color: 'var(--accent)',
+    buildPrompt: buildRouterPrompt,
+    tools: function() { return SHARED_TOOLS; }
+  },
+  analyst: {
+    name: 'Analyst',
+    icon: 'A',
+    color: 'var(--green)',
+    buildPrompt: buildAnalystPrompt,
+    tools: function() { return ANALYST_TOOLS.concat(SHARED_TOOLS); }
+  },
+  sentinel: {
+    name: 'Sentinel',
+    icon: 'S',
+    color: 'var(--purple, #a78bfa)',
+    buildPrompt: buildSentinelPrompt,
+    tools: function() { return SENTINEL_TOOLS.concat(SHARED_TOOLS); }
+  }
+};
+
+// --- Shared Agent Runner ---
+async function runAgent(agentName, userMessage) {
+  var agent = AGENT_REGISTRY[agentName];
+  if (!agent) throw new Error('Unknown agent: ' + agentName);
+  var key = getAnthropicKey();
+  if (!key) throw new Error('No Anthropic API key configured. Add it in Settings.');
+  var messages = [{ role: 'user', content: userMessage }];
+  var maxTurns = 8;
+
+  for (var turn = 0; turn < maxTurns; turn++) {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        system: agent.buildPrompt(),
+        tools: agent.tools().concat([{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }]),
+        messages: messages
+      })
+    });
+    if (!resp.ok) {
+      var err = await resp.json().catch(function() { return {}; });
+      throw new Error(err.error?.message || 'Claude API error (' + resp.status + ')');
+    }
+    var data = await resp.json();
+    var toolUseBlocks = data.content.filter(function(b) { return b.type === 'tool_use'; });
+
+    if (toolUseBlocks.length === 0 || data.stop_reason === 'end_turn') {
+      return extractPamelaResponse(data);
+    }
+
+    messages.push({ role: 'assistant', content: data.content });
+
+    var toolResults = [];
+    for (var i = 0; i < toolUseBlocks.length; i++) {
+      var tc = toolUseBlocks[i];
+      var result;
+      try { result = await executeToolCall(tc.name, tc.input); }
+      catch (e) { result = { error: e.message }; }
+      toolResults.push({ type: 'tool_result', tool_use_id: tc.id, content: JSON.stringify(result) });
+    }
+    messages.push({ role: 'user', content: toolResults });
+  }
+  return { text: 'Hit complexity limit. Try a simpler request.', actions: [] };
+}
+
+// --- Router: Intent Detection + Delegation ---
+async function routedAgent(userMessage) {
+  // Step 1: Ask Router to classify intent
+  var key = getAnthropicKey();
+  if (!key) throw new Error('No Anthropic API key configured.');
+
+  var routerResp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      system: buildRouterPrompt(),
+      tools: SHARED_TOOLS.concat([{ type: 'web_search_20250305', name: 'web_search', max_uses: 1 }]),
+      messages: [{ role: 'user', content: userMessage }]
+    })
+  });
+  if (!routerResp.ok) {
+    var err = await routerResp.json().catch(function() { return {}; });
+    throw new Error(err.error?.message || 'Router error (' + routerResp.status + ')');
+  }
+  var routerData = await routerResp.json();
+
+  // Check if Router wants to use tools directly (handling it itself)
+  var routerToolUse = routerData.content.filter(function(b) { return b.type === 'tool_use'; });
+  if (routerToolUse.length > 0) {
+    // Router is handling directly — run it as a full agent
+    return runAgent('router', userMessage);
+  }
+
+  // Check for routing JSON in response
+  var textContent = routerData.content.filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+
+  try {
+    // Try to parse routing JSON
+    var routeMatch = textContent.match(/\{[\s\S]*?"route"[\s\S]*?\}/);
+    if (routeMatch) {
+      var routing = JSON.parse(routeMatch[0]);
+      if (routing.route === 'analyst' || routing.route === 'sentinel') {
+        // Update thinking indicator to show which agent
+        var agentInfo = AGENT_REGISTRY[routing.route];
+        agentShowThinking(agentInfo.name, agentInfo.color);
+        var result = await runAgent(routing.route, routing.message || userMessage);
+        result.agent = routing.route;
+        return result;
+      }
+    }
+  } catch(e) {
+    // JSON parse failed — Router is responding directly
+  }
+
+  // Router handled directly (text response)
+  var directResult = extractPamelaResponse(routerData);
+  directResult.agent = 'router';
+  return directResult;
+}
+
+// --- Legacy compatibility ---
 const PAMELA_TOOLS = [
   { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker on CoinGecko. Returns top matches with id, symbol, name, and rank.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Crypto name or ticker to search for' } }, required: ['query'] } },
   { name: 'get_crypto_data', description: 'Get detailed crypto data: price, market cap, FDV, volume, 24h/7d/30d changes, ATH/ATL, supply, categories, links, description. Use search_crypto first to get the coingecko_id.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string', description: 'CoinGecko ID (e.g. "bitcoin", "ethereum", "solana")' } }, required: ['coingecko_id'] } },
@@ -3763,6 +4055,36 @@ async function executeToolCall(name, input) {
       hlEnsureVars();
       return { saved_wallets: hlSavedWallets.map(w => ({ address: w.address, label: w.label || '', last_value: w.lastValue || 0, saved_at: w.savedAt })), count: hlSavedWallets.length };
     }
+    case 'get_entities': {
+      if (typeof etEntities === 'undefined' || !etEntities) return { entities: [], count: 0 };
+      var filtered = etEntities;
+      if (input.type) filtered = filtered.filter(function(e) { return e.type === input.type; });
+      if (input.grade) {
+        var gradeRank = {'A+':1,'A':2,'B+':3,'B':4,'C':5};
+        var minRank = gradeRank[input.grade] || 5;
+        filtered = filtered.filter(function(e) { return (gradeRank[e.grade] || 99) <= minRank; });
+      }
+      return { entities: filtered.map(function(e) { return { id: e.id, name: e.name, address: e.address ? e.address.slice(0,10) + '...' : '', type: e.type, grade: e.grade, source: e.source || 'manual', accountValue: e.accountValue || 0, positionCount: e.positionCount || 0, lastScan: e.lastScan }; }), count: filtered.length };
+    }
+    case 'get_signals': {
+      var signals = DB.signals || [];
+      if (input.type) signals = signals.filter(function(s) { return s.type === input.type; });
+      if (input.status) signals = signals.filter(function(s) { return s.status === input.status; });
+      return { signals: signals.slice(-20).reverse().map(function(s) { return { id: s.id, asset: s.asset || s.assetSymbol, type: s.type, conviction: s.conviction, description: s.description, status: s.status, source: s.source, created: s.created }; }), count: signals.length };
+    }
+    case 'create_signal': {
+      var sig = { id: 'sig_' + Date.now(), asset: input.asset, assetSymbol: input.asset, type: input.type, conviction: input.conviction, description: input.description, entityAddress: input.entity_address || '', source: 'sentinel', status: 'new', created: new Date().toISOString() };
+      if (!DB.signals) DB.signals = [];
+      DB.signals.push(sig);
+      if (typeof renderSignalFeed === 'function') renderSignalFeed();
+      return { created: true, id: sig.id, asset: sig.asset, type: sig.type, conviction: sig.conviction };
+    }
+    case 'get_conviction': {
+      try {
+        var conv = computeConviction(input.symbol);
+        return { symbol: input.symbol, master: conv.master, investor: conv.investor, trader: conv.trader, verdict: conv.verdict };
+      } catch(e) { return { error: 'Could not compute conviction: ' + e.message }; }
+    }
     default: return { error: 'Unknown tool: ' + name };
   }
 }
@@ -3798,15 +4120,23 @@ function extractPamelaResponse(apiResponse) {
 }
 
 function pamelaShowThinking() {
-  const el = document.createElement('div');
+  agentShowThinking('Pamela', 'var(--accent)');
+}
+function agentShowThinking(name, color) {
+  var existing = document.getElementById('pamela-thinking');
+  if (existing) existing.remove();
+  var el = document.createElement('div');
   el.className = 'chat-msg chat-msg-bot';
   el.id = 'pamela-thinking';
-  el.innerHTML = '<div class="chat-msg-text" style="color:var(--text3);font-style:italic;"><span class="spinner" style="display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:middle;"></span>Thinking...</div>';
-  const msgs = document.getElementById('chat-messages');
+  el.innerHTML = '<div class="chat-msg-text" style="color:var(--text3);font-style:italic;">' +
+    '<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:' + (color || 'var(--accent)') + ';color:#000;font-size:10px;font-weight:700;text-align:center;line-height:18px;margin-right:6px;vertical-align:middle;">' + (name || 'P').charAt(0) + '</span>' +
+    '<span class="spinner" style="display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:middle;"></span>' +
+    (name || 'Pamela') + ' thinking...</div>';
+  var msgs = document.getElementById('chat-messages');
   if (msgs) { msgs.appendChild(el); msgs.scrollTop = msgs.scrollHeight; }
 }
 function pamelaHideThinking() {
-  const el = document.getElementById('pamela-thinking');
+  var el = document.getElementById('pamela-thinking');
   if (el) el.remove();
 }
 
@@ -7793,10 +8123,15 @@ function chatSend() {
   }
 
   pamelaShowThinking();
-  pamelaAgent(raw).then(result => {
+  routedAgent(raw).then(function(result) {
     pamelaHideThinking();
-    chatAddMsg('bot', result.text, result.actions);
-  }).catch(e => {
+    var agentBadge = '';
+    if (result.agent && AGENT_REGISTRY[result.agent]) {
+      var ag = AGENT_REGISTRY[result.agent];
+      agentBadge = '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;background:color-mix(in srgb, ' + ag.color + ' 15%, transparent);color:' + ag.color + ';margin-bottom:4px;letter-spacing:0.5px;">' + ag.name.toUpperCase() + '</span><br>';
+    }
+    chatAddMsg('bot', agentBadge + result.text, result.actions);
+  }).catch(function(e) {
     pamelaHideThinking();
     chatAddMsg('bot', 'Error: ' + esc(e.message));
   });
