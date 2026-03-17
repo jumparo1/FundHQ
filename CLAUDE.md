@@ -8,7 +8,7 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 - **Hosting:** GitHub Pages (free) — `jumparo1.github.io/JumpTools/fund-hq.html`
 - **AI Agent:** "Pamela" — Claude Haiku via tool_use API, 17 tools, multi-turn loop (max 8 turns)
 - **Scheduled Tasks:** 3 Claude Code cron jobs writing alerts via Firebase REST API
-- **APIs:** CoinGecko (crypto), FMP `/stable/` (stocks), DefiLlama (TVL), Anthropic Claude (AI research + web search)
+- **APIs:** CoinGecko (crypto), FMP `/stable/` (stocks), Arkham Intelligence (wallet identity/labels), Moralis (EVM holders), Dexscreener (DEX pairs), Hyperliquid (perps/whales), Anthropic Claude (AI research + web search)
 - **Knowledge Base:** 4 SKILL.md files (MISSION, TRADING-EDGE, ASYMMETRIC-SETUPS, FUNDAMENTAL-ANALYSIS)
 - **Users:** Jumparo (crypto) & Tihomir (equities)
 
@@ -70,7 +70,8 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
-- 2026-03-17: **Wallet Hunter** — new HL sub-tab: systematically scans leaderboard, fetches trade history, scores wallets (0-100), auto-classifies (Fund/Insider/MM/Copyable/Degen/Whale), bulk import to Entity Tracker
+- 2026-03-17: **Arkham Intelligence integration** — wallet identity labels on Token Intel whales + entities, Arkham token holders endpoint, Alpha Summary identity insights, Wallet Hunter Arkham enrichment, Settings key + test
+- 2026-03-17: **Wallet Hunter** — new HL sub-tab: systematically scans leaderboard, fetches trade history, scores wallets (0-100), auto-classifies (Fund/Insider/MM/Copyable/Degen/Whale), Arkham identity enrichment, bulk import to Entity Tracker
 - 2026-03-17: **Whale Quality Scoring** — `whaleScoreWallet()` engine: win rate, PnL consistency, trade frequency, leverage analysis → composite quality score + auto-grade (A+ to C) + auto-type classification
 - 2026-03-17: **Token Intel whale scoring** — discovered whales now scored & classified with quality badge, type tag, win rate, trade stats; sorted by quality; one-click Track with auto-grade
 - 2026-03-17: **Degen entity type** — 7th entity type added across all selects and displays (orange badge)

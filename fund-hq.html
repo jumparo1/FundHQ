@@ -2526,6 +2526,16 @@ cd ~/deploy && git add . && git commit && git push
         <div style="margin-bottom:20px;">
           <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">On-Chain Intelligence</div>
           <div style="max-width:420px;margin-bottom:14px;">
+            <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px;">Arkham Intelligence <span style="font-size:10px;padding:1px 6px;background:rgba(249,115,22,0.15);color:#f97316;border-radius:3px;">Apply</span></label>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Wallet identity labels, entity tracking, on-chain transfers, token holders. <a href="https://intel.arkm.com/api" target="_blank" style="color:var(--accent);">arkm.com</a></div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="settings-arkham-key" autocomplete="off" data-1p-ignore placeholder="Enter Arkham API key..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;outline:none;">
+              <button class="btn btn-primary btn-sm" onclick="localStorage.setItem('arkhamKey',document.getElementById('settings-arkham-key').value.trim());document.getElementById('arkham-test-result').textContent='Saved!';document.getElementById('arkham-test-result').style.color='var(--green)';refreshApiStatus();">Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="testArkhamKey()">Test</button>
+            </div>
+            <div id="arkham-test-result" style="font-size:11px;margin-top:3px;min-height:16px;"></div>
+          </div>
+          <div style="max-width:420px;margin-bottom:14px;">
             <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px;">Moralis <span style="font-size:10px;padding:1px 6px;background:rgba(16,185,129,0.1);color:var(--green);border-radius:3px;">Free</span></label>
             <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Token Intel: top holders, % supply, whale categories (40K CU/day). <a href="https://admin.moralis.com/register" target="_blank" style="color:var(--accent);">moralis.com</a></div>
             <div style="display:flex;gap:6px;align-items:center;">
@@ -2775,14 +2785,37 @@ function refreshApiStatus() {
     { name: 'Dexscreener', status: 'active', note: 'No key needed' },
     { name: 'Anthropic', status: localStorage.getItem('anthropicKey') ? 'active' : 'missing', note: 'AI research' },
     { name: 'FMP', status: localStorage.getItem('fmpKey') ? 'active' : 'missing', note: 'Stock data' },
+    { name: 'Arkham', status: localStorage.getItem('arkhamKey') ? 'active' : 'missing', note: 'Wallet identity' },
     { name: 'Moralis', status: localStorage.getItem('moralisKey') ? 'active' : 'missing', note: 'On-chain holders' },
-    { name: 'Birdeye', status: localStorage.getItem('birdeyeKey') ? 'active' : 'missing', note: 'Solana traders' },
     { name: 'CoinGlass', status: localStorage.getItem('coinglassKey') ? 'active' : 'missing', note: 'Whale tracker' }
   ];
   grid.innerHTML = apis.map(function(a) {
     var dot = a.status === 'active' ? '<span style="color:var(--green);">&#9679;</span>' : '<span style="color:var(--text3);">&#9675;</span>';
     return '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px;">' + dot + ' <span style="font-weight:600;color:' + (a.status === 'active' ? 'var(--text)' : 'var(--text3)') + ';">' + a.name + '</span><span style="margin-left:auto;color:var(--text3);font-size:10px;">' + a.note + '</span></div>';
   }).join('');
+}
+async function testArkhamKey() {
+  var key = document.getElementById('settings-arkham-key')?.value?.trim();
+  if (key) localStorage.setItem('arkhamKey', key);
+  else key = localStorage.getItem('arkhamKey') || '';
+  var el = document.getElementById('arkham-test-result');
+  if (!key) { el.textContent = 'No key entered'; el.style.color = 'var(--red)'; return; }
+  try {
+    el.textContent = 'Testing...'; el.style.color = 'var(--text3)';
+    // Test with Vitalik's address — well-known entity
+    var resp = await fetch('https://api.arkhamintelligence.com/intelligence/address/0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', {
+      headers: { 'API-Key': key }
+    });
+    if (resp.ok) {
+      var data = await resp.json();
+      var entityName = data.arkhamEntity?.name || data.name || 'entity found';
+      el.textContent = 'Connected! Identified: ' + entityName;
+      el.style.color = 'var(--green)';
+    } else {
+      el.textContent = 'Error ' + resp.status + ': ' + (resp.status === 401 || resp.status === 403 ? 'Invalid key' : 'API error');
+      el.style.color = 'var(--red)';
+    }
+  } catch(e) { el.textContent = 'Connection failed: ' + e.message; el.style.color = 'var(--red)'; }
 }
 async function testMoralisKey() {
   var key = document.getElementById('settings-moralis-key')?.value?.trim();
@@ -4467,6 +4500,7 @@ function showPage(pageName) {
   if (pageName === 'settings') {
     var kf = document.getElementById('settings-fmp-key'); if (kf && !kf.value) kf.value = localStorage.getItem('fmpKey') || '';
     var ka = document.getElementById('settings-anthropic-key'); if (ka && !ka.value) ka.value = localStorage.getItem('anthropicKey') || '';
+    var kark = document.getElementById('settings-arkham-key'); if (kark && !kark.value) kark.value = localStorage.getItem('arkhamKey') || '';
     var km = document.getElementById('settings-moralis-key'); if (km && !km.value) km.value = localStorage.getItem('moralisKey') || '';
     var kb = document.getElementById('settings-birdeye-key'); if (kb && !kb.value) kb.value = localStorage.getItem('birdeyeKey') || '';
     var kc = document.getElementById('settings-coinglass-key'); if (kc && !kc.value) kc.value = localStorage.getItem('coinglassKey') || '';
@@ -9322,6 +9356,25 @@ async function hlWalletHunt() {
     hlHunterResults = hlHunterResults.filter(function(r) { return r.quality.qualityScore >= minQuality; });
     hlHunterResults.sort(function(a,b) { return b.quality.qualityScore - a.quality.qualityScore; });
 
+    // Step 4: Arkham identity enrichment (top 20 results)
+    var arkKey = localStorage.getItem('arkhamKey') || '';
+    if (arkKey && hlHunterResults.length > 0) {
+      hlHunterUpdateProgress('Looking up wallet identities (Arkham)...', 96);
+      var topAddrs = hlHunterResults.slice(0, 20).map(function(r) { return r.address; });
+      try {
+        var arkLabels = await arkhamBatchLookup(topAddrs);
+        hlHunterResults.forEach(function(r) {
+          var label = arkLabels[r.address.toLowerCase()];
+          if (label && label.isLabeled) {
+            r.arkhamLabel = label.entityName;
+            r.arkhamType = label.entityType;
+            // Override displayName if not set
+            if (!r.displayName) r.displayName = label.entityName;
+          }
+        });
+      } catch(e) { console.warn('Hunter Arkham error:', e); }
+    }
+
     hlHunterUpdateProgress('Hunt complete! Found ' + hlHunterResults.length + ' quality wallets.', 100);
     hlHunterRender();
 
@@ -9404,7 +9457,8 @@ function hlHunterRender() {
     html += '<tr style="border-bottom:1px solid var(--border);' + (r.isTracked ? 'opacity:0.5;' : '') + '">';
     // Address
     html += '<td style="padding:8px;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(r.address) + '\')" style="color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2);font-family:monospace;font-size:11px;">' + hlAddr(r.address) + '</a>';
-    if (r.displayName) html += '<br><span style="font-size:10px;color:var(--text3);">' + esc(r.displayName) + '</span>';
+    if (r.arkhamLabel) html += '<br><span style="font-size:10px;padding:1px 5px;background:rgba(249,115,22,0.12);color:#f97316;border-radius:3px;">&#128373; ' + esc(r.arkhamLabel) + '</span>';
+    else if (r.displayName) html += '<br><span style="font-size:10px;color:var(--text3);">' + esc(r.displayName) + '</span>';
     html += '</td>';
     // Quality
     html += '<td style="padding:8px;text-align:center;"><span style="display:inline-block;min-width:44px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:color-mix(in srgb, '+qColor+' 15%, transparent);color:'+qColor+';">' + q.grade + ' (' + q.qualityScore + ')</span></td>';
@@ -10436,6 +10490,59 @@ function renderAll() {
   if (beInput && !beInput.value) beInput.value = localStorage.getItem('birdeyeKey') || '';
 }
 
+// ===== ARKHAM INTELLIGENCE INTEGRATION =====
+var ARKHAM_API = 'https://api.arkhamintelligence.com';
+
+async function arkhamLookup(address) {
+  var key = localStorage.getItem('arkhamKey') || '';
+  if (!key || !address) return null;
+  try {
+    var resp = await fetch(ARKHAM_API + '/intelligence/address/' + encodeURIComponent(address), {
+      headers: { 'API-Key': key }
+    });
+    if (!resp.ok) return null;
+    var data = await resp.json();
+    return {
+      entityName: data.arkhamEntity?.name || null,
+      entityType: data.arkhamEntity?.type || null,
+      entityId: data.arkhamEntity?.id || null,
+      tags: (data.arkhamEntity?.tags || []),
+      isLabeled: !!(data.arkhamEntity?.name)
+    };
+  } catch(e) { console.warn('Arkham lookup error:', address, e); return null; }
+}
+
+// Batch lookup — rate limited to avoid 429s
+async function arkhamBatchLookup(addresses) {
+  var key = localStorage.getItem('arkhamKey') || '';
+  if (!key || !addresses.length) return {};
+  var results = {};
+  for (var i = 0; i < addresses.length; i++) {
+    try {
+      var data = await arkhamLookup(addresses[i]);
+      if (data) results[addresses[i].toLowerCase()] = data;
+    } catch(e) {}
+    if (i < addresses.length - 1) await new Promise(function(r) { setTimeout(r, 100); });
+  }
+  return results;
+}
+
+// Get Arkham token holders (with entity labels)
+async function arkhamTokenHolders(chain, tokenAddress) {
+  var key = localStorage.getItem('arkhamKey') || '';
+  if (!key || !tokenAddress || !chain) return [];
+  var chainMap = { ethereum: 'ethereum', base: 'base', bsc: 'bsc', polygon: 'polygon', arbitrum: 'arbitrum_one', optimism: 'optimism', avalanche: 'avalanche' };
+  var arkChain = chainMap[chain] || chain;
+  try {
+    var resp = await fetch(ARKHAM_API + '/token/holders/' + encodeURIComponent(arkChain) + '/' + encodeURIComponent(tokenAddress) + '?limit=30', {
+      headers: { 'API-Key': key }
+    });
+    if (!resp.ok) return [];
+    var data = await resp.json();
+    return (data.holders || data || []).slice(0, 30);
+  } catch(e) { console.warn('Arkham holders error:', e); return []; }
+}
+
 // ===== TOKEN INTEL SCANNER =====
 async function tiScan() {
   var ticker = (document.getElementById('ti-search')?.value || '').trim().toUpperCase();
@@ -10658,7 +10765,31 @@ async function tiScan() {
     }
   } catch(e) { console.warn('Leaderboard error:', e); results._errors.push('Whale Discovery: ' + e.message); }
 
-  console.log('Token Intel scan complete:', { ticker: ticker, entities: results.entities.length, hlPerp: !!results.hlPerp, dexPairs: results.dexPairs.length, moralis: results.moralisHolders.length, birdeye: results.birdeyeTraders.length, whales: discoveredWhales.length, errors: results._errors });
+  // 7. Arkham: identity labels for discovered whales + tracked entities
+  results.arkhamLabels = {};
+  var arkhamKey = localStorage.getItem('arkhamKey') || '';
+  if (arkhamKey) {
+    document.getElementById('ti-status').textContent = 'Looking up wallet identities (Arkham)...';
+    var addressesToLookup = [];
+    discoveredWhales.forEach(function(w) { if (w.address) addressesToLookup.push(w.address); });
+    results.entities.forEach(function(e) { if (e.address) addressesToLookup.push(e.address); });
+    // Limit to 15 lookups to avoid rate limits
+    addressesToLookup = addressesToLookup.slice(0, 15);
+    try {
+      results.arkhamLabels = await arkhamBatchLookup(addressesToLookup);
+    } catch(e) { console.warn('Arkham batch error:', e); results._errors.push('Arkham: ' + e.message); }
+  }
+
+  // 8. Arkham: token holders with entity labels (if EVM token found)
+  results.arkhamHolders = [];
+  if (arkhamKey && results._tokenAddress && results._tokenChain) {
+    document.getElementById('ti-status').textContent = 'Fetching labeled holders (Arkham)...';
+    try {
+      results.arkhamHolders = await arkhamTokenHolders(results._tokenChain, results._tokenAddress);
+    } catch(e) { console.warn('Arkham holders error:', e); results._errors.push('Arkham Holders: ' + e.message); }
+  }
+
+  console.log('Token Intel scan complete:', { ticker: ticker, entities: results.entities.length, hlPerp: !!results.hlPerp, dexPairs: results.dexPairs.length, moralis: results.moralisHolders.length, birdeye: results.birdeyeTraders.length, whales: discoveredWhales.length, arkham: Object.keys(results.arkhamLabels).length, arkhamHolders: results.arkhamHolders.length, errors: results._errors });
 
   // Render results
   tiRender(results, discoveredWhales);
@@ -10712,7 +10843,10 @@ function tiRender(r, whales) {
     r.entities.forEach(function(e) {
       var gradeColors = {'A+':'var(--green)','A':'var(--green)','B+':'var(--yellow)','B':'var(--text2)','C':'var(--text3)','?':'var(--text3)'};
       html += '<tr style="border-bottom:1px solid var(--border);">';
-      html += '<td style="padding:8px;font-weight:700;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(e.address) + '\')" style="color:var(--text);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + esc(e.name) + '</a></td>';
+      var arkLabel = r.arkhamLabels && r.arkhamLabels[e.address.toLowerCase()];
+      html += '<td style="padding:8px;font-weight:700;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(e.address) + '\')" style="color:var(--text);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + esc(e.name) + '</a>';
+      if (arkLabel && arkLabel.entityName) html += '<br><span style="font-size:10px;padding:1px 5px;background:rgba(249,115,22,0.12);color:#f97316;border-radius:3px;">&#128373; ' + esc(arkLabel.entityName) + '</span>';
+      html += '</td>';
       html += '<td style="padding:8px;"><span style="font-weight:700;color:' + (gradeColors[e.grade]||'var(--text3)') + ';">' + esc(e.grade || '?') + '</span></td>';
       html += '<td style="padding:8px;color:var(--text3);font-size:11px;">' + esc(e.type || '') + '</td>';
       html += '<td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + (e.side==='LONG'?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)') + ';color:' + (e.side==='LONG'?'var(--green)':'var(--red)') + ';">' + e.side + '</span></td>';
@@ -10764,8 +10898,11 @@ function tiRender(r, whales) {
       var qTypeColors = {whale:'var(--accent2)',fund:'var(--purple)',mm:'var(--yellow)',protocol:'var(--green)',insider:'var(--red)',copyable:'var(--blue, #60a5fa)',degen:'#f97316'};
       var qTypeLabels = {whale:'Whale',fund:'Fund/VC',mm:'Market Maker',protocol:'Protocol',insider:'Insider',copyable:'Copyable',degen:'Degen'};
       _whaleQualityMap[w.address] = q;
+      var wArkLabel = r.arkhamLabels && r.arkhamLabels[w.address.toLowerCase()];
       html += '<tr style="border-bottom:1px solid var(--border);">';
-      html += '<td style="padding:8px;font-family:monospace;font-size:11px;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(w.address) + '\')" style="color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + hlAddr(w.address) + '</a></td>';
+      html += '<td style="padding:8px;font-family:monospace;font-size:11px;"><a href="#" onclick="event.preventDefault();tiOpenWallet(\'' + esc(w.address) + '\')" style="color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2);">' + hlAddr(w.address) + '</a>';
+      if (wArkLabel && wArkLabel.entityName) html += '<br><span style="font-size:10px;padding:1px 5px;background:rgba(249,115,22,0.12);color:#f97316;border-radius:3px;font-family:system-ui;">&#128373; ' + esc(wArkLabel.entityName) + '</span>';
+      html += '</td>';
       // Quality score badge
       html += '<td style="padding:8px;text-align:center;"><span style="display:inline-block;min-width:44px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:color-mix(in srgb, ' + qColor + ' 15%, transparent);color:' + qColor + ';">' + qGrade + ' (' + qScore + ')</span></td>';
       // Type
@@ -10958,8 +11095,8 @@ function tiRender(r, whales) {
     { name: 'Entity Tracker', ok: r.entities.length > 0, detail: r.entities.length + ' positions' },
     { name: 'HL Perps', ok: !!r.hlPerp, detail: r.hlPerp ? '$' + dexFmt(r.hlPerp.vol24h) + ' vol' : 'not listed' },
     { name: 'Dexscreener', ok: r.dexPairs.length > 0, detail: r.dexPairs.length + ' pairs' },
+    { name: 'Arkham', ok: Object.keys(r.arkhamLabels||{}).length > 0, detail: Object.keys(r.arkhamLabels||{}).filter(function(k){return r.arkhamLabels[k].isLabeled;}).length + ' identified' + (!localStorage.getItem('arkhamKey') ? ' (no key)' : '') },
     { name: 'Moralis', ok: (r.moralisHolders && r.moralisHolders.length > 0), detail: r.moralisHolders ? r.moralisHolders.length + ' holders' : (localStorage.getItem('moralisKey') ? 'no EVM pair' : 'no API key') },
-    { name: 'Birdeye', ok: (r.birdeyeTraders && r.birdeyeTraders.length > 0), detail: r.birdeyeTraders ? r.birdeyeTraders.length + ' traders' : (localStorage.getItem('birdeyeKey') ? 'no SOL pair' : 'no API key') },
     { name: 'Whale Discovery', ok: newWhales.length > 0, detail: whales.length + ' scanned, ' + newWhales.length + ' found' },
     { name: 'Signals', ok: r.signals.length > 0, detail: r.signals.length + ' active' },
     { name: 'Catalysts', ok: r.catalysts.length > 0, detail: r.catalysts.length + ' upcoming' }
@@ -11024,6 +11161,14 @@ function tiRender(r, whales) {
       var buyRatio = tbuy / (tbuy + tsell);
       if (buyRatio > 0.65) insights.push('<span style="color:var(--green);">&#128640;</span> Solana top traders heavily buying (' + (buyRatio*100).toFixed(0) + '% buy volume)');
       else if (buyRatio < 0.35) insights.push('<span style="color:var(--red);">&#9888;</span> Solana top traders heavily selling (' + ((1-buyRatio)*100).toFixed(0) + '% sell volume)');
+    }
+  }
+  // Arkham identity insights
+  if (r.arkhamLabels && Object.keys(r.arkhamLabels).length > 0) {
+    var labeledCount = Object.values(r.arkhamLabels).filter(function(l) { return l.isLabeled; }).length;
+    var labeledNames = Object.values(r.arkhamLabels).filter(function(l) { return l.isLabeled; }).map(function(l) { return l.entityName; });
+    if (labeledCount > 0) {
+      insights.push('<span style="color:#f97316;">&#128373;</span> Arkham identified <strong>' + labeledCount + '</strong> wallet(s): ' + labeledNames.slice(0,5).join(', ') + (labeledNames.length > 5 ? '...' : ''));
     }
   }
   if (r.dexPairs.length > 0) {
