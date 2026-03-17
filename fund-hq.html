@@ -8497,7 +8497,9 @@ function etRender() {
 
     html += '<tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="etShowDetail(\''+e.id+'\')">';
     html += '<td style="padding:10px 14px;"><div style="font-weight:600;color:var(--text1);">'+esc(e.name)+'</div><div style="font-size:11px;color:var(--text3);font-family:monospace;">'+hlAddr(e.address)+'</div></td>';
-    html += '<td><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:color-mix(in srgb, '+typeColor+' 15%, transparent);color:'+typeColor+';">'+(typeLabels[e.type]||e.type)+'</span></td>';
+    var srcColors = {hyperliquid:'var(--green)',arkham:'var(--accent)',moralis:'var(--blue, #60a5fa)',dexscreener:'var(--yellow)',manual:'var(--text3)'};
+    var srcLabel = e.source ? '<span style="font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px;background:color-mix(in srgb, '+(srcColors[e.source]||'var(--text3)')+' 15%, transparent);color:'+(srcColors[e.source]||'var(--text3)')+';">'+e.source.toUpperCase()+'</span>' : '';
+    html += '<td><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:color-mix(in srgb, '+typeColor+' 15%, transparent);color:'+typeColor+';">'+(typeLabels[e.type]||e.type)+'</span>'+srcLabel+'</td>';
     html += '<td style="font-weight:700;color:'+gradeColor+';">'+(e.grade||'--')+'</td>';
     html += '<td style="font-weight:600;">$'+hlFmt(e.accountValue||0)+'</td>';
     html += '<td>'+(e.positionCount||0)+' open</td>';
@@ -9974,8 +9976,28 @@ var hlLastScannedAcctVal = 0;
 
 function hlSaveScannedWallet() {
   if (!hlLastScannedAddr) return;
-  hlToggleSave(hlLastScannedAddr, hlLastScannedAcctVal);
+  hlEnsureVars();
+  var isSaved = hlSavedWallets.some(function(w) { return w.address.toLowerCase() === hlLastScannedAddr.toLowerCase(); });
+  if (isSaved) {
+    hlToggleSave(hlLastScannedAddr, hlLastScannedAcctVal);
+  } else {
+    var name = prompt('Name this wallet:', hlLastScannedAddr.slice(0,8) + '...');
+    if (name === null) return;
+    hlToggleSave(hlLastScannedAddr, hlLastScannedAcctVal, name || hlLastScannedAddr.slice(0,8) + '...');
+  }
   hlUpdateSaveScannedBtn();
+}
+
+function hlPromptSave(addr, acctVal) {
+  hlEnsureVars();
+  var isSaved = hlSavedWallets.some(function(w) { return w.address.toLowerCase() === addr.toLowerCase(); });
+  if (isSaved) {
+    hlToggleSave(addr, acctVal);
+  } else {
+    var name = prompt('Name this wallet:', addr.slice(0,8) + '...');
+    if (name === null) return;
+    hlToggleSave(addr, acctVal, name || addr.slice(0,8) + '...');
+  }
 }
 
 function hlUpdateSaveScannedBtn() {
@@ -10012,7 +10034,7 @@ function hlRenderWalletProfile(addr, state, fills) {
   // Run quality scoring
   var walletQuality = whaleScoreWallet(addr, state, fills);
   html += '<div style="display:flex;gap:8px;">';
-  html += '<button class="btn btn-sm '+(isSaved?'btn-ghost':'btn-primary')+'" onclick="hlToggleSave(\''+addr+'\','+acctVal+')">'+(isSaved?'&#10003; Saved':'&#128190; Save Wallet')+'</button>';
+  html += '<button class="btn btn-sm '+(isSaved?'btn-ghost':'btn-primary')+'" onclick="hlPromptSave(\''+addr+'\','+acctVal+')">'+(isSaved?'&#10003; Saved':'&#128190; Save Wallet')+'</button>';
   if (!isTracked) html += '<button class="btn btn-sm btn-primary admin-only" onclick="tiAddEntity(\''+addr+'\','+acctVal+')">&#128373; Track Entity</button>';
   else html += '<span style="font-size:10px;padding:4px 8px;background:rgba(99,102,241,0.12);color:var(--accent2);border-radius:4px;display:flex;align-items:center;">TRACKED: ' + esc(isTracked.name) + '</span>';
   html += '</div></div>';
@@ -10098,28 +10120,13 @@ function hlStatCard(label, value, color) {
 }
 
 // ===== SAVE/UNSAVE WALLETS =====
-function hlToggleSave(addr, acctVal) {
+function hlToggleSave(addr, acctVal, name) {
   hlEnsureVars();
   const idx = hlSavedWallets.findIndex(w => w.address.toLowerCase() === addr.toLowerCase());
   if (idx >= 0) {
     hlSavedWallets.splice(idx, 1);
   } else {
-    hlSavedWallets.push({ address: addr, savedAt: new Date().toISOString(), lastValue: acctVal, label: '' });
-    // Auto-sync to Entity Tracker (unified entity store)
-    if (typeof getEntityByAddress === 'function' && !getEntityByAddress(addr)) {
-      addEntity({
-        name: typeof hlAddr === 'function' ? hlAddr(addr) : addr.slice(0,8) + '...',
-        address: addr,
-        type: 'whale',
-        grade: 'B',
-        venues: ['hyperliquid'],
-        notes: 'Auto-tracked from HL wallet save',
-        accountValue: acctVal || 0,
-        positions: [],
-        positionCount: 0,
-        totalPnl: 0
-      });
-    }
+    hlSavedWallets.push({ address: addr, savedAt: new Date().toISOString(), lastValue: acctVal, label: name || '' });
   }
   hlSaveWallets();
   hlRenderSaved();
@@ -10154,7 +10161,10 @@ async function hlRenderSaved() {
     html += '<div style="font-family:monospace;font-size:11px;color:var(--text3);">'+hlAddr(w.address)
       + ' <a href="https://app.hyperliquid.xyz/explorer/address/'+w.address+'" target="_blank" style="color:var(--accent);">&#8599;</a></div>';
     html += '</div>';
-    html += '<div style="display:flex;gap:6px;">';
+    var isEntity = typeof getEntityByAddress === 'function' && getEntityByAddress(w.address);
+    html += '<div style="display:flex;gap:6px;align-items:center;">';
+    if (isEntity) html += '<span style="font-size:9px;padding:2px 6px;background:rgba(99,102,241,0.12);color:var(--accent2);border-radius:3px;">ENTITY</span>';
+    else html += '<button class="btn btn-sm btn-ghost" onclick="hlPromoteToEntity(\''+w.address+'\')" title="Promote to Entity" style="font-size:11px;">&#128373; Entity</button>';
     html += '<button class="btn btn-sm btn-ghost" onclick="document.getElementById(\'hl-wallet-input\').value=\''+w.address+'\';hlShowTab(\'scanner\');hlScanWallet();" title="Full scan">&#128269;</button>';
     html += '<button class="btn btn-sm btn-ghost" onclick="hlToggleSave(\''+w.address+'\',0)" title="Remove" style="color:var(--red,#f87171);">&#10005;</button>';
     html += '</div></div>';
@@ -10196,6 +10206,34 @@ async function hlRenderSaved() {
 function hlUpdateLabel(addr, label) {
   const w = hlSavedWallets.find(w => w.address === addr);
   if (w) { w.label = label; hlSaveWallets(); }
+}
+
+function hlPromoteToEntity(addr) {
+  if (typeof getEntityByAddress === 'function' && getEntityByAddress(addr)) {
+    alert('Already tracked as entity'); return;
+  }
+  var saved = hlSavedWallets.find(function(w) { return w.address.toLowerCase() === addr.toLowerCase(); });
+  var suggestedName = saved && saved.label ? saved.label : addr.slice(0,8) + '...';
+  var name = prompt('Entity name:', suggestedName);
+  if (!name) return;
+  var type = prompt('Type (whale / fund / insider / mm / copyable / degen):', 'whale') || 'whale';
+  var validTypes = ['whale','fund','insider','mm','copyable','degen'];
+  if (validTypes.indexOf(type) === -1) type = 'whale';
+  addEntity({
+    name: name,
+    address: addr,
+    type: type,
+    grade: '?',
+    venues: ['hyperliquid'],
+    source: 'hyperliquid',
+    notes: 'Promoted from HL Saved Wallets',
+    accountValue: saved ? saved.lastValue || 0 : 0,
+    positions: [],
+    positionCount: 0,
+    totalPnl: 0
+  });
+  hlRenderSaved();
+  alert(name + ' added to Entity Tracker as ' + type + '!');
 }
 
 // ===== WHALE DISCOVERY =====
@@ -11753,7 +11791,7 @@ function tiAddEntity(address, acctVal, qualityData) {
   etEntities.push({
     id: 'et_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
     name: label, address: address, type: type, grade: grade,
-    venues: ['hyperliquid'], notes: notes,
+    venues: ['hyperliquid'], source: 'hyperliquid', notes: notes,
     addedAt: new Date().toISOString(), lastScan: null,
     accountValue: acctVal, positions: [], positionCount: 0, totalPnl: 0
   });
