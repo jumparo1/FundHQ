@@ -724,34 +724,25 @@ tbody tr:hover { background: var(--bg3); }
     <div class="logo" onclick="showPage('dashboard')" style="cursor:pointer;" title="Go to Dashboard"><div class="logo-icon">F</div> Fund HQ</div>
     <div class="logo-sub">Private Investment Fund</div>
 
-    <div class="nav-section">Overview</div>
+    <div class="nav-section">Command Center</div>
     <div class="nav-item active" data-page="dashboard"><span class="icon">&#9632;</span> Dashboard</div>
-    <div class="nav-item" data-page="about"><span class="icon">&#127919;</span> About</div>
 
-    <div class="nav-section">Pipeline</div>
-    <div class="nav-item" data-page="projects"><span class="icon">&#9733;</span> Project Dump <span class="badge" id="badge-projects">0</span></div>
-    <div class="nav-item" data-page="watchlist"><span class="icon">&#128065;</span> Watchlist <span class="badge" id="badge-watchlist">0</span></div>
-    <div class="nav-item" data-page="alerts"><span class="icon">&#128276;</span> Alerts <span class="badge" id="badge-alerts">0</span></div>
-    <div class="nav-item" data-page="portfolio"><span class="icon">&#128176;</span> Portfolio <span class="badge" id="badge-portfolio">0</span></div>
-
-    <div class="nav-section">On-Chain Intel</div>
-    <div class="nav-item" data-page="onchain"><span class="icon">&#128279;</span> On-Chain <span class="badge" id="badge-hl-wallets">0</span></div>
+    <div class="nav-section">Discover</div>
+    <div class="nav-item" data-page="onchain"><span class="icon">&#128279;</span> Intelligence <span class="badge" id="badge-hl-wallets">0</span></div>
+    <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
 
     <div class="nav-section">Research</div>
-    <div class="nav-item" data-page="marketdata"><span class="icon">&#128200;</span> Market Data</div>
-    <div class="nav-item" data-page="templates"><span class="icon">&#128196;</span> Templates</div>
+    <div class="nav-item" data-page="watchlist"><span class="icon">&#128065;</span> Watchlist <span class="badge" id="badge-watchlist">0</span></div>
     <div class="nav-item" data-page="reports"><span class="icon">&#128203;</span> Reports <span class="badge" id="badge-reports">0</span></div>
     <div class="nav-item" data-page="catalysts"><span class="icon">&#128197;</span> Catalysts <span class="badge" id="badge-catalysts">0</span></div>
 
-    <div class="nav-section">Technical</div>
-    <div class="nav-item" data-page="technical"><span class="icon">&#128202;</span> Technical</div>
+    <div class="nav-section">Execute</div>
+    <div class="nav-item" data-page="technical"><span class="icon">&#128202;</span> Trading</div>
+    <div class="nav-item" data-page="portfolio"><span class="icon">&#128176;</span> Portfolio <span class="badge" id="badge-portfolio">0</span></div>
 
-    <div class="nav-section">Operations</div>
-    <div class="nav-item" data-page="tasks"><span class="icon">&#9745;</span> Tasks <span class="badge" id="badge-tasks">0</span></div>
-    <div class="nav-item" data-page="roadmap"><span class="icon">&#128506;</span> Roadmap</div>
-    <div class="nav-item" data-page="progress"><span class="icon">&#128197;</span> Progress</div>
+    <div class="nav-section">Alerts</div>
+    <div class="nav-item" data-page="alerts"><span class="icon">&#128276;</span> Signals & Alerts <span class="badge" id="badge-alerts">0</span></div>
 
-    <div class="nav-section">Tools</div>
     <div class="nav-item" data-page="help"><span class="icon">&#128218;</span> Docs</div>
     <div class="nav-item" data-page="settings"><span class="icon">&#9881;</span> Settings</div>
 
@@ -782,12 +773,10 @@ tbody tr:hover { background: var(--bg3); }
       <div class="card" style="margin-bottom:20px;padding:16px 20px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:13px;color:var(--text3);font-weight:600;margin-right:6px;">Quick Actions</span>
-          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=onchain]').click()">&#128279; On-Chain Intel</button>
-          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=marketdata]').click()">&#128270; Search Market</button>
-          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=templates]').click()">&#128218; Research Templates</button>
+          <button class="btn btn-sm btn-ghost" onclick="showPage('onchain')">&#128279; Intelligence</button>
+          <button class="btn btn-sm btn-ghost" onclick="showPage('marketdata')">&#128270; Search Market</button>
+          <button class="btn btn-sm btn-ghost" onclick="showPage('reports'); setTimeout(function(){ switchReportTab('templates'); },100);">&#128218; Templates</button>
           <button class="btn btn-sm btn-ghost admin-only" onclick="openModal('report')">&#128196; New Report</button>
-          <button class="btn btn-sm btn-ghost admin-only" onclick="openModal('task')">&#10004; New Task</button>
-          <button class="btn btn-sm btn-ghost admin-only" onclick="openModal('project')">&#9889; Quick Dump</button>
         </div>
       </div>
 
@@ -815,7 +804,7 @@ tbody tr:hover { background: var(--bg3); }
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <h3 style="font-size:14px;color:var(--text2);margin:0;">&#9745; Open Tasks</h3>
-            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=tasks]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
+            <span class="btn btn-sm btn-ghost" onclick="showPage('tasks')" style="font-size:11px;padding:3px 8px;">View All →</span>
           </div>
           <div id="dash-tasks"></div>
         </div>
@@ -823,7 +812,7 @@ tbody tr:hover { background: var(--bg3); }
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <h3 style="font-size:14px;color:var(--text2);margin:0;">&#9889; Recent Projects</h3>
-            <span class="btn btn-sm btn-ghost" onclick="document.querySelector('[data-page=projects]').click()" style="font-size:11px;padding:3px 8px;">View All →</span>
+            <span class="btn btn-sm btn-ghost" onclick="showPage('watchlist')" style="font-size:11px;padding:3px 8px;">View All →</span>
           </div>
           <div id="dash-projects"></div>
         </div>
@@ -959,19 +948,28 @@ tbody tr:hover { background: var(--bg3); }
     <!-- ===== ALERTS ===== -->
     <div id="page-alerts" class="page hidden">
       <div class="page-header">
-        <h1>Alerts</h1>
-        <p>Signals from market scans, watchlist checks, and deep dives</p>
+        <h1>Signals & Alerts</h1>
+        <p>On-chain signals, market scans, watchlist alerts &amp; agent intelligence</p>
         <div class="header-actions">
           <button class="btn btn-ghost btn-sm" onclick="requestAlertPermission()" id="btn-notify" style="font-size:11px;">Enable Notifications</button>
           <button class="btn btn-ghost btn-sm" onclick="clearDismissedAlerts()">Clear Read</button>
         </div>
       </div>
-      <div class="alert-filters" id="alert-filters">
-        <button class="task-filter active" data-filter="all" onclick="setAlertFilter('all')">All</button>
-        <button class="task-filter" data-filter="unread" onclick="setAlertFilter('unread')">Unread</button>
-        <button class="task-filter" data-filter="opportunity" onclick="setAlertFilter('opportunity')">Opportunities</button>
+      <div class="tabs" style="margin-bottom:16px;">
+        <button class="tab active" onclick="alertsShowTab('alerts')" id="alerts-tab-alerts">Alerts</button>
+        <button class="tab" onclick="alertsShowTab('signals')" id="alerts-tab-signals">Signals</button>
+        <button class="tab" onclick="alertsShowTab('flows')" id="alerts-tab-flows">Flow Monitor</button>
       </div>
-      <div id="alerts-list"></div>
+      <div id="alerts-panel-alerts">
+        <div class="alert-filters" id="alert-filters">
+          <button class="task-filter active" data-filter="all" onclick="setAlertFilter('all')">All</button>
+          <button class="task-filter" data-filter="unread" onclick="setAlertFilter('unread')">Unread</button>
+          <button class="task-filter" data-filter="opportunity" onclick="setAlertFilter('opportunity')">Opportunities</button>
+        </div>
+        <div id="alerts-list"></div>
+      </div>
+      <div id="alerts-panel-signals" style="display:none;"></div>
+      <div id="alerts-panel-flows" style="display:none;"></div>
     </div>
 
     <!-- ===== RESEARCH ===== -->
@@ -1009,13 +1007,19 @@ tbody tr:hover { background: var(--bg3); }
       <div class="tabs" id="reports-tabs">
         <button class="tab active" onclick="switchReportTab('research')">Research</button>
         <button class="tab" onclick="switchReportTab('substack')">Substack</button>
+        <button class="tab" onclick="switchReportTab('templates')">&#128196; Templates</button>
         <button class="tab" onclick="switchReportTab('trash')">&#128465; Trash <span id="trash-count" style="font-size:11px;color:var(--text3);"></span></button>
       </div>
-      <div class="search-bar">
+      <div id="reports-search-bar" class="search-bar">
         <span class="search-icon">&#128269;</span>
         <input type="text" placeholder="Search reports..." oninput="renderReports(this.value)">
       </div>
       <div id="reports-list"></div>
+      <div id="reports-templates-panel" style="display:none;">
+        <div style="margin-bottom:16px;color:var(--text2);font-size:14px;">Click a template to open the research workspace. Customize sections, run AI analysis, or fill manually.</div>
+        <div class="template-grid" id="templates-list-embedded"></div>
+        <div id="tpl-workspace-embedded" style="display:none;"></div>
+      </div>
     </div>
 
     <!-- ===== CATALYSTS ===== -->
@@ -1182,8 +1186,8 @@ tbody tr:hover { background: var(--bg3); }
     <!-- ===== ON-CHAIN INTEL ===== -->
     <div id="page-onchain" class="page hidden">
       <div class="page-header">
-        <h1>&#128279; On-Chain Intel</h1>
-        <p>Smart money tracking, flow analysis &amp; venue intelligence</p>
+        <h1>&#128279; Intelligence</h1>
+        <p>On-chain alpha, smart money tracking &amp; venue intelligence</p>
       </div>
 
       <!-- Division Tabs -->
@@ -1193,8 +1197,6 @@ tbody tr:hover { background: var(--bg3); }
         <button class="market-tab" onclick="ocShowDivision('hyperliquid')" id="oc-div-hyperliquid">Hyperliquid</button>
         <button class="market-tab" onclick="ocShowDivision('entities')" id="oc-div-entities">Entity Tracker</button>
         <button class="market-tab" onclick="ocShowDivision('dexscreener')" id="oc-div-dexscreener">Dexscreener</button>
-        <button class="market-tab" onclick="ocShowDivision('flows')" id="oc-div-flows">Flow Monitor</button>
-        <button class="market-tab" onclick="ocShowDivision('signals')" id="oc-div-signals">Signal Feed</button>
       </div>
 
       <!-- ON-CHAIN OVERVIEW -->
@@ -1226,11 +1228,10 @@ tbody tr:hover { background: var(--bg3); }
           <div class="card" style="padding:18px 22px;">
             <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Quick Access</h3>
             <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('tokenintel')" style="justify-content:flex-start;text-align:left;">&#128270; Token Intel — Multi-source alpha scanner</button>
               <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('hyperliquid')" style="justify-content:flex-start;text-align:left;">&#128011; Hyperliquid — Wallet Scanner, Whales, Perps</button>
               <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('entities')" style="justify-content:flex-start;text-align:left;">&#128373; Entity Tracker — Cross-venue wallet intelligence</button>
               <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('dexscreener')" style="justify-content:flex-start;text-align:left;">&#128142; Dexscreener — DEX token discovery &amp; trending</button>
-              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('flows')" style="justify-content:flex-start;text-align:left;">&#128200; Flow Monitor — Smart money flow detection</button>
-              <button class="btn btn-sm btn-ghost" onclick="ocShowDivision('signals')" style="justify-content:flex-start;text-align:left;">&#128276; Signal Feed — High-conviction on-chain signals</button>
             </div>
           </div>
           <div class="card" style="padding:18px 22px;">
@@ -1604,8 +1605,8 @@ tbody tr:hover { background: var(--bg3); }
     <!-- ===== TECHNICAL ANALYSIS ===== -->
     <div id="page-technical" class="page hidden">
       <div class="page-header">
-        <h1>&#128202; Technical Analysis</h1>
-        <p>Market structure, trade setups, playbooks &amp; confluence scoring</p>
+        <h1>&#128202; Trading</h1>
+        <p>Setups, playbooks, confluence scoring &amp; trade log</p>
       </div>
 
       <!-- Division Tabs -->
@@ -1898,6 +1899,22 @@ tbody tr:hover { background: var(--bg3); }
             <div class="docs-nav-label">Updates</div>
             <div class="docs-nav-item" onclick="docsNav('changelog')">
               <span class="docs-nav-icon">&#128220;</span> Changelog
+            </div>
+          </div>
+
+          <div class="docs-nav-group">
+            <div class="docs-nav-label">Operations</div>
+            <div class="docs-nav-item" onclick="docsNav('about')">
+              <span class="docs-nav-icon">&#127919;</span> About
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('tasks')">
+              <span class="docs-nav-icon">&#9745;</span> Tasks
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('roadmap')">
+              <span class="docs-nav-icon">&#128506;</span> Roadmap
+            </div>
+            <div class="docs-nav-item" onclick="docsNav('progress')">
+              <span class="docs-nav-icon">&#128197;</span> Progress
             </div>
           </div>
         </nav>
@@ -2454,6 +2471,18 @@ cd ~/deploy && git add . && git commit && git push
 
             </div>
           </section>
+
+          <!-- ABOUT (embedded from Operations) -->
+          <section class="docs-section" id="docs-s-about" style="display:none;"></section>
+
+          <!-- TASKS (embedded from Operations) -->
+          <section class="docs-section" id="docs-s-tasks" style="display:none;"></section>
+
+          <!-- ROADMAP (embedded from Operations) -->
+          <section class="docs-section" id="docs-s-roadmap" style="display:none;"></section>
+
+          <!-- PROGRESS (embedded from Operations) -->
+          <section class="docs-section" id="docs-s-progress" style="display:none;"></section>
 
         </div><!-- /docs-content -->
       </div><!-- /docs-layout -->
@@ -4484,6 +4513,16 @@ function migrateFromLocalStorage() {
 
 // ===== NAVIGATION =====
 function showPage(pageName) {
+  // Redirect legacy pages to new locations
+  var legacyRedirects = {
+    'about': function() { showPage('help'); setTimeout(function(){ docsNav('about'); }, 100); return true; },
+    'tasks': function() { showPage('help'); setTimeout(function(){ docsNav('tasks'); }, 100); return true; },
+    'roadmap': function() { showPage('help'); setTimeout(function(){ docsNav('roadmap'); }, 100); return true; },
+    'progress': function() { showPage('help'); setTimeout(function(){ docsNav('progress'); }, 100); return true; },
+    'projects': function() { showPage('watchlist'); return true; },
+    'templates': function() { showPage('reports'); setTimeout(function(){ switchReportTab('templates'); }, 100); return true; }
+  };
+  if (legacyRedirects[pageName]) return legacyRedirects[pageName]();
   const target = document.getElementById('page-' + pageName);
   if (!target) return false;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -5850,6 +5889,16 @@ function renderTemplates() {
   document.getElementById('tpl-workspace').style.display = 'none';
 }
 
+function renderTemplatesEmbedded() {
+  // Mirror templates into the embedded container inside Reports
+  var src = document.getElementById('templates-list');
+  var dest = document.getElementById('templates-list-embedded');
+  if (src && dest) {
+    renderTemplates();
+    dest.innerHTML = src.innerHTML;
+  }
+}
+
 // ===== GET TEMPLATE (with custom overrides) =====
 function getTemplateDef(templateId) {
   const base = TEMPLATE_DEFS[templateId];
@@ -6573,7 +6622,19 @@ function switchReportTab(tab) {
   currentReportTab = tab;
   document.querySelectorAll('#reports-tabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`#reports-tabs .tab[onclick*="${tab}"]`).classList.add('active');
-  renderReports();
+  var searchBar = document.getElementById('reports-search-bar');
+  var reportsList = document.getElementById('reports-list');
+  var templatesPanel = document.getElementById('reports-templates-panel');
+  if (tab === 'templates') {
+    if (searchBar) searchBar.style.display = 'none';
+    if (reportsList) reportsList.style.display = 'none';
+    if (templatesPanel) { templatesPanel.style.display = ''; renderTemplatesEmbedded(); }
+  } else {
+    if (searchBar) searchBar.style.display = '';
+    if (reportsList) reportsList.style.display = '';
+    if (templatesPanel) templatesPanel.style.display = 'none';
+    renderReports();
+  }
 }
 
 function renderReports(filter = '') {
@@ -7660,6 +7721,33 @@ function fuzzyPageMatch(input) {
 // ===== ALERTS =====
 let currentAlertFilter = 'all';
 
+function alertsShowTab(tab) {
+  ['alerts','signals','flows'].forEach(t => {
+    var panel = document.getElementById('alerts-panel-' + t);
+    var tabBtn = document.getElementById('alerts-tab-' + t);
+    if (panel) panel.style.display = t === tab ? '' : 'none';
+    if (tabBtn) tabBtn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'signals') {
+    // Clone signal feed content from on-chain panel
+    var src = document.getElementById('oc-panel-signals');
+    var dest = document.getElementById('alerts-panel-signals');
+    if (src && dest && !dest.dataset.loaded) {
+      dest.innerHTML = src.innerHTML;
+      dest.dataset.loaded = '1';
+    }
+    if (typeof sigRender === 'function') setTimeout(sigRender, 50);
+  } else if (tab === 'flows') {
+    var src = document.getElementById('oc-panel-flows');
+    var dest = document.getElementById('alerts-panel-flows');
+    if (src && dest && !dest.dataset.loaded) {
+      dest.innerHTML = src.innerHTML;
+      dest.dataset.loaded = '1';
+    }
+    if (typeof flowRender === 'function') setTimeout(flowRender, 50);
+  }
+}
+
 function setAlertFilter(filter) {
   currentAlertFilter = filter;
   document.querySelectorAll('#alert-filters .task-filter').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
@@ -7983,7 +8071,20 @@ function hlLoadFromFirebase() {
 
 // ===== DOCS NAVIGATION (GitBook-style) =====
 function docsNav(page) {
-  var docsPages = ['overview','pipeline','architecture','pamela','hyperliquid','scheduled','agent-roadmap','scoring','apis','models','changelog'];
+  var docsPages = ['overview','pipeline','architecture','pamela','hyperliquid','scheduled','agent-roadmap','scoring','apis','models','changelog','about','tasks','roadmap','progress'];
+  // For embedded ops pages, render their content into the docs section
+  var opsPages = {about: 'page-about', tasks: 'page-tasks', roadmap: 'page-roadmap', progress: 'page-progress'};
+  if (opsPages[page]) {
+    var srcPage = document.getElementById(opsPages[page]);
+    var target = document.getElementById('docs-s-' + page);
+    if (srcPage && target) {
+      target.innerHTML = '<div class="docs-breadcrumb">Operations</div>' + srcPage.innerHTML;
+      // Re-run render functions for dynamic pages
+      if (page === 'tasks' && typeof renderTasks === 'function') setTimeout(function(){ renderTasks(); }, 50);
+      if (page === 'roadmap' && typeof renderRoadmap === 'function') setTimeout(function(){ renderRoadmap(); }, 50);
+      if (page === 'progress' && typeof renderProgress === 'function') setTimeout(function(){ renderProgress(); }, 50);
+    }
+  }
   docsPages.forEach(p => {
     const section = document.getElementById('docs-s-' + p);
     if (section) section.style.display = p === page ? '' : 'none';

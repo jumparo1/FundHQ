@@ -12,33 +12,28 @@ AI-powered fundamental research engine — discovers asymmetric opportunities in
 - **Knowledge Base:** 4 SKILL.md files (MISSION, TRADING-EDGE, ASYMMETRIC-SETUPS, FUNDAMENTAL-ANALYSIS)
 - **Users:** Jumparo (crypto) & Tihomir (equities)
 
-## Architecture — 3 Research Divisions
-| Division | Agent | Mission |
-|----------|-------|---------|
-| **On-Chain Intel** | Sentinel | Smart money tracking, flow analysis, venue intelligence |
-| **Research** | Analyst | Fundamental deep dives, tokenomics, catalysts, valuation |
-| **Technical** | Quant | Market regime, setups, playbooks, confluence scoring |
+## Architecture — 4 Agent Pillars (planned)
+| Agent | Division | Mission |
+|-------|----------|---------|
+| **Analyst** | Research | Fundamental deep dives, tokenomics, catalysts, valuation |
+| **Sentinel** | On-Chain Intel | Smart money tracking, flow analysis, venue intelligence |
+| **Trader** | Execution | Setup detection, entry/exit optimization, learning from outcomes |
+| **Orchestrator** | Alerts | Cross-agent signal synthesis, priority alerting |
 
-## Pages
+## Pages (Restructured)
 | Page | Section | Description |
 |------|---------|-------------|
-| Dashboard | Overview | Stats, quick actions, watchlist, reports, tasks, projects at a glance |
-| About | Overview | Mission, operating principles, scale trajectory |
-| Project Dump | Pipeline | Quick capture for project ideas |
-| Watchlist | Pipeline | Tracked assets with scores, detail view, Firebase sync |
-| Alerts | Pipeline | Signals from scheduled scans + Pamela, severity levels, browser notifications |
-| Portfolio | Pipeline | Holdings tracker, allocation breakdown, P&L tracking, cash management |
-| On-Chain Intel | On-Chain | 7 tabs: Overview, Token Intel (multi-source scanner with quality scoring), Hyperliquid (5 sub-tabs incl. Wallet Hunter), Entity Tracker, Dexscreener, Flow Monitor, Signal Feed |
-| Market Data | Research | Live search/discovery, CoinGecko + FMP fundamentals |
-| Templates | Research | 4 templates (Crypto 16s, Stock 14s, Quick Thesis 5s, Commodity 12s), view/edit modes |
-| Reports | Research | AI-generated research reports, rating, conviction, Substack, Trash |
+| Dashboard | Command Center | Stats, quick actions, watchlist, reports at a glance |
+| Intelligence | Discover | 5 tabs: Overview, Token Intel, Hyperliquid (5 sub-tabs incl. Wallet Hunter), Entity Tracker, Dexscreener |
+| Market Data | Discover | Live search/discovery, CoinGecko + FMP fundamentals |
+| Watchlist | Research | Tracked assets with scores, detail view, Firebase sync |
+| Reports | Research | AI research reports + Templates tab (4 templates built in), Substack, Trash |
 | Catalysts | Research | Event tracking (8 types), impact/time filters, summary cards, Firebase sync |
-| Technical | Technical | 5 tabs: Market Regime, Setup Scanner, Playbooks, Confluence, Trade Log |
-| Tasks | Operations | Kanban board with milestones, priority, assignee |
-| Roadmap | Operations | Tasks grouped by milestone with progress bars |
-| Progress | Operations | Daily work log, timeline, streak tracking |
-| Docs | Tools | GitBook-style documentation with changelog |
-| Settings | Tools | API status grid, keys by category (AI/Research/On-Chain), Firebase sync, backup |
+| Trading | Execute | 5 tabs: Market Regime, Setup Scanner, Playbooks, Confluence, Trade Log |
+| Portfolio | Execute | Holdings tracker, allocation breakdown, P&L tracking, cash management |
+| Signals & Alerts | Alerts | 3 tabs: Alerts (scheduled scans + Pamela), Signal Feed, Flow Monitor |
+| Docs | — | GitBook-style docs + Operations sub-tabs (About, Tasks, Roadmap, Progress) |
+| Settings | — | API status grid, keys by category (AI/Research/On-Chain), Firebase sync, backup |
 
 ## Pamela (AI Agent)
 - **Model:** Claude Haiku 4.5 (fast + cheap, ~$0.005/query)
@@ -70,6 +65,7 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-17: **Intelligence OS restructure** — sidebar reorganized: Command Center / Discover / Research / Execute / Alerts. Pages reduced from 17 to 11. Templates merged into Reports as tab. Signal Feed + Flow Monitor merged into Signals & Alerts page. About, Tasks, Roadmap, Progress moved under Docs as sub-tabs. Legacy URL redirects for all moved pages.
 - 2026-03-17: **500-wallet Token Intel scan** — expanded from 30→500 wallets ($10K min), concurrent batches of 5 for speed, coin-specific scoring (filters fills by scanned ticker), coin stats row in results
 - 2026-03-17: **Track Entity in Wallet Scanner** — Track Entity button + quality score card (grade, type, trades/day, consistency, leverage) on wallet profile page
 - 2026-03-17: **Arkham Intelligence integration** — wallet identity labels on Token Intel whales + entities, Arkham token holders endpoint, Alpha Summary identity insights, Wallet Hunter Arkham enrichment, Settings key + test
