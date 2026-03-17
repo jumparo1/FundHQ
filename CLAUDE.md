@@ -65,7 +65,8 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
-- 2026-03-17: **Intelligence OS restructure** — sidebar reorganized: Command Center / Discover / Research / Execute / Alerts. Pages reduced from 17 to 11. Templates merged into Reports as tab. Signal Feed + Flow Monitor merged into Signals & Alerts page. About, Tasks, Roadmap, Progress moved under Docs as sub-tabs. Legacy URL redirects for all moved pages.
+- 2026-03-17: **Stage 3: Modularize** — 22 CRUD helper functions (dbGet/dbFind/dbAdd/dbUpdate/dbRemove/dbSync + entity/signal/watchlist/report/trade/setup helpers). Unified Conviction Engine: Investor Score (/100, 5 factors) + Trader Score (/100, 5 factors) replacing 5 disconnected scoring systems. Entity auto-sync from HL wallet saves. Conviction badge on watchlist cards.
+- 2026-03-17: **Stage 2: Simplify (Intelligence OS restructure)** — sidebar reorganized: Command Center / Discover / Research / Execute / Alerts. Pages reduced from 17 to 11. Templates merged into Reports as tab. Signal Feed + Flow Monitor merged into Signals & Alerts page. About, Tasks, Roadmap, Progress moved under Docs as sub-tabs. Legacy URL redirects for all moved pages.
 - 2026-03-17: **500-wallet Token Intel scan** — expanded from 30→500 wallets ($10K min), concurrent batches of 5 for speed, coin-specific scoring (filters fills by scanned ticker), coin stats row in results
 - 2026-03-17: **Track Entity in Wallet Scanner** — Track Entity button + quality score card (grade, type, trades/day, consistency, leverage) on wallet profile page
 - 2026-03-17: **Arkham Intelligence integration** — wallet identity labels on Token Intel whales + entities, Arkham token holders endpoint, Alpha Summary identity insights, Wallet Hunter Arkham enrichment, Settings key + test
