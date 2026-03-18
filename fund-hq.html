@@ -6870,24 +6870,87 @@ Signal Rating: [Strong / Moderate / Weak]
 ═══════════════════════════════════════════════════
 10. TOP HOLDERS & WHALE ACTIVITY
 ═══════════════════════════════════════════════════
-Top 10 concentration: [%] | Top 30 concentration: [%]
-* Whale wallets: [# flagged as whale, team, or CEX]
-* Behavior: [accumulating / distributing / idle]
-* Red flags: [high centralization? active sell-offs? unknown multisigs?]
+CONTRACT: [Contract address] ([ERC-20 / SPL / Native])
+Total Holders: [#] ([trend: growing / declining / flat])
+24h Transfers: [#]
 
-PERP POSITIONING (Hyperdash):
-* OI: [$] | Funding: [%] | Long/Short ratio: [x]
-* Whale cohort ($1M+): [% long / % short]
-* Retail cohort ($10K-$100K): [% long / % short]
-* Smart money divergence: [whales vs retail — same direction or opposite?]
-* Liquidation clusters: Longs [$X-$Y] | Shorts [$X-$Y]
+TOP HOLDER BREAKDOWN (Etherscan / Solscan / Explorer):
+| Rank | Entity | Address | Balance | % Supply | Type |
+|------|--------|---------|---------|----------|------|
+| 1 | [Label] | [0x...] | [#] | [%] | [CEX / Protocol / Team / Fund / Bridge] |
+| 2 | [Label] | [0x...] | [#] | [%] | [Type] |
+| 3 | [Label] | [0x...] | [#] | [%] | [Type] |
+| 4 | [Label] | [0x...] | [#] | [%] | [Type] |
+| 5 | [Label] | [0x...] | [#] | [%] | [Type] |
+Sources: Etherscan, Arkham Intel, Bubblemaps, Nansen
+
+CONCENTRATION ANALYSIS:
+* Top 10 wallets: [%] of supply — [low <20% / moderate 20-40% / high >40%]
+* CEX wallets combined: [%] — [exchange float — high = sell pressure risk]
+* Staking/Locked: [%] — [conviction indicator]
+* Team/Foundation: [%] — [insider concentration]
+* FDV/MCap ratio: [Xx] — [>3x = heavy future dilution from unlocks]
+
+WHALE BEHAVIOR (last 7-14 days):
+* Accumulation signals: [exchange outflows, new wallets, Arkham alerts]
+* Distribution signals: [exchange inflows, large transfers to CEX, OTC deals]
+* Net flow: [accumulating / distributing / neutral]
+* Notable moves: [specific large txns, whale wallet actions, foundation activity]
+* Source: Arkham (intel.arkm.com), Nansen, SpotOnChain
+
+SMART MONEY TRACKING:
+* Arkham labels: [which known entities hold? funds, VCs, market makers]
+* Bubblemaps clusters: [are top wallets interconnected? insider rings?]
+* Exchange flow: [net inflow or outflow from CEXs last 7d]
+* Stablecoin pairing depth: [DEX liquidity on Uniswap/major pools]
+
+RED FLAGS:
+* [High centralization? >50% in top 10 wallets]
+* [Unknown multisigs with large holdings?]
+* [Active sell-offs from labeled team/VC wallets?]
+* [Declining holder count?]
+* [Low staking ratio for PoS chain?]
+
+═══════════════════════════════════════════════════
+10b. PERP POSITIONING (CoinGlass / Coinalyze / Hyperdash)
+═══════════════════════════════════════════════════
+OPEN INTEREST: [$] | OI Change 24h: [+/-$] ([+/-%])
+Futures Volume 24h: [$] | Spot Volume 24h: [$]
+Futures/Spot Ratio: [Xx — >2x = derivatives leading]
+Liquidations 24h: [$] (Longs: [$] / Shorts: [$])
+
+FUNDING RATE:
+* Current: [%] ([positive = longs pay / negative = shorts pay])
+* Weighted Avg (OI-weighted): [%]
+* Trend: [rising / falling / stable]
+* Exchanges: Binance [%] | OKX [%] | Bybit [%] | Bitget [%]
+
+LEVERAGE ANALYSIS:
+* OI / Market Cap: [%] — [<10% low / 10-15% moderate / >15% danger]
+* Liquidation / OI ratio: [%] — [<1% organic / >3% forced moves]
+* Estimated leverage: [Xx avg]
+
+POSITIONING READ:
+* OI direction vs Price: [OI up + Price up = new longs / OI down + Price up = short covering]
+* Whale cohort ($1M+): [% long / % short] — [bias]
+* Retail cohort ($10K-$100K): [% long / % short] — [bias]
+* Smart money divergence: [whales vs retail — same or opposite?]
+
+LIQUIDATION CLUSTERS:
+* Long liquidation zone: [$X-$Y] — [if price drops here, cascade risk]
+* Short liquidation zone: [$X-$Y] — [if price reaches here, squeeze potential]
 
 TOP TRADER PnL:
-Entry clusters: [$X-$Y range] | Avg PnL: [+/-X%] | Whales holding or selling: [status]
+Entry clusters: [$X-$Y range] | Avg PnL: [+/-X%] | Top traders: [holding / reducing]
+
+VERDICT: [Healthy / Overcrowded Long / Overcrowded Short / Neutral]
+[1-2 sentence summary of positioning and what it means for trade timing]
 
 ═══════════════════════════════════════════════════
 11. CHART & TECHNICAL ANALYSIS
 ═══════════════════════════════════════════════════
+[CHART:[TICKER]USDT.P:BINANCE]
+
 * Trend: [direction + strength]
 * Support: [$, $] | Resistance: [$, $]
 * Entry zone: [breakout / retest / DCA level]
@@ -8507,13 +8570,49 @@ function formatSectionBody(text) {
   const lines = text.split('\n');
   let html = '';
   let inList = false;
+  let inTable = false;
+  let tableRows = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) {
       if (inList) { html += '</ul>'; inList = false; }
+      if (inTable) { html += renderTable(tableRows); inTable = false; tableRows = []; }
       continue;
     }
+
+    // TradingView chart embed: [CHART:SYMBOL] or [CHART:SYMBOL:EXCHANGE]
+    const chartMatch = trimmed.match(/^\[CHART:([A-Za-z0-9._]+)(?::([A-Za-z]+))?\]$/);
+    if (chartMatch) {
+      if (inList) { html += '</ul>'; inList = false; }
+      if (inTable) { html += renderTable(tableRows); inTable = false; tableRows = []; }
+      const symbol = chartMatch[1];
+      const exchange = chartMatch[2] || 'BINANCE';
+      html += `<div class="rv-chart-embed" style="margin:16px 0;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+        <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=${exchange}%3A${symbol}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=1a1a2e&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&showpopupbutton=0&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&showVolume=true&locale=en&utm_source=fundhq" style="width:100%;height:500px;border:none;" allowfullscreen></iframe>
+        <div style="font-size:11px;color:var(--text3);padding:6px 12px;background:var(--bg3);display:flex;justify-content:space-between;">
+          <span>TradingView — ${exchange}:${symbol} (Daily)</span>
+          <a href="https://www.tradingview.com/chart/?symbol=${exchange}%3A${symbol}" target="_blank" style="color:var(--accent);text-decoration:none;">Open in TradingView ↗</a>
+        </div>
+      </div>`;
+      continue;
+    }
+
+    // Table rows: lines starting with |
+    if (/^\|/.test(trimmed)) {
+      if (inList) { html += '</ul>'; inList = false; }
+      // Skip separator rows like |---|---|
+      if (/^\|[\s\-:|]+\|$/.test(trimmed)) { continue; }
+      const cells = trimmed.split('|').filter((c, i, a) => i > 0 && i < a.length - 1).map(c => c.trim());
+      if (cells.length > 0) {
+        if (!inTable) { inTable = true; tableRows = []; }
+        tableRows.push(cells);
+      }
+      continue;
+    }
+
+    if (inTable) { html += renderTable(tableRows); inTable = false; tableRows = []; }
+
     // Bullet lines starting with - or *
     if (/^[-*]\s/.test(trimmed)) {
       if (!inList) { html += '<ul>'; inList = true; }
@@ -8532,6 +8631,20 @@ function formatSectionBody(text) {
     }
   }
   if (inList) html += '</ul>';
+  if (inTable) html += renderTable(tableRows);
+  return html;
+}
+
+function renderTable(rows) {
+  if (!rows.length) return '';
+  let html = '<div style="overflow-x:auto;margin:12px 0;"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  // First row is header
+  html += '<thead><tr>' + rows[0].map(c => '<th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:600;white-space:nowrap;">' + esc(c) + '</th>').join('') + '</tr></thead>';
+  html += '<tbody>';
+  for (let i = 1; i < rows.length; i++) {
+    html += '<tr>' + rows[i].map(c => '<td style="padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text);">' + esc(c) + '</td>').join('') + '</tr>';
+  }
+  html += '</tbody></table></div>';
   return html;
 }
 
