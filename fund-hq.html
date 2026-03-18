@@ -24,6 +24,8 @@
   --border: #2e3345; --radius: 10px; --radius-sm: 6px;
   --shadow: 0 4px 24px rgba(0,0,0,0.3);
 }
+@keyframes regime-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.regime-loading { animation: regime-spin 1s linear infinite; display: inline-block; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 a { color: var(--accent2); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -1761,11 +1763,15 @@ tbody tr:hover { background: var(--bg3); }
 
       <!-- MARKET REGIME -->
       <div id="ta-panel-regime">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-size:11px;color:var(--text3);" id="regime-last-updated">Not loaded</span>
+          <button class="btn btn-ghost" onclick="if(window._regimeCache)window._regimeCache.fetchedAt=0;regimeRefresh()" id="regime-refresh-btn" style="font-size:12px;padding:4px 12px;">&#x21bb; Refresh Regime</button>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
           <div class="card" style="padding:16px 20px;">
             <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">BTC Regime</div>
             <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="ta-btc-regime">--</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Based on funding + OI + dominance</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Score: <span id="regime-vote-sum">--</span>/5</div>
           </div>
           <div class="card" style="padding:16px 20px;">
             <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Active Playbooks</div>
@@ -1782,6 +1788,10 @@ tbody tr:hover { background: var(--bg3); }
             <div style="font-size:22px;font-weight:700;" id="ta-avg-confluence">--</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px;">Across active setups</div>
           </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px;" id="regime-indicators">
+          <div class="card" style="padding:14px 16px;border-left:3px solid var(--border);"><div style="font-size:12px;color:var(--text3);">Loading indicators...</div></div>
         </div>
 
         <div class="card" style="padding:20px;">
@@ -3573,7 +3583,7 @@ var SENTINEL_TOOLS = [
 
 // --- Trader Agent Tools ---
 var TRADER_TOOLS = [
-  { name: 'create_setup', description: 'Create a trade setup with entry, stop, target. Auto-calculates R:R.', input_schema: { type: 'object', properties: { symbol: { type: 'string', description: 'Asset symbol (e.g. ETH, SOL, BTC)' }, side: { type: 'string', enum: ['long', 'short'] }, playbook: { type: 'string', description: 'Playbook: MR-Long, Breakout, Narrative-FrontRun, Deep-Value, Momo-Short, CRT-CISD, Spike-Exhaustion' }, entry: { type: 'number', description: 'Entry price' }, stop: { type: 'number', description: 'Stop loss price' }, target: { type: 'number', description: 'Target price' }, notes: { type: 'string' } }, required: ['symbol', 'side', 'entry', 'stop', 'target'] } },
+  { name: 'create_setup', description: 'Create a trade setup with entry, stop, target. Auto-calculates R:R.', input_schema: { type: 'object', properties: { symbol: { type: 'string', description: 'Asset symbol (e.g. ETH, SOL, BTC)' }, side: { type: 'string', enum: ['long', 'short'] }, playbook: { type: 'string', description: 'Playbook: MR-Long, Breakout, Narrative-FrontRun, Deep-Value, Momo-Short, CRT-CISD, Spike-Exhaustion' }, entry: { type: 'number', description: 'Entry price' }, stop: { type: 'number', description: 'Stop loss price' }, target: { type: 'number', description: 'Target price' }, timeframe: { type: 'string', description: 'Timeframe: scalp (hours), swing (days-weeks), position (weeks-months)' }, notes: { type: 'string' } }, required: ['symbol', 'side', 'entry', 'stop', 'target'] } },
   { name: 'get_setups', description: 'Get active trade setups, optionally filtered by status or symbol.', input_schema: { type: 'object', properties: { status: { type: 'string', description: 'Filter: watching/active/triggered/closed' }, symbol: { type: 'string' } } } },
   { name: 'update_setup', description: 'Update a setup by ID — change status, adjust levels, add notes.', input_schema: { type: 'object', properties: { id: { type: 'string', description: 'Setup ID' }, updates: { type: 'object', description: 'Fields to update: status, entry, stop, target, notes' } }, required: ['id', 'updates'] } },
   { name: 'log_trade', description: 'Log a completed trade with outcome. Links to setup if applicable.', input_schema: { type: 'object', properties: { symbol: { type: 'string' }, side: { type: 'string', enum: ['long', 'short'] }, entry: { type: 'number' }, exit: { type: 'number' }, size: { type: 'number', description: 'Position size in USD' }, playbook: { type: 'string' }, result: { type: 'string', enum: ['win', 'loss'] }, notes: { type: 'string' }, setupId: { type: 'string', description: 'Linked setup ID if applicable' } }, required: ['symbol', 'side', 'entry', 'exit', 'result'] } },
@@ -3581,8 +3591,14 @@ var TRADER_TOOLS = [
   { name: 'get_trade_stats', description: 'Get trading performance stats: win rate, P&L, best playbook, avg R:R, streak.', input_schema: { type: 'object', properties: {} } },
   { name: 'get_confluence', description: 'Get the confluence score and conviction for an asset. Returns 4-factor breakdown (on-chain, fundamental, TA, regime).', input_schema: { type: 'object', properties: { symbol: { type: 'string' } }, required: ['symbol'] } },
   { name: 'position_size', description: 'Calculate position size based on risk parameters.', input_schema: { type: 'object', properties: { account_size: { type: 'number', description: 'Total account in USD' }, risk_pct: { type: 'number', description: 'Risk per trade as % (e.g. 1 = 1%)' }, entry: { type: 'number' }, stop: { type: 'number' } }, required: ['account_size', 'risk_pct', 'entry', 'stop'] } },
+  { name: 'generate_trade_signal', description: 'Generate a structured trade signal with full confluence data. Creates a signal in the Signal Feed AND optionally saves a trade report. Use when a setup has confluence 65+ and you want to broadcast it.', input_schema: { type: 'object', properties: { symbol: { type: 'string', description: 'Asset symbol' }, side: { type: 'string', enum: ['long', 'short'] }, signal_type: { type: 'string', enum: ['breakout', 'breakdown', 'mean_reversion', 'narrative', 'deep_value', 'momentum', 'exhaustion'], description: 'Signal classification' }, confidence: { type: 'number', description: 'Signal confidence 1-5 (1=speculative, 3=moderate, 5=maximum conviction)' }, timeframe: { type: 'string', enum: ['scalp', 'swing', 'position'], description: 'Trade timeframe' }, entry: { type: 'number', description: 'Entry price' }, stop: { type: 'number', description: 'Stop loss' }, target: { type: 'number', description: 'Target price' }, thesis: { type: 'string', description: 'Why this trade — 2-3 sentences covering catalyst, edge, timing' }, confluence_factors: { type: 'object', description: 'Confluence breakdown: { onchain: 0-25, fundamental: 0-25, technical: 0-30, regime: 0-20 }', properties: { onchain: { type: 'number' }, fundamental: { type: 'number' }, technical: { type: 'number' }, regime: { type: 'number' } } }, supporting_data: { type: 'string', description: 'Key data points: whale activity, funding rates, valuation metrics, volume, etc.' }, save_report: { type: 'boolean', description: 'Also save as a trade report in Reports (default false)' } }, required: ['symbol', 'side', 'signal_type', 'confidence', 'entry', 'stop', 'target', 'thesis'] } },
+  { name: 'get_signals', description: 'Get on-chain signals from Sentinel, optionally filtered by type or status. Use to check if smart money confirms your setup.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter: accumulation/distribution/whale_entry/whale_exit/breakout/breakdown' }, status: { type: 'string', description: 'Filter: new/reviewing/acted/dismissed' }, symbol: { type: 'string', description: 'Filter by asset symbol' } } } },
+  { name: 'get_entities', description: 'Get tracked smart money entities. Use to check whale alignment with your setup.', input_schema: { type: 'object', properties: { type: { type: 'string', description: 'Filter: whale/fund/insider/mm/copyable/degen' }, grade: { type: 'string', description: 'Min grade: A+/A/B+/B/C' } } } },
+  { name: 'get_reports', description: 'Get existing research reports. Check if Analyst already researched an asset before building a setup.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Search by title' }, limit: { type: 'number' } } } },
+  { name: 'get_catalysts', description: 'Get upcoming catalysts. Use to validate narrative timing for setups.', input_schema: { type: 'object', properties: { symbol: { type: 'string', description: 'Filter by asset' }, impact: { type: 'string', description: 'Filter: high/medium/low' } } } },
   { name: 'search_crypto', description: 'Search for a cryptocurrency by name or ticker.', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
-  { name: 'get_crypto_data', description: 'Get detailed crypto data from CoinGecko.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string' } }, required: ['coingecko_id'] } }
+  { name: 'get_crypto_data', description: 'Get detailed crypto data from CoinGecko.', input_schema: { type: 'object', properties: { coingecko_id: { type: 'string' } }, required: ['coingecko_id'] } },
+  { name: 'get_market_regime', description: 'Get the current market regime (Risk-On/Neutral/Risk-Off) with 5 live indicators: BTC funding rate, OI trend, BTC dominance, Fear & Greed index, BTC vs 200D SMA. Returns regime label, score (-5 to +5), and all indicator details. Use before creating setups to validate regime alignment.', input_schema: { type: 'object', properties: {} } }
 ];
 
 // --- VC / Fundraising Agent Tools ---
@@ -3655,6 +3671,21 @@ function buildTraderPrompt() {
 
   return 'You are the TRADER agent for Fund HQ — a specialist in trade execution, setups, and risk management.\n\n' +
   '## MISSION\nHelp execute trades with best entry, sizing, and risk management. Build setups, calculate position sizes, log trades, and learn from outcomes. You close the loop: Discover → Research → EXECUTE → Learn.\n\n' +
+  '## CROSS-AGENT INTELLIGENCE\n' +
+  'Before building ANY setup, gather intel from other agents:\n' +
+  '1. **get_signals** — Check if Sentinel has on-chain signals (whale accumulation = strong confirmation)\n' +
+  '2. **get_entities** — Check if A/A+ grade whales are aligned with your direction\n' +
+  '3. **get_reports** — Check if Analyst already researched this asset (use their verdict)\n' +
+  '4. **get_catalysts** — Check upcoming catalysts that could accelerate or invalidate the trade\n' +
+  'A setup with 3+ confirming cross-agent signals is HIGH CONVICTION. Report this to the user.\n\n' +
+  '## SIGNAL QUALITY FRAMEWORK\n' +
+  'Not all signals are equal. Score signal quality before acting:\n' +
+  '**S-Tier (confidence 5)**: Multi-whale accumulation + bullish regime + upcoming catalyst + undervalued. RARE — generate_trade_signal immediately.\n' +
+  '**A-Tier (confidence 4)**: 3 of 4 confluence factors aligned. Standard high-conviction setup.\n' +
+  '**B-Tier (confidence 3)**: Technical setup + 1 confirming factor. Moderate conviction, smaller size.\n' +
+  '**C-Tier (confidence 2)**: Technical only, no cross-agent confirmation. Speculative — only if R:R > 5:1.\n' +
+  '**Noise (confidence 1)**: Single data point, no confluence. PASS — do not generate signal.\n' +
+  'When confidence >= 4, ALWAYS use generate_trade_signal to broadcast to Signal Feed.\n\n' +
   '## SETUP ARCHETYPES\n' +
   '- **MR-Long**: Mean reversion long — RSI <30, hammer candle, key support, BB squeeze. Best after capitulation.\n' +
   '- **Breakout**: Consolidation → break on 2x volume → retest = entry. Target = measured move.\n' +
@@ -3665,11 +3696,18 @@ function buildTraderPrompt() {
   '- **Spike-Exhaustion**: Sharp move on extreme volume → exhaustion → fade.\n\n' +
   '## CONFLUENCE SCORING (4 factors)\n' +
   'Every trade must be scored before entry:\n' +
-  '1. **On-Chain (25%)**: Smart money alignment, whale accumulation/distribution\n' +
-  '2. **Fundamental (25%)**: Valuation, catalysts, earnings, tokenomics\n' +
-  '3. **Technical (30%)**: Setup quality, trend, volume, levels\n' +
-  '4. **Regime (20%)**: Risk-on/off/neutral, BTC trend, funding rates\n' +
+  '1. **On-Chain (25%)**: Smart money alignment, whale accumulation/distribution — use get_signals + get_entities\n' +
+  '2. **Fundamental (25%)**: Valuation, catalysts, earnings, tokenomics — use get_reports + get_catalysts\n' +
+  '3. **Technical (30%)**: Setup quality, trend, volume, levels — use get_crypto_data\n' +
+  '4. **Regime (20%)**: Use get_market_regime for live regime classification (5 indicators: funding, OI, dominance, fear/greed, 200D SMA)\n' +
   'Total /100. Below 50 = no trade. 50-65 = small size. 65-80 = standard. 80+ = full conviction.\n\n' +
+  '## SIGNAL-TO-REPORT PIPELINE\n' +
+  'When generating a trade signal with confidence >= 3:\n' +
+  '1. Build the setup (create_setup)\n' +
+  '2. Score confluence (get_confluence or manual 4-factor)\n' +
+  '3. Check cross-agent data (signals, entities, reports, catalysts)\n' +
+  '4. Generate signal (generate_trade_signal with save_report=true for confidence >= 4)\n' +
+  'This creates BOTH a signal in Signal Feed AND a trade report in Reports.\n\n' +
   '## POSITION SIZING\n' +
   '- Max 1-2% risk per trade\n' +
   '- Size = (Account × Risk%) / |Entry - Stop|\n' +
@@ -3688,14 +3726,18 @@ function buildTraderPrompt() {
   '5. TARGET: Price + take-profit logic\n' +
   '6. SIZE: Position size based on confluence\n' +
   '7. R:R: Risk/reward ratio\n' +
-  '8. CONFLUENCE: 4-factor score\n\n' +
+  '8. CONFLUENCE: 4-factor score with cross-agent data\n' +
+  '9. SMART MONEY: Whale alignment from Sentinel signals/entities\n' +
+  '10. CATALYSTS: Upcoming events from catalyst tracker\n\n' +
   '## ANTI-PATTERNS\n' +
   '- Revenge trading after losses\n' +
   '- Moving stops further away\n' +
   '- Adding to losing positions\n' +
   '- Trading without a stop\n' +
   '- FOMO entries after 50%+ moves\n' +
-  '- Overtrading (>3 new positions per day)\n\n' +
+  '- Overtrading (>3 new positions per day)\n' +
+  '- Ignoring cross-agent data — ALWAYS check signals + entities before creating setups\n' +
+  '- Generating signals without confluence data — NEVER broadcast noise\n\n' +
   '## YOUR TRACK RECORD\n' +
   (stats.total > 0 ?
     '- Total trades: ' + stats.total + '\n' +
@@ -3875,9 +3917,11 @@ function buildRouterPrompt() {
   '- "who is long ETH?" → {"route": "sentinel", "message": "Find whale positions that are long ETH on Hyperliquid"}\n' +
   '- "scan wallet 0x..." → {"route": "sentinel", "message": "Scan and profile this Hyperliquid wallet: 0x..."}\n' +
   '- "compare SOL vs ETH" → {"route": "analyst", "message": "Compare SOL and ETH fundamentals side by side"}\n' +
-  '- "build trade plan for ETH long" → {"route": "trader", "message": "Build a trade plan for ETH long with entry, stop, target"}\n' +
+  '- "build trade plan for ETH long" → {"route": "trader", "message": "Build a trade plan for ETH long with entry, stop, target. Check signals and entities for smart money confirmation."}\n' +
   '- "what is my win rate?" → {"route": "trader", "message": "Show trading performance stats and win rate"}\n' +
   '- "position size for BTC" → {"route": "trader", "message": "Calculate position size for BTC trade"}\n' +
+  '- "generate signal for SOL" → {"route": "trader", "message": "Generate a trade signal for SOL — check cross-agent data (signals, entities, reports, catalysts) and build a full confluence-scored signal"}\n' +
+  '- "what setups have good signals?" → {"route": "trader", "message": "Check active setups against current signals and entities to find highest confluence opportunities"}\n' +
   '- "who raised recently?" → {"route": "vc", "message": "Show recent crypto fundraising rounds"}\n' +
   '- "what did a16z invest in?" → {"route": "vc", "message": "Show a16z investment portfolio and recent deals"}\n' +
   '- "find 100x gems" → {"route": "vc", "message": "Find seed-stage projects from top VCs with 100x potential"}\n' +
@@ -4560,6 +4604,7 @@ async function executeToolCall(name, input) {
       var signals = DB.signals || [];
       if (input.type) signals = signals.filter(function(s) { return s.type === input.type; });
       if (input.status) signals = signals.filter(function(s) { return s.status === input.status; });
+      if (input.symbol) { var sigSym = input.symbol.toUpperCase(); signals = signals.filter(function(s) { return (s.asset || s.assetSymbol || '').toUpperCase().indexOf(sigSym) >= 0; }); }
       return { signals: signals.slice(-20).reverse().map(function(s) { return { id: s.id, asset: s.asset || s.assetSymbol, type: s.type, conviction: s.conviction, description: s.description, status: s.status, source: s.source, created: s.created }; }), count: signals.length };
     }
     case 'create_signal': {
@@ -4567,6 +4612,7 @@ async function executeToolCall(name, input) {
       if (!DB.signals) DB.signals = [];
       DB.signals.push(sig);
       if (typeof renderSignalFeed === 'function') renderSignalFeed();
+      if (typeof dbRef !== 'undefined' && dbRef) dbRef.child('signals/' + sig.id).set(sig).catch(function(){});
       return { created: true, id: sig.id, asset: sig.asset, type: sig.type, conviction: sig.conviction };
     }
     case 'get_conviction': {
@@ -4587,6 +4633,7 @@ async function executeToolCall(name, input) {
         target: input.target,
         rr: Math.abs((input.target - input.entry) / (input.entry - input.stop)).toFixed(2),
         status: 'watching',
+        timeframe: input.timeframe || 'swing',
         notes: input.notes || '',
         created: new Date().toISOString()
       };
@@ -4667,6 +4714,98 @@ async function executeToolCall(name, input) {
         units: parseFloat(units.toFixed(4)),
         leverage_needed: parseFloat((posSize / input.account_size).toFixed(2)) + 'x'
       };
+    }
+    case 'get_market_regime': {
+      var regime = await regimeRefresh();
+      return regime || { regime: 'Unknown', error: 'Failed to fetch regime data' };
+    }
+    case 'generate_trade_signal': {
+      var rr = Math.abs((input.target - input.entry) / (input.entry - input.stop));
+      var confTotal = 0;
+      if (input.confluence_factors) {
+        confTotal = (input.confluence_factors.onchain || 0) + (input.confluence_factors.fundamental || 0) + (input.confluence_factors.technical || 0) + (input.confluence_factors.regime || 0);
+      }
+      // Create signal in Signal Feed
+      var tradeSig = {
+        id: 'sig_' + Date.now(),
+        asset: input.symbol.toUpperCase(),
+        assetSymbol: input.symbol.toUpperCase(),
+        type: input.signal_type,
+        conviction: input.confidence,
+        description: '**' + input.side.toUpperCase() + ' ' + input.symbol.toUpperCase() + '** (' + (input.timeframe || 'swing') + ')\n' +
+          'Entry: $' + input.entry + ' | Stop: $' + input.stop + ' | Target: $' + input.target + ' | R:R: ' + rr.toFixed(1) + ':1\n' +
+          'Confluence: ' + confTotal + '/100' + (input.confluence_factors ? ' (OC:' + (input.confluence_factors.onchain||0) + ' F:' + (input.confluence_factors.fundamental||0) + ' TA:' + (input.confluence_factors.technical||0) + ' R:' + (input.confluence_factors.regime||0) + ')' : '') + '\n' +
+          'Thesis: ' + input.thesis + (input.supporting_data ? '\nData: ' + input.supporting_data : ''),
+        entityAddress: '',
+        source: 'trader',
+        status: 'new',
+        created: new Date().toISOString()
+      };
+      if (!DB.signals) DB.signals = [];
+      DB.signals.push(tradeSig);
+      if (typeof renderSignalFeed === 'function') renderSignalFeed();
+      if (typeof dbRef !== 'undefined' && dbRef) dbRef.child('signals/' + tradeSig.id).set(tradeSig).catch(function(){});
+      // Also create setup
+      var sigSetup = {
+        id: 'setup_' + Date.now(),
+        symbol: input.symbol.toUpperCase(),
+        side: input.side,
+        playbook: input.signal_type,
+        entry: input.entry, stop: input.stop, target: input.target,
+        rr: rr.toFixed(2),
+        status: 'watching',
+        notes: input.thesis,
+        confluence: confTotal,
+        confidence: input.confidence,
+        timeframe: input.timeframe || 'swing',
+        created: new Date().toISOString()
+      };
+      if (typeof taSetups === 'undefined') taSetups = [];
+      taSetups.push(sigSetup);
+      if (typeof setupSave === 'function') setupSave();
+      // Optionally save as trade report
+      var reportSaved = false;
+      if (input.save_report && input.confidence >= 4) {
+        var reportContent = '# Trade Signal: ' + input.side.toUpperCase() + ' ' + input.symbol.toUpperCase() + '\n\n' +
+          '**Signal Type:** ' + input.signal_type + ' | **Confidence:** ' + input.confidence + '/5 | **Timeframe:** ' + (input.timeframe || 'swing') + '\n\n' +
+          '## Levels\n| Entry | Stop | Target | R:R |\n|-------|------|--------|-----|\n| $' + input.entry + ' | $' + input.stop + ' | $' + input.target + ' | ' + rr.toFixed(1) + ':1 |\n\n' +
+          '## Thesis\n' + input.thesis + '\n\n' +
+          '## Confluence Score: ' + confTotal + '/100\n' +
+          (input.confluence_factors ? '- On-Chain: ' + (input.confluence_factors.onchain||0) + '/25\n- Fundamental: ' + (input.confluence_factors.fundamental||0) + '/25\n- Technical: ' + (input.confluence_factors.technical||0) + '/30\n- Regime: ' + (input.confluence_factors.regime||0) + '/20\n\n' : '') +
+          (input.supporting_data ? '## Supporting Data\n' + input.supporting_data + '\n\n' : '') +
+          '## Verdict\n' + (confTotal >= 80 ? 'STRONG BUY' : confTotal >= 65 ? 'BUY' : 'SPECULATE') + ' — Confidence ' + input.confidence + '/5\n\n' +
+          '*Generated by Trader Agent on ' + new Date().toISOString().split('T')[0] + '*';
+        var report = {
+          id: 'report_' + Date.now(),
+          title: 'Trade Signal: ' + input.side.toUpperCase() + ' ' + input.symbol.toUpperCase(),
+          type: 'crypto',
+          content: reportContent,
+          rating: confTotal >= 80 ? 'Strong Buy' : confTotal >= 65 ? 'Buy' : 'Speculate',
+          conviction: input.confidence >= 4 ? 'High' : 'Medium',
+          date: new Date().toISOString(),
+          source: 'trader-agent'
+        };
+        if (!DB.reports) DB.reports = [];
+        DB.reports.push(report);
+        if (typeof dbRef !== 'undefined' && dbRef) dbRef.child('reports/' + report.id).set(report).catch(function(){});
+        reportSaved = true;
+      }
+      // Create alert for high conviction
+      if (input.confidence >= 4) {
+        var alertObj = { id: 'alert_' + Date.now(), title: input.confidence + '/5 ' + input.side.toUpperCase() + ' ' + input.symbol.toUpperCase() + ' — ' + input.signal_type, content: 'R:R ' + rr.toFixed(1) + ':1 | Confluence ' + confTotal + '/100\n' + input.thesis, severity: 'opportunity', created: new Date().toISOString(), dismissed: false };
+        if (!DB.alerts) DB.alerts = [];
+        DB.alerts.unshift(alertObj);
+        if (typeof dbRef !== 'undefined' && dbRef) dbRef.child('alerts/' + alertObj.id).set(alertObj).catch(function(){});
+      }
+      return { signal_created: true, signal_id: tradeSig.id, setup_created: true, setup_id: sigSetup.id, report_saved: reportSaved, rr: rr.toFixed(1) + ':1', confluence: confTotal, confidence: input.confidence, alert: input.confidence >= 4 };
+    }
+    case 'get_catalysts': {
+      var cats = DB.catalysts || [];
+      if (input.symbol) { var sym = input.symbol.toUpperCase(); cats = cats.filter(function(c) { return c.asset && c.asset.toUpperCase().indexOf(sym) >= 0; }); }
+      if (input.impact) cats = cats.filter(function(c) { return c.impact === input.impact; });
+      // Sort by date, upcoming first
+      cats.sort(function(a, b) { return (a.date || '').localeCompare(b.date || ''); });
+      return { catalysts: cats.slice(0, 20).map(function(c) { return { id: c.id, title: c.title, asset: c.asset, type: c.type, impact: c.impact, date: c.date, notes: c.notes }; }), count: cats.length };
     }
     // --- VC Agent Tools ---
     case 'get_raises': {
@@ -10945,7 +11084,7 @@ function catDelete(id) {
 }
 
 // Load entities + setups + catalysts + signals + trades from Firebase on init
-setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); catLoadFromFirebase(); catUpdateBadge(); sigLoadFromFirebase(); tradeLoadFromFirebase(); pfLoadFromFirebase(); }, 2000);
+setTimeout(function() { etLoadFromFirebase(); setupLoadFromFirebase(); catLoadFromFirebase(); catUpdateBadge(); sigLoadFromFirebase(); tradeLoadFromFirebase(); pfLoadFromFirebase(); regimeRefresh(); }, 2000);
 
 // ===== CONFLUENCE SCORING =====
 function confCalc() {
@@ -11587,6 +11726,7 @@ function taShowTab(tab) {
     var tabBtn = document.getElementById('ta-tab-' + t);
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  if (tab === 'regime') regimeRefresh();
   if (tab === 'setups') setupRender();
   if (tab === 'tradelog') tradeRender();
 }
@@ -11899,6 +12039,168 @@ async function hlPost(body) {
   const res = await fetch('https://api.hyperliquid.xyz/info', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   if (!res.ok) throw new Error('HL API error: ' + res.status);
   return res.json();
+}
+
+// ===== AUTO MARKET REGIME ENGINE =====
+async function regimeRefresh() {
+  if (!window._regimeCache) window._regimeCache = { data: null, fetchedAt: 0, TTL: 5 * 60 * 1000 };
+  var rc = window._regimeCache;
+  if (rc.data && Date.now() - rc.fetchedAt < rc.TTL) {
+    regimeRender(rc.data);
+    return rc.data;
+  }
+
+  var refreshBtn = document.getElementById('regime-refresh-btn');
+  if (refreshBtn) refreshBtn.innerHTML = '<span class="regime-loading">&#x21bb;</span> Loading...';
+
+  var indicators = [];
+
+  var results = await Promise.allSettled([
+    hlPost({ type: 'metaAndAssetCtxs' }),
+    fetch('https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=48').then(function(r) { return r.ok ? r.json() : null; }),
+    fetch('https://api.coingecko.com/api/v3/global').then(function(r) { return r.ok ? r.json() : null; }),
+    fetch('https://api.alternative.me/fng/?limit=1').then(function(r) { return r.ok ? r.json() : null; }),
+    fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=200&interval=daily').then(function(r) { return r.ok ? r.json() : null; })
+  ]);
+
+  // 1. BTC Funding Rate (Hyperliquid)
+  try {
+    var hlData = results[0].status === 'fulfilled' ? results[0].value : null;
+    if (hlData && hlData[0] && hlData[1]) {
+      var btcIdx = hlData[0].universe.findIndex(function(c) { return c.name === 'BTC'; });
+      if (btcIdx >= 0) {
+        var funding8h = parseFloat(hlData[1][btcIdx].funding);
+        var fundingAnn = funding8h * 3 * 365 * 100;
+        var fundingVote = fundingAnn > 10 ? 1 : fundingAnn < -10 ? -1 : 0;
+        indicators.push({ name: 'BTC Funding', value: funding8h, display: (funding8h * 100).toFixed(4) + '% (8h) / ' + fundingAnn.toFixed(1) + '% ann.', vote: fundingVote, status: fundingVote > 0 ? 'risk-on' : fundingVote < 0 ? 'risk-off' : 'neutral' });
+      }
+    }
+  } catch(e) { indicators.push({ name: 'BTC Funding', value: null, display: 'N/A', vote: 0, status: 'error' }); }
+
+  // 2. BTC OI Trend (Binance 48h)
+  try {
+    var oiData = results[1].status === 'fulfilled' ? results[1].value : null;
+    if (oiData && oiData.length >= 2) {
+      var oiFirst = parseFloat(oiData[0].sumOpenInterestValue);
+      var oiLast = parseFloat(oiData[oiData.length - 1].sumOpenInterestValue);
+      var oiChange = ((oiLast - oiFirst) / oiFirst) * 100;
+      var oiVote = oiChange > 5 ? 1 : oiChange < -5 ? -1 : 0;
+      indicators.push({ name: 'BTC OI Trend', value: oiChange, display: (oiChange > 0 ? '+' : '') + oiChange.toFixed(1) + '% (48h)', vote: oiVote, status: oiVote > 0 ? 'risk-on' : oiVote < 0 ? 'risk-off' : 'neutral' });
+    }
+  } catch(e) { indicators.push({ name: 'BTC OI Trend', value: null, display: 'N/A', vote: 0, status: 'error' }); }
+
+  // 3. BTC Dominance (CoinGecko)
+  try {
+    var globalData = results[2].status === 'fulfilled' ? results[2].value : null;
+    if (globalData && globalData.data && globalData.data.market_cap_percentage) {
+      var dom = globalData.data.market_cap_percentage.btc;
+      var domVote = dom < 50 ? 1 : dom > 55 ? -1 : 0;
+      indicators.push({ name: 'BTC Dominance', value: dom, display: dom.toFixed(1) + '%', vote: domVote, status: domVote > 0 ? 'risk-on' : domVote < 0 ? 'risk-off' : 'neutral' });
+    }
+  } catch(e) { indicators.push({ name: 'BTC Dominance', value: null, display: 'N/A', vote: 0, status: 'error' }); }
+
+  // 4. Fear & Greed Index
+  try {
+    var fngData = results[3].status === 'fulfilled' ? results[3].value : null;
+    if (fngData && fngData.data && fngData.data[0]) {
+      var fng = parseInt(fngData.data[0].value);
+      var fngLabel = fngData.data[0].value_classification;
+      var fngVote = fng > 60 ? 1 : fng < 40 ? -1 : 0;
+      indicators.push({ name: 'Fear & Greed', value: fng, display: fng + ' (' + fngLabel + ')', vote: fngVote, status: fngVote > 0 ? 'risk-on' : fngVote < 0 ? 'risk-off' : 'neutral' });
+    }
+  } catch(e) { indicators.push({ name: 'Fear & Greed', value: null, display: 'N/A', vote: 0, status: 'error' }); }
+
+  // 5. BTC vs 200D SMA
+  try {
+    var chartData = results[4].status === 'fulfilled' ? results[4].value : null;
+    if (chartData && chartData.prices && chartData.prices.length > 10) {
+      var prices = chartData.prices.map(function(p) { return p[1]; });
+      var sma200 = prices.reduce(function(s, p) { return s + p; }, 0) / prices.length;
+      var currentPrice = prices[prices.length - 1];
+      var pctAbove = ((currentPrice - sma200) / sma200) * 100;
+      var smaVote = currentPrice > sma200 ? 1 : -1;
+      indicators.push({ name: 'BTC vs 200D SMA', value: pctAbove, display: '$' + Math.round(currentPrice).toLocaleString() + ' (' + (pctAbove > 0 ? '+' : '') + pctAbove.toFixed(1) + '%)', vote: smaVote, status: smaVote > 0 ? 'risk-on' : 'risk-off' });
+    }
+  } catch(e) { indicators.push({ name: 'BTC vs 200D SMA', value: null, display: 'N/A', vote: 0, status: 'error' }); }
+
+  // Fill missing indicators
+  var expectedNames = ['BTC Funding', 'BTC OI Trend', 'BTC Dominance', 'Fear & Greed', 'BTC vs 200D SMA'];
+  expectedNames.forEach(function(name) {
+    if (!indicators.find(function(i) { return i.name === name; })) {
+      indicators.push({ name: name, value: null, display: 'N/A', vote: 0, status: 'error' });
+    }
+  });
+
+  var sum = indicators.reduce(function(s, i) { return s + i.vote; }, 0);
+  var regime = sum >= 3 ? 'Risk-On' : sum <= -3 ? 'Risk-Off' : 'Neutral';
+
+  var result = { regime: regime, score: sum, indicators: indicators, updatedAt: Date.now() };
+  rc.data = result;
+  rc.fetchedAt = Date.now();
+  regimeRender(result);
+  return result;
+}
+
+function regimeRender(data) {
+  var regimeColors = { 'Risk-On': 'var(--green)', 'Neutral': 'var(--yellow)', 'Risk-Off': 'var(--red)' };
+  var color = regimeColors[data.regime] || 'var(--yellow)';
+
+  // Update regime badge
+  var regimeEl = document.getElementById('ta-btc-regime');
+  if (regimeEl) { regimeEl.textContent = data.regime; regimeEl.style.color = color; }
+
+  // Update on Intelligence Overview if visible
+  var ocRegime = document.getElementById('oc-regime');
+  if (ocRegime) { ocRegime.textContent = data.regime; ocRegime.style.color = color; }
+  var ocDetail = document.getElementById('oc-regime-detail');
+  if (ocDetail) ocDetail.textContent = 'Score: ' + data.score + '/5 | ' + data.indicators.filter(function(i) { return i.status === 'risk-on'; }).length + ' bullish, ' + data.indicators.filter(function(i) { return i.status === 'risk-off'; }).length + ' bearish';
+
+  // Update score
+  var sumEl = document.getElementById('regime-vote-sum');
+  if (sumEl) sumEl.textContent = data.score;
+
+  // Update active playbooks based on regime
+  var pbEl = document.getElementById('ta-active-playbooks');
+  if (pbEl) {
+    if (data.regime === 'Risk-On') { pbEl.textContent = 'Momentum'; pbEl.style.color = 'var(--green)'; }
+    else if (data.regime === 'Risk-Off') { pbEl.textContent = 'Defensive'; pbEl.style.color = 'var(--red)'; }
+    else { pbEl.textContent = 'MR + Selective'; pbEl.style.color = 'var(--yellow)'; }
+  }
+
+  // Update open setups count
+  var setupsEl = document.getElementById('ta-open-setups');
+  if (setupsEl && typeof taSetups !== 'undefined') {
+    setupsEl.textContent = taSetups.filter(function(s) { return s.status === 'watching' || s.status === 'active'; }).length;
+  }
+
+  // Render indicator cards
+  var container = document.getElementById('regime-indicators');
+  if (container) {
+    var html = '';
+    data.indicators.forEach(function(ind) {
+      var iColor = ind.status === 'risk-on' ? 'var(--green)' : ind.status === 'risk-off' ? 'var(--red)' : ind.status === 'error' ? 'var(--text3)' : 'var(--yellow)';
+      var iBg = ind.status === 'risk-on' ? 'var(--green-bg)' : ind.status === 'risk-off' ? 'var(--red-bg)' : ind.status === 'error' ? 'var(--bg3)' : 'var(--yellow-bg)';
+      var voteIcon = ind.vote > 0 ? '\u25B2' : ind.vote < 0 ? '\u25BC' : '\u25CF';
+      var statusLabel = ind.status === 'error' ? 'Error' : ind.status === 'risk-on' ? 'Bullish' : ind.status === 'risk-off' ? 'Bearish' : 'Neutral';
+      html += '<div class="card" style="padding:14px 16px;border-left:3px solid ' + iColor + ';">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+      html += '<span style="font-size:12px;font-weight:600;color:var(--text2);">' + ind.name + '</span>';
+      html += '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + iBg + ';color:' + iColor + ';">' + statusLabel + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:16px;font-weight:700;margin:6px 0;color:var(--text);">' + ind.display + '</div>';
+      html += '<div style="font-size:11px;color:' + iColor + ';">' + voteIcon + ' Vote: ' + (ind.vote > 0 ? '+1' : ind.vote < 0 ? '-1' : '0') + '</div>';
+      html += '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  // Update timestamp
+  var tsEl = document.getElementById('regime-last-updated');
+  if (tsEl) tsEl.textContent = 'Updated ' + new Date(data.updatedAt).toLocaleTimeString();
+
+  // Reset refresh button
+  var refreshBtn = document.getElementById('regime-refresh-btn');
+  if (refreshBtn) refreshBtn.innerHTML = '&#x21bb; Refresh Regime';
 }
 
 // Format helpers

@@ -43,7 +43,7 @@ AI-powered Conviction Engine for asymmetric trades — 5 AI agents discover, res
 - **Shared tools (8):** create_item, update_item, delete_item, find_items, search_all, navigate_to_page, get_fund_stats, create_alert
 - **Analyst tools (10):** search_crypto, get_crypto_data, search_stocks, get_stock_data, add_to_watchlist, get_watchlist, save_research, get_reports, get_report_content, get_conviction
 - **Sentinel tools (8):** hl_scan_wallet, hl_whale_positions, hl_saved_wallets, get_entities, get_signals, create_signal, search_crypto, get_crypto_data
-- **Trader tools (10):** create_setup, get_setups, update_setup, log_trade, get_trade_log, get_trade_stats, get_confluence, position_size, search_crypto, get_crypto_data
+- **Trader tools (11):** create_setup, get_setups, update_setup, log_trade, get_trade_log, get_trade_stats, get_confluence, position_size, get_market_regime, search_crypto, get_crypto_data
 - **VC tools (6):** get_raises, search_raises, get_investor_portfolio, get_raise_stats, search_crypto, get_crypto_data
 - **All agents** also get web_search (Claude built-in, max 3 per conversation)
 - **Multi-turn:** Up to 8 tool-use turns per conversation
@@ -72,6 +72,7 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-18: **Auto Market Regime** — Live regime detection (Risk-On/Neutral/Risk-Off) from 5 indicators: BTC funding rate (Hyperliquid), OI trend 48h (Binance), BTC dominance (CoinGecko), Fear & Greed index (alternative.me), BTC vs 200D SMA (CoinGecko). Each indicator votes +1/0/-1, sum determines regime. 5 indicator cards with status badges. Refresh button with 5-min cache. `get_market_regime` Trader agent tool. Auto-populates `ta-btc-regime` for `computeTraderScore()` and confluence scoring. Loads on page init + regime tab switch.
 - 2026-03-17: **VC Due Diligence template** — 18-section professional template: executive summary, deal terms & cap table, team, problem & market, product & tech, traction, tokenomics, competitive analysis, backers, GTM, roadmap, risk assessment (6 dimensions /30), legal, return modeling (scenario table), 100x filter (/25), DD checklist (10 items), investment verdict. Raw text format + structured workspace format.
 - 2026-03-17: **VC Watchlist page** — Track fundraising rounds with intelligence sources (CryptoRank VCs, DefiLlama Raises, CryptoRank Rounds, RootData + custom). Stats cards (tracked, total raised, Tier 1, 100x). Filters by round/category/status. Status tracking (watching/researching/invested/passed). 18 raises pre-loaded. track_raise + get_vc_watchlist agent tools.
 - 2026-03-17: **Sidebar restructured by agent** — 4 agent sections (Sentinel, Analyst, Trader, VC) with colored badges. Dashboard at top, Docs + Settings at bottom. Alerts section separate.
