@@ -4,12 +4,13 @@ AI-powered Conviction Engine for asymmetric trades — 5 AI agents discover, res
 
 ## Stack
 - **Frontend:** `fund-hq.html` (single file, vanilla JS, dark theme)
+- **Backend:** `agents/server.py` — FastAPI server (port 8888) with 5 phases of trading infrastructure
 - **Database:** Firebase Realtime Database + localStorage fallback
 - **Hosting:** GitHub Pages (free) — `jumparo1.github.io/JumpTools/fund-hq.html`
 - **AI Agents:** 5-agent system via Claude Haiku tool_use API, 8-turn multi-tool loop, intent-based routing
-- **Scheduled Tasks:** 3 Claude Code cron jobs writing alerts via Firebase REST API
-- **APIs:** CoinGecko (crypto), FMP `/stable/` (stocks), Arkham Intelligence (wallet identity/labels), Moralis (EVM holders), Dexscreener (DEX pairs), Hyperliquid (perps/whales), Anthropic Claude (AI research + web search)
-- **Knowledge Base:** 4 SKILL.md files (MISSION, TRADING-EDGE, ASYMMETRIC-SETUPS, FUNDAMENTAL-ANALYSIS)
+- **Scheduled Tasks:** 4 Claude Code scheduled tasks writing alerts via Firebase REST API
+- **APIs:** CoinGecko (crypto), FMP `/stable/` (stocks), Arkham Intelligence (wallet identity/labels), Moralis (EVM holders), Dexscreener (DEX pairs), Hyperliquid (perps/whales), Anthropic Claude (AI research + web search), DefiLlama (TVL + raises), Binance Futures (funding + OI), Alternative.me (Fear & Greed)
+- **Knowledge Base:** 9 SKILL.md files in `.claude/skills/`
 - **Users:** Jumparo (crypto) & Tihomir (equities)
 
 ## Architecture — 5-Agent Intelligence OS (Live)
@@ -52,6 +53,7 @@ AI-powered Conviction Engine for asymmetric trades — 5 AI agents discover, res
 | Task | Schedule | What it does |
 |------|----------|--------------|
 | daily-market-scan | 8am weekdays | Top movers, unusual volume, narrative shifts, asymmetric setups |
+| vc-feed-scan | 9am daily | Fetch DefiLlama raises, update Firebase vcFeed |
 | watchlist-refresh | 8pm daily | Price changes, score shifts, breakout/breakdown signals |
 | weekly-deep-dive | Sunday 10am | Sector rotation, new narratives, top 3 opportunities with full scoring |
 
@@ -72,6 +74,9 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-19: **Phases 1-5 Backend Complete** — FastAPI server (`agents/server.py`, port 8888) with all 5 roadmap phases implemented. Phase 1: real-time data feeds (CoinGecko, Binance, DeFiLlama, Fear & Greed, HL) with auto-refresh. Phase 2: crypto valuation engine (DCF, revenue multiples, TVL), multi-factor scorer (5 dimensions), auto-discovery scanner. Phase 3: historical VaR, correlation matrix, liquidity scoring, portfolio optimizer, position sizer. Phase 4: trade feedback loop (win rate, profit factor, by-setup analysis), score calibration, backtest bridge. Phase 5: autonomous research triggers, portfolio-aware smart alerts, external API platform. 4 background loops: prices (2min), full data (10min), smart alerts (5min), auto-research (15min). All data pushed to Firebase for frontend consumption.
+- 2026-03-19: **4th scheduled task** — vc-feed-scan (daily 9am): fetches DefiLlama raises, writes to Firebase vcFeed
+- 2026-03-19: **Mac Mini infrastructure setup** — SSH keys, repo clones (FundHQ, Backtesting, TradingJournal, JumpTools deploy), .env API key storage, Claude memory files, launch.json with backend config
 - 2026-03-18: **Auto Market Regime** — Live regime detection (Risk-On/Neutral/Risk-Off) from 5 indicators: BTC funding rate (Hyperliquid), OI trend 48h (Binance), BTC dominance (CoinGecko), Fear & Greed index (alternative.me), BTC vs 200D SMA (CoinGecko). Each indicator votes +1/0/-1, sum determines regime. 5 indicator cards with status badges. Refresh button with 5-min cache. `get_market_regime` Trader agent tool. Auto-populates `ta-btc-regime` for `computeTraderScore()` and confluence scoring. Loads on page init + regime tab switch.
 - 2026-03-17: **VC Due Diligence template** — 18-section professional template: executive summary, deal terms & cap table, team, problem & market, product & tech, traction, tokenomics, competitive analysis, backers, GTM, roadmap, risk assessment (6 dimensions /30), legal, return modeling (scenario table), 100x filter (/25), DD checklist (10 items), investment verdict. Raw text format + structured workspace format.
 - 2026-03-17: **VC Watchlist page** — Track fundraising rounds with intelligence sources (CryptoRank VCs, DefiLlama Raises, CryptoRank Rounds, RootData + custom). Stats cards (tracked, total raised, Tier 1, 100x). Filters by round/category/status. Status tracking (watching/researching/invested/passed). 18 raises pre-loaded. track_raise + get_vc_watchlist agent tools.
@@ -142,17 +147,81 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - 2026-03-11: Migrated Netlify → GitHub Pages, AI research, Market Data, FMP stock support
 - 2026-02-27: Initial SKILL.md, pushed to GitHub
 
-## Roadmap (in Fund HQ Tasks/Roadmap)
+## Backend Server (Phases 1-5)
+FastAPI server at `agents/server.py` — runs on port 8888, pushes data to Firebase.
+
+### Phase 1: Data Infrastructure (COMPLETE)
+- `services/data_feeds.py` — Real-time feeds: CoinGecko prices, Binance funding/OI, Fear & Greed, BTC dominance, DeFi TVL, Hyperliquid market data, trending coins
+- Auto-updates: prices every 2min, full update every 10min
+- Pushes all data to `/fundHQ/marketData` in Firebase
+
+### Phase 2: Quantitative Models (COMPLETE)
+- `services/quant_models.py` — DCF valuation, revenue multiple, TVL valuation
+- Multi-factor scorer: fundamental / technical / onchain / sentiment / valuation (weighted composite)
+- Auto-discovery: scans CoinGecko for deep-value coins, DefiLlama for undervalued DeFi
+- Endpoints: `/api/valuation`, `/api/score`, `/api/discovery`
+
+### Phase 3: Risk Framework (COMPLETE)
+- `services/risk_engine.py` — Historical VaR (portfolio + per-position)
+- Correlation matrix builder (cross-asset)
+- Liquidity scoring with position size caps
+- Portfolio optimizer: conviction-weighted allocation with risk budgets
+- Position sizer: risk-per-trade → exact size + R-multiples
+- Endpoints: `/api/risk/var`, `/api/risk/correlation`, `/api/risk/position-size`, `/api/risk/assess`
+
+### Phase 4: Learning & Edge (COMPLETE)
+- `services/learning.py` — Trade feedback loop: win rate, profit factor, expectancy, by-setup analysis
+- Score calibration: adjusts multi-factor weights based on which factors predicted winners
+- Backtest bridge: connects to Backtesting engine, falls back to simple simulation
+- Endpoints: `/api/performance`, `/api/calibration`, `/api/backtest/{symbol}/{strategy}`
+
+### Phase 5: Full Autonomy (COMPLETE)
+- `services/autonomy.py` — Autonomous research triggers: price spikes, volume surges, recovery signals
+- Smart alerts: portfolio-aware (stop proximity, target proximity, concentration, drawdown)
+- API platform: external read-only endpoints for bots/dashboards
+- Background loops: auto-research every 15min, smart alerts every 5min
+- Endpoints: `/api/autonomous/triggers`, `/api/smart-alerts`, `/api/v1/*`
+
+### Backend Endpoints Summary
+| Endpoint | Method | Phase | Description |
+|----------|--------|-------|-------------|
+| `/api/prices` | GET | 1 | All watched coin prices |
+| `/api/macro` | GET | 1 | Fear & Greed, BTC dominance, DeFi TVL |
+| `/api/feeds/refresh` | POST | 1 | Force data refresh |
+| `/api/valuation` | POST | 2 | Full valuation (DCF + multiples) |
+| `/api/score` | POST | 2 | Multi-factor asset score |
+| `/api/discovery` | GET | 2 | Auto-discovery scan |
+| `/api/risk/var` | POST | 3 | Portfolio VaR calculation |
+| `/api/risk/correlation` | POST | 3 | Cross-asset correlation matrix |
+| `/api/risk/position-size` | POST | 3 | Position size calculator |
+| `/api/risk/assess` | POST | 3 | Full risk assessment |
+| `/api/performance` | GET | 4 | Trading performance analysis |
+| `/api/calibration/run` | POST | 4 | Calibrate scoring weights |
+| `/api/backtest/{s}/{t}` | GET | 4 | Run backtest |
+| `/api/autonomous/triggers` | GET | 5 | Check auto-research triggers |
+| `/api/smart-alerts` | GET | 5 | Portfolio-aware alerts |
+| `/api/v1/portfolio` | GET | 5 | External API: portfolio |
+| `/api/v1/signals` | GET | 5 | External API: signals |
+| `/api/v1/market` | GET | 5 | External API: market data |
+
+## Roadmap
 - **Phase 0: Prototype** — COMPLETE
-- **Phase 1: Data Infrastructure** — Python backend, real data feeds, on-chain analytics, macro
-- **Phase 2: Quantitative Models** — Financial statements, DCF, multi-factor scoring, auto-discovery
-- **Phase 3: Risk Framework** — VaR, correlations, liquidity, counterparty, portfolio construction
-- **Phase 4: Learning & Edge** — Feedback loop, score calibration, backtesting integration
-- **Phase 5: Full Autonomy** — Unprompted research, portfolio-aware alerts, multi-user, API platform
+- **Phase 1: Data Infrastructure** — COMPLETE
+- **Phase 2: Quantitative Models** — COMPLETE
+- **Phase 3: Risk Framework** — COMPLETE
+- **Phase 4: Learning & Edge** — COMPLETE
+- **Phase 5: Full Autonomy** — COMPLETE
 
 ## How to Run
 ```bash
+# Frontend (static)
 cd JumpTools/FundHQ
 python3 -m http.server 8080
 # Open http://localhost:8080/fund-hq.html
+
+# Backend (FastAPI — all 5 phases)
+cd JumpTools/FundHQ/agents
+python3 server.py
+# API at http://localhost:8888
+# Docs at http://localhost:8888/docs
 ```
