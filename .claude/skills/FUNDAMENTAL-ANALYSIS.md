@@ -450,39 +450,146 @@ CoinGecko | DefiLlama | Artemis | TokenTerminal | Token Unlocks | Dexscreener | 
 
 ## Substack Writing Style (Asymmetric Jump)
 
-Section 18 rewrites the full report as a Substack-ready article. Match this voice:
+Section 18 rewrites the full report as a copy-paste-ready Substack article. Match the exact voice and structure from asymmetricjump.substack.com published articles.
 
-### Tone & Structure
-- **Provocative title** with specific numbers ("The $4.5B 'Bitcoin of AI' That's Down 72%...")
+### Voice Rules
 - **Opinionated, direct, no-BS.** Tell the reader what data MEANS, not just what it says
-- **"You're buying a bet that..."** framing — make the investment thesis concrete
-- **Moat scoring** with numbers (0-100 scale or /10)
-- **Explicit risk/reward** with allocation guidance and sizing
-- **Include backend valuation verdict** — readers respect systematic models backing up qualitative opinions
 - **Shorter paragraphs, punchy sentences.** If you can say it in one line, don't use three
 - **Bold for key terms** and emphasis throughout
-- **Clean ## headings** without numbered prefixes
-- **Real analysis over data dumps** — always follow data with "What this means:"
+- **"This matters because..."** framing after key facts — explain WHY, not just WHAT
+- **Real analysis over data dumps** — always follow data with interpretation
+- **Have an opinion.** Never be neutral. Every section should have a stance
+- **Clean ## headings** — descriptive, no numbered prefixes (not "1. Team" but "Team / Backers")
 
-### Sections to Include
-- Hook title + subtitle line
-- What you're actually buying (thesis framing)
-- Moat scoring (scored categories, total /100)
-- Tokenomics — The Good, The Bad, The Ugly
-- Backers & smart money
-- Valuation problem (peer table + backend valuation model results + honest assessment)
-- What smart money is doing (perp positioning + Fund HQ entity intel)
-- Chart says [wait/go/run] — with position sizing and R-multiples
-- Catalysts that could change everything
-- The Verdict (rating /10, conviction, action, bull/bear/base case + backend grade for cross-check)
-- Disclaimer: "AI-assisted and refined by the researcher. Not financial advice — DYOR."
+### Exact Section Structure (match this order)
+
+```
+# [Provocative Title with Specific Numbers]
+[Subtitle: one-line positioning hook]
+
+---
+
+## TL;DR
+
+**What:** [one sentence — what it is]
+**How:** [one sentence — how it works]
+**Why:** [one sentence — why it matters as an investment]
+
+---
+
+## Project Snapshot
+
+**Name:** [name] | **Sector:** [sector]
+**Website:** [url] | **X:** [handle]
+
+| Metric | Value |
+|--------|-------|
+| Price | $ |
+| Market Cap | $ |
+| FDV | $ |
+| 24h Volume | $ |
+| ATH | $ (% from ATH) |
+| Circulating / Max Supply | X / Y (ratio) |
+| Total Raised | $ |
+
+---
+
+## Why It Matters (Thesis)
+
+[2-3 paragraphs framing what you're actually buying. Not features — the BET.
+Use "You're buying a bet that..." framing.
+End with narrative fit for current cycle.]
+
+---
+
+## Team / Backers
+
+[Founders with credentials — "This matters because..."]
+[Key investors — what their involvement signals]
+[Track record — honest, include concerns if any]
+
+---
+
+## Product / Development
+
+### What exists today
+[Bullet list of live products, metrics, users]
+
+### Design philosophy
+[1-2 sentences on approach]
+
+### Security / Audits
+[Status — flag if missing]
+
+---
+
+## Tokenomics
+
+### The Good
+[Positive tokenomics factors]
+
+### The Bad
+[Concerning factors — unlocks, concentration]
+
+### The Ugly
+[Deal-breaker risks if any]
+
+[Key metrics: supply, FDV/MCap ratio, unlock schedule, top holder concentration]
+
+---
+
+## On-Chain & Market Context
+
+[Whale positioning, smart money activity, perp data if available]
+[Competitive positioning — where this sits vs peers]
+[Valuation comparison table if relevant]
+
+---
+
+## Risks / Red Flags
+
+[Brutally honest list — 3-5 key risks]
+[Each risk should be specific, not generic]
+
+---
+
+## Conclusion & Plan
+
+### Bull Case
+[Specific scenario + probability if comfortable]
+
+### Bear Case
+[Specific scenario + what invalidates thesis]
+
+### What I'm watching
+[3-5 concrete monitoring points with deadlines]
+
+### Conviction
+**[X/10]** — [one sentence summary of stance]
+
+---
+
+## Personal Thesis
+
+[2-3 paragraphs — the opinionated closer. This is where personality lives.
+What does this mean in the bigger picture? Would you actually put money here?
+End with a clear action: buy/wait/avoid and WHY.]
+
+---
+
+**Disclaimer**
+*This report was AI-assisted and refined by the researcher. It is for informational purposes only and not financial advice. Always DYOR. The researcher may hold or trade related assets.*
+```
 
 ### What NOT to Do
-- Don't just reformat — rewrite in voice
-- Don't be neutral. Have an opinion
-- Don't dump tables without context
+- Don't just reformat the research report — fully rewrite in Substack voice
+- Don't be neutral or hedge everything — have a clear stance
+- Don't dump tables without context — every table needs a "what this means" follow-up
 - Don't use section numbers (0, 1, 2...) — use descriptive headings
-- Don't make it too long — tight and focused, ~1500-2000 words
+- Don't include moat scoring tables or backend scores — those belong in the full report, not Substack
+- Don't exceed ~2000 words — tight and focused, respect the reader's time
+- Don't use ═══ dividers — use `---` horizontal rules (Substack native)
+- Don't include sources list — link inline where needed
 
 ---
 
