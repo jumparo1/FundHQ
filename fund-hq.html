@@ -5832,34 +5832,40 @@ async function selectSearchResult(type, id, symbol, name, thumb) {
 }
 
 async function addToWatchlist(type, id, symbol, name, thumb) {
-  if (DB.watchlist.some(w => (type === 'crypto' && w.coingeckoId === id) || (type === 'stock' && w.fmpSymbol === id))) return;
-  const item = {
-    id: genId(), symbol: symbol, name: name, type: type,
-    coingeckoId: type === 'crypto' ? id : null, fmpSymbol: type === 'stock' ? id : null,
-    addedBy: MY_NAME, addedAt: today(), notes: '', image: thumb || null,
-    lastData: { price: null, marketCap: null, change24h: null, fetchedAt: null }
-  };
-  const res = _searchResultsEl(); if (res) res.classList.add('hidden');
-  // Write to Firebase first so listener picks it up
-  if (firebaseReady && dbRef) {
-    await dbRef.child('watchlist').child(item.id).set(item);
-  } else {
-    DB.watchlist.push(item);
-    localStorage.setItem('fundHQ', JSON.stringify(DB));
-    renderMarketData();
-  }
-  // Fetch current data and update
   try {
-    let data;
-    if (type === 'crypto') data = await fetchCryptoData(id);
-    else data = await fetchStockData(id);
-    if (data) {
-      item.lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, fetchedAt: Date.now() };
-      if (data.image) item.image = data.image;
-      if (firebaseReady && dbRef) { dbRef.child('watchlist').child(item.id).update({ lastData: item.lastData, image: item.image || null }); }
-      else { localStorage.setItem('fundHQ', JSON.stringify(DB)); renderMarketData(); }
+    if (DB.watchlist.some(w => (type === 'crypto' && w.coingeckoId === id) || (type === 'stock' && w.fmpSymbol === id))) return;
+    var itemId = 'wl_' + symbol.toLowerCase().replace(/[^a-z0-9]/g,'') + '_' + Date.now();
+    var item = {
+      id: itemId, symbol: symbol, name: name, type: type,
+      coingeckoId: type === 'crypto' ? id : null, fmpSymbol: type === 'stock' ? id : null,
+      addedBy: MY_NAME || 'User', addedAt: today(), notes: '', image: thumb || null,
+      lastData: { price: null, marketCap: null, change24h: null, fetchedAt: null }
+    };
+    // Close search dropdown
+    var res = _searchResultsEl(); if (res) res.classList.add('hidden');
+    // Add to local DB immediately for instant feedback
+    DB.watchlist.push(item);
+    renderMarketData();
+    // Persist to Firebase
+    if (firebaseReady && dbRef) {
+      try { await dbRef.child('watchlist').child(itemId).set(item); } catch(e) { console.error('Firebase watchlist write failed:', e); }
     }
-  } catch {}
+    // Also always save to localStorage as backup
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    // Fetch price data in background
+    try {
+      var data;
+      if (type === 'crypto') data = await fetchCryptoData(id);
+      else data = await fetchStockData(id);
+      if (data) {
+        item.lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, fetchedAt: Date.now() };
+        if (data.image) item.image = data.image;
+        if (firebaseReady && dbRef) { dbRef.child('watchlist').child(itemId).update({ lastData: item.lastData, image: item.image || null }).catch(function(){}); }
+        localStorage.setItem('fundHQ', JSON.stringify(DB));
+        renderMarketData();
+      }
+    } catch(e) { console.error('Watchlist data fetch failed:', e); }
+  } catch(e) { console.error('addToWatchlist error:', e); }
 }
 
 function removeFromWatchlist(id) {
@@ -6168,7 +6174,7 @@ function renderMarketData() {
       (keyMetric ? '<div class="wc-metric">' + keyMetric + '</div>' : '') +
       '<div id="' + sparkId + '" style="opacity:0.8;"></div>' +
       (ld.score != null ? '<div class="wc-score">' + renderStars(ld.score, 12) + '<span class="wc-score-num">' + ld.score.toFixed(1) + '</span></div>' : '') +
-      (function() { try { var c = computeInvestorScore(w.symbol); return '<div style="margin-top:4px;">' + convictionBadge(c.score) + '</div>'; } catch(e) { return ''; } })() +
+      (function() { try { var c = computeInvestorScore(w.symbol); if (c.score > 0 && c.factors.some(function(f) { return f.score !== 50 && f.score !== 0; })) return '<div style="margin-top:4px;">' + convictionBadge(c.score) + '</div>'; return ''; } catch(e) { return ''; } })() +
       '</div>';
   }).join('');
   // Fetch sparklines for crypto assets (staggered to avoid rate limits)
@@ -6343,10 +6349,18 @@ if (firebaseReady) {
     if (allLoaded()) debouncedRender();
   });
 
-  // Watchlist listener
+  // Watchlist listener — merge with local items to prevent race condition
   dbRef.child('watchlist').on('value', (snap) => {
     const data = snap.val();
-    DB.watchlist = data ? Object.values(data) : [];
+    const fbItems = data ? Object.values(data) : [];
+    // Keep any local items not yet in Firebase (recently added)
+    const fbIds = new Set(fbItems.map(i => i.id));
+    const localOnly = DB.watchlist.filter(w => !fbIds.has(w.id));
+    DB.watchlist = fbItems.concat(localOnly);
+    // Push local-only items to Firebase so they persist
+    localOnly.forEach(item => {
+      dbRef.child('watchlist').child(item.id).set(item).catch(function(){});
+    });
     initialLoad.watchlist = true;
     if (allLoaded()) debouncedRender();
   });
@@ -15241,6 +15255,9 @@ if (!firebaseReady) {
   if (!DB.tasks) DB.tasks = [];
   if (!DB.watchlist) DB.watchlist = [];
   renderAll();
+} else {
+  // Pre-load watchlist from localStorage so Firebase listener can merge
+  try { const raw = localStorage.getItem('fundHQ'); if (raw) { const local = JSON.parse(raw); if (local.watchlist) DB.watchlist = local.watchlist; } } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
