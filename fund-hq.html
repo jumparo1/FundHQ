@@ -3685,7 +3685,7 @@ async function fetchStockData(symbol) {
     week52Low: p.range ? parseFloat(p.range.split('-')[0]) || null : null,
     avgVolume: p.volAvg || p.averageVolume, image: p.image
   };
-  // Merge enriched data from watchlist (manually updated metrics persist in Firebase)
+  // Merge enriched data from watchlist (manually updated or previously fetched metrics persist in Firebase)
   var wlEntry = DB.watchlist.find(function(w) { return w.fmpSymbol === symbol; });
   if (wlEntry && wlEntry.lastData) {
     var wd = wlEntry.lastData;
@@ -3693,12 +3693,34 @@ async function fetchStockData(symbol) {
     if (!data.eps && wd.eps) data.eps = wd.eps;
     if (!data.pbRatio && wd.pbRatio) data.pbRatio = wd.pbRatio;
     if (!data.roe && wd.roe) data.roe = wd.roe;
-    if (!data.debtToEquity && wd.debtToEquity != null) data.debtToEquity = wd.debtToEquity;
+    if (data.debtToEquity == null && wd.debtToEquity != null) data.debtToEquity = wd.debtToEquity;
     if (!data.currentRatio && wd.currentRatio) data.currentRatio = wd.currentRatio;
     if (!data.evToEbitda && wd.evToEbitda) data.evToEbitda = wd.evToEbitda;
-    if (!data.dividendYield && wd.dividendYield) data.dividendYield = wd.dividendYield;
+    if (data.dividendYield == null && wd.dividendYield != null) data.dividendYield = wd.dividendYield;
   }
+  // Auto-calculate P/E from price and EPS if missing
+  if (!data.pe && data.price && p.eps) { data.pe = data.price / p.eps; data.eps = p.eps; }
+  // Auto-calculate dividend yield from lastDiv
+  if (data.dividendYield == null && p.lastDiv && data.price) { data.dividendYield = (p.lastDiv / data.price) * 100; }
+  // If key metrics still missing, try to compute from profile data
+  if (!data.pe && data.price && data.eps) data.pe = data.price / data.eps;
   marketCache.set('stocks', symbol, data);
+  // Auto-save enriched data back to watchlist in Firebase
+  if (wlEntry && firebaseReady && dbRef) {
+    var updatedLd = Object.assign({}, wlEntry.lastData || {}, {
+      price: data.price, marketCap: data.marketCap, change24h: data.change24h, fetchedAt: Date.now()
+    });
+    if (data.pe) updatedLd.pe = data.pe;
+    if (data.eps) updatedLd.eps = data.eps;
+    if (data.pbRatio) updatedLd.pbRatio = data.pbRatio;
+    if (data.roe) updatedLd.roe = data.roe;
+    if (data.debtToEquity != null) updatedLd.debtToEquity = data.debtToEquity;
+    if (data.currentRatio) updatedLd.currentRatio = data.currentRatio;
+    if (data.evToEbitda) updatedLd.evToEbitda = data.evToEbitda;
+    if (data.dividendYield != null) updatedLd.dividendYield = data.dividendYield;
+    if (data.image) wlEntry.image = data.image;
+    dbRef.child('watchlist').child(wlEntry.id).update({ lastData: updatedLd, image: data.image || null }).catch(function(){});
+  }
   return data;
 }
 
