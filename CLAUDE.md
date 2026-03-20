@@ -216,6 +216,13 @@ FastAPI server at `agents/server.py` — runs on port 8888, pushes data to Fireb
 - **Phase 3: Risk Framework** — COMPLETE
 - **Phase 4: Learning & Edge** — COMPLETE
 - **Phase 5: Full Autonomy** — COMPLETE
+- **Phase 6: 24/7 Autonomous Agents** — NEXT (see `PLAN-24-7-AGENTS.md`)
+  - [ ] Phase A: Foundation — daemon.py + shared modules (claude_client, queue, memory)
+  - [ ] Phase B: Sentinel Autonomy — whale scanning, funding extremes, signal generation (30min cycle)
+  - [ ] Phase C: Analyst Autonomy — score refresh, discovery scans, research briefs (2h cycle)
+  - [ ] Phase D: Trader Autonomy + Learning — outcome tracking, setup scanning, calibration (1h cycle)
+  - [ ] Phase E: Learning Loop — agent memory injection, threshold evolution, cost tracking
+  - [ ] Phase F: Production — launchd auto-start, Dashboard agent status widget, 48h monitoring
 
 ## How to Run
 ```bash
