@@ -8908,20 +8908,85 @@ function formatSectionBody(text) {
   let inList = false;
   let inTable = false;
   let tableRows = [];
+  let inAlignedTable = false;
+  let alignedRows = [];
+  let alignedCols = null;
 
-  for (const line of lines) {
+  // Detect space-aligned table: header row with 3+ columns separated by 2+ spaces
+  function isAlignedHeader(line) {
+    return /^\s{10,}/.test(line) && line.trim().split(/\s{2,}/).length >= 3;
+  }
+  function isAlignedDataRow(line) {
+    return line.trim().split(/\s{2,}/).length >= 3 && /[\d$%+\-.]/.test(line);
+  }
+  function parseAlignedRow(line, cols) {
+    // Split by 2+ spaces
+    var parts = line.trim().split(/\s{2,}/);
+    return parts;
+  }
+  function flushAligned() {
+    if (alignedRows.length < 2) {
+      alignedRows.forEach(function(r) { html += '<p>' + esc(r.join('  ')) + '</p>'; });
+      alignedRows = []; alignedCols = null; inAlignedTable = false;
+      return;
+    }
+    html += '<div style="overflow-x:auto;margin:12px 0;"><table class="rv-score-table" style="width:100%;border-collapse:collapse;font-size:13px;">';
+    // First row is header
+    html += '<thead><tr>';
+    alignedRows[0].forEach(function(c, ci) {
+      var style = ci === 0 ? 'text-align:left;' : 'text-align:center;';
+      html += '<th style="' + style + 'padding:10px 14px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;white-space:nowrap;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">' + esc(c) + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    for (var i = 1; i < alignedRows.length; i++) {
+      var isTotal = alignedRows[i][0] && /TOTAL/i.test(alignedRows[i][0]);
+      var trStyle = isTotal ? 'background:var(--bg3);font-weight:700;' : (i % 2 === 0 ? 'background:rgba(255,255,255,0.02);' : '');
+      html += '<tr style="' + trStyle + '">';
+      alignedRows[i].forEach(function(c, ci) {
+        var style = ci === 0 ? 'text-align:left;color:var(--text);' : 'text-align:center;';
+        // Color code values
+        var val = c.trim();
+        var color = '';
+        if (/^[89]$|^10$/.test(val)) color = 'color:#4ade80;font-weight:600;';
+        else if (/^[67]$/.test(val)) color = 'color:var(--accent);font-weight:600;';
+        else if (/^[45]$/.test(val)) color = 'color:#f59e0b;font-weight:600;';
+        else if (/^[1-3]$/.test(val)) color = 'color:#ef4444;font-weight:600;';
+        else if (/^\+/.test(val)) color = 'color:#4ade80;';
+        else if (/^-\d/.test(val)) color = 'color:#ef4444;';
+        else if (/^Yes$/i.test(val)) color = 'color:#4ade80;font-weight:600;';
+        else if (/^No$/i.test(val)) color = 'color:var(--text3);';
+        else if (/^\d{2,}$/.test(val) && isTotal) color = 'color:var(--accent);font-weight:700;font-size:15px;';
+        else if (/\$/.test(val)) color = 'font-weight:600;';
+        style += color;
+        var tdBorder = isTotal ? 'border-top:2px solid var(--border);' : 'border-bottom:1px solid rgba(255,255,255,0.05);';
+        html += '<td style="' + style + 'padding:8px 14px;' + tdBorder + 'white-space:nowrap;">' + esc(c) + '</td>';
+      });
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    alignedRows = []; alignedCols = null; inAlignedTable = false;
+  }
+
+  for (var li = 0; li < lines.length; li++) {
+    const line = lines[li];
     const trimmed = line.trim();
+
     if (!trimmed) {
       if (inList) { html += '</ul>'; inList = false; }
       if (inTable) { html += renderTable(tableRows); inTable = false; tableRows = []; }
+      if (inAlignedTable) { flushAligned(); }
       continue;
     }
+
+    // Skip lines that are just dashes (---- separators)
+    if (/^-{3,}$/.test(trimmed)) continue;
 
     // TradingView chart embed: [CHART:SYMBOL] or [CHART:SYMBOL:EXCHANGE]
     const chartMatch = trimmed.match(/^\[CHART:([A-Za-z0-9._]+)(?::([A-Za-z]+))?\]$/);
     if (chartMatch) {
       if (inList) { html += '</ul>'; inList = false; }
       if (inTable) { html += renderTable(tableRows); inTable = false; tableRows = []; }
+      if (inAlignedTable) { flushAligned(); }
       const symbol = chartMatch[1];
       const exchange = chartMatch[2] || 'BINANCE';
       html += `<div class="rv-chart-embed" style="margin:16px 0;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
@@ -8937,6 +9002,7 @@ function formatSectionBody(text) {
     // Table rows: lines starting with |
     if (/^\|/.test(trimmed)) {
       if (inList) { html += '</ul>'; inList = false; }
+      if (inAlignedTable) { flushAligned(); }
       // Skip separator rows like |---|---|
       if (/^\|[\s\-:|]+\|$/.test(trimmed)) { continue; }
       const cells = trimmed.split('|').filter((c, i, a) => i > 0 && i < a.length - 1).map(c => c.trim());
@@ -8948,6 +9014,21 @@ function formatSectionBody(text) {
     }
 
     if (inTable) { html += renderTable(tableRows); inTable = false; tableRows = []; }
+
+    // Detect space-aligned tables (scoreboard style)
+    var alignedParts = trimmed.split(/\s{2,}/);
+    if (alignedParts.length >= 3 && !inList) {
+      // Check if this looks like a data row (has numbers, $, %, +/-, Yes/No) or a header row
+      var looksLikeData = /[\d$%]/.test(trimmed) || /\b(Yes|No)\b/i.test(trimmed);
+      var looksLikeHeader = !looksLikeData && alignedParts.length >= 3 && alignedParts.every(function(p) { return p.length < 20; });
+      if (looksLikeData || looksLikeHeader || inAlignedTable) {
+        if (!inAlignedTable) { inAlignedTable = true; alignedRows = []; }
+        alignedRows.push(alignedParts);
+        continue;
+      }
+    }
+
+    if (inAlignedTable) { flushAligned(); }
 
     // Bullet lines starting with - or *
     if (/^[-*]\s/.test(trimmed)) {
@@ -8968,6 +9049,7 @@ function formatSectionBody(text) {
   }
   if (inList) html += '</ul>';
   if (inTable) html += renderTable(tableRows);
+  if (inAlignedTable) flushAligned();
   return html;
 }
 
