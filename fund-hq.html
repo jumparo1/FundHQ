@@ -5786,10 +5786,14 @@ async function addToWatchlist(type, id, symbol, name, thumb) {
   const item = {
     id: genId(), symbol: symbol, name: name, type: type,
     coingeckoId: type === 'crypto' ? id : null, fmpSymbol: type === 'stock' ? id : null,
-    addedBy: MY_NAME, addedAt: today(), notes: '',
+    addedBy: MY_NAME, addedAt: today(), notes: '', image: thumb || null,
     lastData: { price: null, marketCap: null, change24h: null, fetchedAt: null }
   };
-  // Fetch current data immediately
+  // Add to local DB immediately for instant UI feedback
+  DB.watchlist.push(item);
+  renderMarketData();
+  const res = _searchResultsEl(); if (res) res.classList.add('hidden');
+  // Fetch current data
   try {
     let data;
     if (type === 'crypto') data = await fetchCryptoData(id);
@@ -5799,9 +5803,10 @@ async function addToWatchlist(type, id, symbol, name, thumb) {
       if (data.image) item.image = data.image;
     }
   } catch {}
+  // Save to Firebase (persistent) or localStorage
   if (firebaseReady && dbRef) { dbRef.child('watchlist').child(item.id).set(item); }
-  else { DB.watchlist.push(item); localStorage.setItem('fundHQ', JSON.stringify(DB)); debouncedRender(); }
-  const res = _searchResultsEl(); if (res) res.classList.add('hidden');
+  else { localStorage.setItem('fundHQ', JSON.stringify(DB)); }
+  renderMarketData();
 }
 
 function removeFromWatchlist(id) {
@@ -5994,6 +5999,45 @@ function buildMetricGrid(rows) {
   ).join('');
 }
 
+function buildSparklineSvg(prices, width, height, color) {
+  if (!prices || prices.length < 2) return '';
+  var min = Math.min.apply(null, prices);
+  var max = Math.max.apply(null, prices);
+  var range = max - min || 1;
+  var step = width / (prices.length - 1);
+  var points = prices.map(function(p, i) {
+    return (i * step).toFixed(1) + ',' + (height - ((p - min) / range) * (height - 2) - 1).toFixed(1);
+  }).join(' ');
+  return '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" style="display:block;margin-top:8px;"><polyline points="' + points + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+var _sparklineCache = {};
+
+function fetchSparkline(coinId, cardId) {
+  if (_sparklineCache[coinId]) {
+    var el = document.getElementById(cardId);
+    if (el) el.innerHTML = _sparklineCache[coinId];
+    return;
+  }
+  fetch('https://api.coingecko.com/api/v3/coins/' + coinId + '/market_chart?vs_currency=usd&days=7')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.prices || !d.prices.length) return;
+      // Downsample to ~50 points for clean sparkline
+      var raw = d.prices.map(function(p) { return p[1]; });
+      var step = Math.max(1, Math.floor(raw.length / 50));
+      var sampled = [];
+      for (var i = 0; i < raw.length; i += step) sampled.push(raw[i]);
+      var last = raw[raw.length - 1]; var first = raw[0];
+      var color = last >= first ? '#4ade80' : '#ef4444';
+      var svg = buildSparklineSvg(sampled, 240, 40, color);
+      _sparklineCache[coinId] = svg;
+      var el = document.getElementById(cardId);
+      if (el) el.innerHTML = svg;
+    })
+    .catch(function() {});
+}
+
 function renderMarketData() {
   const grid = document.getElementById('watchlist-grid');
   const badge = document.getElementById('badge-watchlist');
@@ -6002,7 +6046,7 @@ function renderMarketData() {
     grid.innerHTML = '<div class="watchlist-empty"><span class="icon">&#128200;</span>No assets in watchlist yet.<br>Search for a coin or stock above to get started.</div>';
     return;
   }
-  grid.innerHTML = DB.watchlist.map(w => {
+  grid.innerHTML = DB.watchlist.map(function(w, idx) {
     const ld = w.lastData || {};
     const priceStr = ld.price != null ? '$' + fmtNum(ld.price) : 'Loading...';
     const changeStr = ld.change24h != null ? fmtPct(ld.change24h) : '';
@@ -6012,16 +6056,24 @@ function renderMarketData() {
       : (ld.pe ? 'P/E ' + ld.pe.toFixed(1) : (ld.marketCap ? 'MCap $' + fmtBigNum(ld.marketCap) : ''));
     const imgHtml = w.image ? '<img src="' + w.image + '" alt="">' : '<div style="width:28px;height:28px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);">' + (w.symbol || '?')[0] + '</div>';
     const lookupId = w.type === 'crypto' ? w.coingeckoId : w.fmpSymbol;
+    const sparkId = 'spark-' + (w.id || idx);
     return '<div class="watchlist-card" onclick="showMarketDetail(\'' + w.type + '\',\'' + lookupId + '\')">' +
       '<button class="wc-remove admin-only" onclick="event.stopPropagation();removeFromWatchlist(\'' + w.id + '\')" title="Remove">&times;</button>' +
       '<div class="wc-header">' + imgHtml + '<div><div class="wc-name">' + esc(w.name) + '</div><div class="wc-symbol">' + w.symbol + '</div></div></div>' +
       '<div class="wc-price">' + priceStr + '</div>' +
       (changeStr ? '<div class="wc-change ' + cls + '">' + changeStr + '</div>' : '') +
       (keyMetric ? '<div class="wc-metric">' + keyMetric + '</div>' : '') +
+      '<div id="' + sparkId + '" style="opacity:0.8;"></div>' +
       (ld.score != null ? '<div class="wc-score">' + renderStars(ld.score, 12) + '<span class="wc-score-num">' + ld.score.toFixed(1) + '</span></div>' : '') +
       (function() { try { var c = computeInvestorScore(w.symbol); return '<div style="margin-top:4px;">' + convictionBadge(c.score) + '</div>'; } catch(e) { return ''; } })() +
       '</div>';
   }).join('');
+  // Fetch sparklines for crypto assets (staggered to avoid rate limits)
+  DB.watchlist.forEach(function(w, idx) {
+    if (w.type === 'crypto' && w.coingeckoId) {
+      setTimeout(function() { fetchSparkline(w.coingeckoId, 'spark-' + (w.id || idx)); }, idx * 300);
+    }
+  });
 }
 
 // ===== AUTO-FILL RESEARCH FROM MARKET DATA =====
