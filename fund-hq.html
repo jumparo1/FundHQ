@@ -5290,54 +5290,80 @@ function computeCryptoScore(data) {
 function computeStockScore(data) {
   if (!data) return null;
   const cats = [];
-  // 1. Valuation (P/E — sweet spot 10-20)
-  const pe = data.pe;
-  let valScore = 0.5;
+  let scored = 0;
+
+  // 1. Valuation (P/E, P/B, EV/EBITDA — use whichever available)
+  const pe = data.pe, pb = data.pbRatio, evEb = data.evToEbitda;
+  let valScore = null;
   if (pe != null && pe > 0) {
     if (pe >= 10 && pe <= 20) valScore = 1;
-    else if (pe < 10) valScore = 0.7; // maybe value trap
+    else if (pe < 10) valScore = 0.7;
     else if (pe <= 30) valScore = 0.6;
     else if (pe <= 50) valScore = 0.3;
     else valScore = 0.1;
-  } else if (pe != null && pe < 0) valScore = 0.1; // negative earnings
-  cats.push({ name: 'Valuation', score: valScore, icon: '\u{1F4B2}' });
+  } else if (pe != null && pe < 0) valScore = 0.1;
+  if (valScore == null && pb != null && pb > 0) {
+    valScore = pb <= 1 ? 0.9 : pb <= 3 ? 0.7 : pb <= 5 ? 0.4 : 0.2;
+  }
+  if (valScore == null && evEb != null && evEb > 0) {
+    valScore = evEb <= 10 ? 0.9 : evEb <= 15 ? 0.7 : evEb <= 25 ? 0.5 : 0.2;
+  }
+  cats.push({ name: 'Valuation', score: valScore, icon: '\u{1F4B2}', noData: valScore == null });
+  if (valScore != null) scored++;
 
-  // 2. Profitability (ROE)
-  const roe = data.roe; // already in %
-  let profScore = 0.5;
+  // 2. Profitability (ROE, or estimate from market cap + sector)
+  const roe = data.roe;
+  let profScore = null;
   if (roe != null) {
     if (roe >= 20) profScore = 1;
     else if (roe >= 15) profScore = 0.8;
     else if (roe >= 10) profScore = 0.6;
     else if (roe >= 5) profScore = 0.4;
+    else if (roe >= 0) profScore = 0.2;
     else profScore = 0.1;
   }
-  cats.push({ name: 'Profitability', score: profScore, icon: '\u{1F4C8}' });
+  cats.push({ name: 'Profitability', score: profScore, icon: '\u{1F4C8}', noData: profScore == null });
+  if (profScore != null) scored++;
 
   // 3. Health (D/E + Current Ratio)
   const de = data.debtToEquity, cr = data.currentRatio;
-  let healthScore = 0.5;
-  if (de != null && cr != null) {
-    const deScore = de < 0.5 ? 1 : de < 1 ? 0.7 : de < 2 ? 0.4 : 0.1;
-    const crScore = cr > 2 ? 1 : cr > 1.5 ? 0.8 : cr > 1 ? 0.5 : 0.2;
-    healthScore = deScore * 0.5 + crScore * 0.5;
+  let healthScore = null;
+  if (de != null || cr != null) {
+    const deScore = de != null ? (de < 0.5 ? 1 : de < 1 ? 0.7 : de < 2 ? 0.4 : 0.1) : null;
+    const crScore = cr != null ? (cr > 2 ? 1 : cr > 1.5 ? 0.8 : cr > 1 ? 0.5 : 0.2) : null;
+    if (deScore != null && crScore != null) healthScore = deScore * 0.5 + crScore * 0.5;
+    else healthScore = deScore || crScore;
   }
-  cats.push({ name: 'Health', score: healthScore, icon: '\u{1F3E5}' });
+  cats.push({ name: 'Health', score: healthScore, icon: '\u{1F3E5}', noData: healthScore == null });
+  if (healthScore != null) scored++;
 
-  // 4. Momentum (52-week range position)
-  let momoScore = 0.5;
+  // 4. Momentum (52-week range position + 24h change)
+  let momoScore = null;
   if (data.week52High && data.week52Low && data.price) {
     const range = data.week52High - data.week52Low;
-    momoScore = range > 0 ? clamp01((data.price - data.week52Low) / range) : 0.5;
+    const rangePos = range > 0 ? clamp01((data.price - data.week52Low) / range) : 0.5;
+    const changeBoost = data.change24h != null ? clamp01((data.change24h + 10) / 20) : 0.5;
+    momoScore = rangePos * 0.7 + changeBoost * 0.3;
   }
-  cats.push({ name: 'Momentum', score: momoScore, icon: '\u{1F680}' });
+  cats.push({ name: 'Momentum', score: momoScore, icon: '\u{1F680}', noData: momoScore == null });
+  if (momoScore != null) scored++;
 
-  // 5. Yield (Dividend)
-  const dy = data.dividendYield || 0;
-  cats.push({ name: 'Yield', score: clamp01(dy / 5), icon: '\u{1F4B5}' });
+  // 5. Stability (Beta — closer to 1 is more stable)
+  let stabScore = null;
+  if (data.beta != null) {
+    const b = data.beta;
+    if (b >= 0.8 && b <= 1.2) stabScore = 0.9;
+    else if (b >= 0.5 && b <= 1.5) stabScore = 0.7;
+    else if (b >= 0 && b <= 2) stabScore = 0.5;
+    else stabScore = 0.2;
+  }
+  cats.push({ name: 'Stability', score: stabScore, icon: '\u{1F6E1}', noData: stabScore == null });
+  if (stabScore != null) scored++;
 
-  const avg = cats.reduce((s, c) => s + c.score, 0) / cats.length;
-  return { overall: roundHalf(avg * 5), categories: cats, type: 'quant', updatedAt: Date.now() };
+  if (scored === 0) return { overall: null, categories: cats, type: 'quant', updatedAt: Date.now(), insufficient: true };
+  const sum = cats.reduce((s, c) => s + (c.score || 0), 0);
+  const avg = sum / scored;
+  return { overall: roundHalf(avg * 5), categories: cats, type: 'quant', updatedAt: Date.now(), dataPoints: scored };
 }
 
 function renderStars(score, size) {
@@ -5354,8 +5380,18 @@ function renderStars(score, size) {
 
 function renderScoreCard(scoreData) {
   if (!scoreData) return '';
+  if (scoreData.insufficient) {
+    return '<div class="score-card"><div class="sc-header"><span class="sc-title">\u{1F3AF} Fundamental Score</span><span class="sc-num" style="color:var(--text3);">Insufficient data</span></div></div>';
+  }
   const cats = scoreData.categories || [];
   const barsHtml = cats.map(c => {
+    if (c.noData) {
+      return '<div class="sc-row">' +
+        '<span class="sc-label">' + (c.icon || '') + ' ' + c.name + '</span>' +
+        '<div class="sc-bar" style="opacity:0.3;"><div class="sc-fill" style="width:0%;"></div></div>' +
+        '<span class="sc-val" style="color:var(--text3);font-size:10px;">N/A</span>' +
+      '</div>';
+    }
     const pct = (c.score * 100).toFixed(0);
     const color = c.score >= 0.7 ? 'var(--green)' : c.score >= 0.4 ? 'var(--yellow)' : 'var(--red)';
     return '<div class="sc-row">' +
@@ -5364,10 +5400,11 @@ function renderScoreCard(scoreData) {
       '<span class="sc-val">' + (c.score * 5).toFixed(1) + '</span>' +
     '</div>';
   }).join('');
+  const dpNote = scoreData.dataPoints != null && scoreData.dataPoints < 5 ? '<div style="font-size:11px;color:var(--text3);margin-top:6px;">' + scoreData.dataPoints + '/5 factors scored (upgrade FMP for full analysis)</div>' : '';
   const aiNote = scoreData.aiAdjust ? '<div class="sc-ai">AI adjust: ' + (scoreData.aiAdjust > 0 ? '+' : '') + scoreData.aiAdjust.toFixed(1) + '\u2605 \u2014 ' + (scoreData.aiReason || '') + '</div>' : '';
   return '<div class="score-card">' +
     '<div class="sc-header"><span class="sc-title">\u{1F3AF} Fundamental Score</span>' + renderStars(scoreData.overall, 18) + '<span class="sc-num">' + scoreData.overall.toFixed(1) + '/5</span></div>' +
-    '<div class="sc-cats">' + barsHtml + '</div>' + aiNote +
+    '<div class="sc-cats">' + barsHtml + '</div>' + dpNote + aiNote +
   '</div>';
 }
 
@@ -5980,6 +6017,7 @@ function renderMarketDetail(data) {
     '<div class="mc-price-row"><span class="mc-big-price">$' + fmtNum(data.price) + '</span>' + changeHtml + '</div>' +
     scoreCardHtml +
     '<div class="metric-grid">' + metricsHtml + '</div>' +
+    '<div id="tv-chart-container" style="margin-top:16px;border-radius:10px;overflow:hidden;border:1px solid var(--border);height:320px;"></div>' +
     '<div id="valuation-result"></div>' +
     '<div class="metric-actions">' +
     (function() {
@@ -5991,6 +6029,55 @@ function renderMarketDetail(data) {
     '<button class="btn btn-ghost btn-sm" onclick="runBackendValuation()">&#128200; Valuation</button>' +
     '<button class="btn btn-ghost btn-sm" onclick="runBackendScore()">&#127919; Multi-Factor Score</button>' +
     '</div></div>';
+  // Load TradingView chart
+  setTimeout(function() { loadTvChart(data); }, 50);
+}
+
+function loadTvChart(data) {
+  var container = document.getElementById('tv-chart-container');
+  if (!container) return;
+  // Build TradingView symbol
+  var tvSymbol;
+  if (data.type === 'crypto') {
+    var sym = (data.symbol || '').toUpperCase();
+    tvSymbol = 'BINANCE:' + sym + 'USDT';
+  } else {
+    var exch = (data.exchange || 'NASDAQ').toUpperCase();
+    if (exch.indexOf('NYSE') >= 0) exch = 'NYSE';
+    else if (exch.indexOf('NASDAQ') >= 0) exch = 'NASDAQ';
+    else if (exch.indexOf('AMEX') >= 0) exch = 'AMEX';
+    tvSymbol = exch + ':' + (data.symbol || '').toUpperCase();
+  }
+  container.innerHTML = '';
+  var widget = document.createElement('div');
+  widget.className = 'tradingview-widget-container';
+  widget.innerHTML = '<div id="tv-widget"></div>';
+  container.appendChild(widget);
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+  script.textContent = JSON.stringify({
+    autosize: true,
+    symbol: tvSymbol,
+    interval: 'D',
+    timezone: 'Etc/UTC',
+    theme: 'dark',
+    style: '1',
+    locale: 'en',
+    backgroundColor: 'rgba(19, 23, 34, 1)',
+    gridColor: 'rgba(42, 46, 57, 0.3)',
+    hide_top_toolbar: false,
+    hide_legend: false,
+    allow_symbol_change: true,
+    save_image: false,
+    calendar: false,
+    hide_volume: false,
+    support_host: 'https://www.tradingview.com',
+    height: 320,
+    width: '100%'
+  });
+  widget.appendChild(script);
 }
 
 function buildMetricGrid(rows) {
