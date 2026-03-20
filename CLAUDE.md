@@ -74,6 +74,16 @@ All write alerts to Firebase via REST API → appear in Fund HQ Alerts page in r
 - API keys stored in browser localStorage (per-domain)
 
 ## Recent Changes
+- 2026-03-20: **Watchlist split by type** — Crypto/Stocks tabs now filter the watchlist grid to show only relevant assets. Empty states per type. `setMarketType()` triggers re-render. Sparklines only fetched for visible filtered set.
+- 2026-03-20: **Watchlist persistence fix** — Firebase listener race condition fixed: `on('value')` now merges local items instead of replacing. Dual-write to Firebase + localStorage. Pre-load from localStorage before Firebase connects. Items no longer vanish on reload.
+- 2026-03-20: **Sparkline charts** — Inline SVG sparklines on watchlist cards from CoinGecko 7-day market_chart API. Green/red based on trend. Downsampled to 50 points. Staggered fetches to avoid rate limits.
+- 2026-03-20: **TradingView chart** — Embedded advanced chart widget in watchlist detail view. Dark theme, auto-mapped symbols (crypto → BINANCE:XXXUSDT, stocks → EXCHANGE:SYMBOL).
+- 2026-03-20: **Add to Watchlist button** — Prominent purple "+ Add" button on search results. One-click add with persistent storage.
+- 2026-03-20: **Stock scoring accuracy** — Replaced fake 2.5 defaults with N/A for missing data. Each category tracks `noData` flag. Shows "X/5 factors scored". Hidden conviction badge when no real data exists.
+- 2026-03-20: **Auto-enrich stocks** — Every new stock auto-fetches financials on add. Enriched metrics stored in Firebase `watchlist/{id}/lastData` and merged on every load. DLO + HOOD enriched with real data.
+- 2026-03-20: **FMP API fix** — Premium endpoints (`key-metrics-ttm`, `ratios-ttm`) wrapped in separate try/catch. Free tier graceful degradation. Fixed `exchangeShortName` → `exchange` field mapping.
+- 2026-03-20: **Stale alerts cleanup** — Old Mar 12 test alerts removed. 3 fresh data-driven alerts written to Firebase.
+- 2026-03-20: **Docs sidebar** — Progress moved from Operations to Updates section.
 - 2026-03-20: **Report table UI upgrade** — `renderTable()` rewritten with rounded card borders, accent-colored headers, color-coded scores (green 8-10, purple 6-7, amber 4-5, red 1-3), Yes/No coloring, +/- percentage colors, bold TOTAL rows with accent highlight, hover effects, alternating row backgrounds. All report tables (scoreboard, non-crypto comparison, peer comparison) now render as styled HTML tables. Reports converted from space-aligned to pipe-delimited format. Substack TOC added.
 - 2026-03-20: **Data-driven research template** — Added Valuation Scoreboard (10-dimension 1-10 scoring vs 3 crypto peers, total /100), Non-Crypto Comparison (project FDV as % of TradFi/Web2 giants like NVIDIA $4.4T, OpenAI $850B, Anthropic $380B), and strict data-driven rules (every claim needs API data, honest conviction ratings, BULLISH/BEARISH signal lists). Substack template updated with scoreboard + on-chain sections.
 - 2026-03-20: **FET deep data analysis** — Binance Futures 14-day taker flow (Buy $1.53B vs Sell $1.56B = net -$29M), 30-day OI history (+9.1%), top trader L/S ratio 30d trend (LONG→NEUTRAL→recovering), spot volume profile (6 net-buy days Mar 10-16, then profit-taking). Whale accumulation rated honestly at 6.5/10 with explicit bullish/bearish signal lists. Perp positioning section added to both reports.

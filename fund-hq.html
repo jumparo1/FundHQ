@@ -2686,6 +2686,14 @@ cd ~/deploy && git add . && git commit && git push
               <div class="docs-changelog-entry">
                 <div class="docs-changelog-date">March 20, 2026</div>
                 <ul>
+                  <li><strong>Watchlist Split by Type</strong> — Crypto/Stocks tabs now filter the watchlist grid to show only relevant assets with per-type empty states</li>
+                  <li><strong>Watchlist Persistence Fix</strong> — Firebase listener race condition fixed with merge-based approach + dual-write (Firebase + localStorage)</li>
+                  <li><strong>Sparkline Charts</strong> — inline SVG 7-day sparklines on watchlist cards from CoinGecko, green/red based on trend</li>
+                  <li><strong>TradingView Chart</strong> — embedded advanced chart widget in watchlist detail view with dark theme</li>
+                  <li><strong>Add to Watchlist Button</strong> — prominent purple "+ Add" button on search results for one-click watchlist add</li>
+                  <li><strong>Stock Scoring Accuracy</strong> — replaced fake 2.5 defaults with N/A, hidden conviction badge when no real data</li>
+                  <li><strong>Auto-Enrich Stocks</strong> — every new stock auto-fetches financials, enriched metrics persist in Firebase</li>
+                  <li><strong>FMP API Fix</strong> — premium endpoint graceful degradation, free tier compatibility</li>
                   <li><strong>Frontend-Backend Integration</strong> — wired all 5 backend phases into frontend: macro intelligence, auto-discovery, risk dashboard, performance analytics, smart alerts</li>
                   <li><strong>Report Table UI</strong> — pipe-delimited table renderer with color-coded scores, styled card borders, accent headers, hover effects</li>
                   <li><strong>Data-Driven Research Template</strong> — valuation scoreboard (10 dimensions /100), non-crypto comparison, strict data rules (every claim needs API data)</li>
