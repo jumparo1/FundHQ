@@ -3685,6 +3685,19 @@ async function fetchStockData(symbol) {
     week52Low: p.range ? parseFloat(p.range.split('-')[0]) || null : null,
     avgVolume: p.volAvg || p.averageVolume, image: p.image
   };
+  // Merge enriched data from watchlist (manually updated metrics persist in Firebase)
+  var wlEntry = DB.watchlist.find(function(w) { return w.fmpSymbol === symbol; });
+  if (wlEntry && wlEntry.lastData) {
+    var wd = wlEntry.lastData;
+    if (!data.pe && wd.pe) data.pe = wd.pe;
+    if (!data.eps && wd.eps) data.eps = wd.eps;
+    if (!data.pbRatio && wd.pbRatio) data.pbRatio = wd.pbRatio;
+    if (!data.roe && wd.roe) data.roe = wd.roe;
+    if (!data.debtToEquity && wd.debtToEquity != null) data.debtToEquity = wd.debtToEquity;
+    if (!data.currentRatio && wd.currentRatio) data.currentRatio = wd.currentRatio;
+    if (!data.evToEbitda && wd.evToEbitda) data.evToEbitda = wd.evToEbitda;
+    if (!data.dividendYield && wd.dividendYield) data.dividendYield = wd.dividendYield;
+  }
   marketCache.set('stocks', symbol, data);
   return data;
 }
@@ -5826,11 +5839,16 @@ async function addToWatchlist(type, id, symbol, name, thumb) {
     addedBy: MY_NAME, addedAt: today(), notes: '', image: thumb || null,
     lastData: { price: null, marketCap: null, change24h: null, fetchedAt: null }
   };
-  // Add to local DB immediately for instant UI feedback
-  DB.watchlist.push(item);
-  renderMarketData();
   const res = _searchResultsEl(); if (res) res.classList.add('hidden');
-  // Fetch current data
+  // Write to Firebase first so listener picks it up
+  if (firebaseReady && dbRef) {
+    await dbRef.child('watchlist').child(item.id).set(item);
+  } else {
+    DB.watchlist.push(item);
+    localStorage.setItem('fundHQ', JSON.stringify(DB));
+    renderMarketData();
+  }
+  // Fetch current data and update
   try {
     let data;
     if (type === 'crypto') data = await fetchCryptoData(id);
@@ -5838,12 +5856,10 @@ async function addToWatchlist(type, id, symbol, name, thumb) {
     if (data) {
       item.lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, fetchedAt: Date.now() };
       if (data.image) item.image = data.image;
+      if (firebaseReady && dbRef) { dbRef.child('watchlist').child(item.id).update({ lastData: item.lastData, image: item.image || null }); }
+      else { localStorage.setItem('fundHQ', JSON.stringify(DB)); renderMarketData(); }
     }
   } catch {}
-  // Save to Firebase (persistent) or localStorage
-  if (firebaseReady && dbRef) { dbRef.child('watchlist').child(item.id).set(item); }
-  else { localStorage.setItem('fundHQ', JSON.stringify(DB)); }
-  renderMarketData();
 }
 
 function removeFromWatchlist(id) {
