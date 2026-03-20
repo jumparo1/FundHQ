@@ -5787,6 +5787,7 @@ function setMarketType(type) {
   if (inp) { inp.placeholder = type === 'crypto' ? 'Search coin...' : 'Search stock...'; inp.value = ''; }
   const res = _searchResultsEl();
   if (res) res.classList.add('hidden');
+  renderMarketData();
 }
 
 function debouncedMarketSearch(q, ctx) {
@@ -6182,11 +6183,14 @@ function renderMarketData() {
   const grid = document.getElementById('watchlist-grid');
   const badge = document.getElementById('badge-watchlist');
   if (badge) badge.textContent = DB.watchlist.length || '';
-  if (!DB.watchlist.length) {
-    grid.innerHTML = '<div class="watchlist-empty"><span class="icon">&#128200;</span>No assets in watchlist yet.<br>Search for a coin or stock above to get started.</div>';
+  // Filter by current market type (crypto vs stock)
+  var filtered = DB.watchlist.filter(function(w) { return w.type === currentMarketType; });
+  if (!filtered.length) {
+    var typeLabel = currentMarketType === 'crypto' ? 'crypto assets' : 'stocks';
+    grid.innerHTML = '<div class="watchlist-empty"><span class="icon">&#128200;</span>No ' + typeLabel + ' in watchlist yet.<br>Search above to add some.</div>';
     return;
   }
-  grid.innerHTML = DB.watchlist.map(function(w, idx) {
+  grid.innerHTML = filtered.map(function(w, idx) {
     const ld = w.lastData || {};
     const priceStr = ld.price != null ? '$' + fmtNum(ld.price) : 'Loading...';
     const changeStr = ld.change24h != null ? fmtPct(ld.change24h) : '';
@@ -6209,7 +6213,7 @@ function renderMarketData() {
       '</div>';
   }).join('');
   // Fetch sparklines for crypto assets (staggered to avoid rate limits)
-  DB.watchlist.forEach(function(w, idx) {
+  filtered.forEach(function(w, idx) {
     if (w.type === 'crypto' && w.coingeckoId) {
       setTimeout(function() { fetchSparkline(w.coingeckoId, 'spark-' + (w.id || idx)); }, idx * 300);
     }
