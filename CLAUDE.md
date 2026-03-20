@@ -10,7 +10,7 @@ AI-powered Conviction Engine for asymmetric trades — 5 AI agents discover, res
 - **AI Agents:** 5-agent system via Claude Haiku tool_use API, 8-turn multi-tool loop, intent-based routing
 - **Scheduled Tasks:** 4 Claude Code scheduled tasks writing alerts via Firebase REST API
 - **APIs:** CoinGecko (crypto), FMP `/stable/` (stocks), Arkham Intelligence (wallet identity/labels), Moralis (EVM holders), Dexscreener (DEX pairs), Hyperliquid (perps/whales), Anthropic Claude (AI research + web search), DefiLlama (TVL + raises), Binance Futures (funding + OI), Alternative.me (Fear & Greed)
-- **Knowledge Base:** 9 SKILL.md files in `.claude/skills/`
+- **Knowledge Base:** 10 SKILL.md files in `.claude/skills/`
 - **Users:** Jumparo (crypto) & Tihomir (equities)
 
 ## Architecture — 5-Agent Intelligence OS (Live)
