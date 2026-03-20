@@ -5978,7 +5978,16 @@ async function refreshWatchlist() {
       const data = await fetchStockData(stockItems[i].fmpSymbol);
       if (data) {
         const score = computeStockScore(data);
-        stockItems[i].lastData = { price: data.price, marketCap: data.marketCap, change24h: data.change24h, pe: data.pe, score: score ? score.overall : null, scoreBreakdown: score ? score.categories : null, fetchedAt: Date.now() };
+        // Merge with existing enriched data (don't overwrite ROE, D/E etc)
+        const prev = stockItems[i].lastData || {};
+        stockItems[i].lastData = Object.assign({}, prev, {
+          price: data.price, marketCap: data.marketCap, change24h: data.change24h,
+          pe: data.pe || prev.pe, eps: data.eps || prev.eps, pbRatio: data.pbRatio || prev.pbRatio,
+          roe: data.roe || prev.roe, debtToEquity: data.debtToEquity != null ? data.debtToEquity : prev.debtToEquity,
+          currentRatio: data.currentRatio || prev.currentRatio, evToEbitda: data.evToEbitda || prev.evToEbitda,
+          dividendYield: data.dividendYield != null ? data.dividendYield : prev.dividendYield,
+          score: score ? score.overall : prev.score, scoreBreakdown: score ? score.categories : prev.scoreBreakdown, fetchedAt: Date.now()
+        });
         if (data.image) stockItems[i].image = data.image;
         if (firebaseReady && dbRef) dbRef.child('watchlist').child(stockItems[i].id).update({ lastData: stockItems[i].lastData, image: stockItems[i].image || null });
       }
