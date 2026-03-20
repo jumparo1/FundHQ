@@ -774,6 +774,33 @@ tbody tr:hover { background: var(--bg3); }
       </div>
       <div class="stats-row" id="stats-row"></div>
 
+      <!-- Macro Intelligence Row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="card" style="padding:14px 18px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Fear & Greed</div>
+          <div id="dash-fng" style="font-size:22px;font-weight:700;color:var(--yellow);margin-top:4px;">--</div>
+          <div id="dash-fng-label" style="font-size:11px;color:var(--text3);">Loading...</div>
+        </div>
+        <div class="card" style="padding:14px 18px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">BTC Dominance</div>
+          <div id="dash-btc-dom" style="font-size:22px;font-weight:700;color:var(--accent2);margin-top:4px;">--</div>
+          <div id="dash-btc-dom-detail" style="font-size:11px;color:var(--text3);">Loading...</div>
+        </div>
+        <div class="card" style="padding:14px 18px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">DeFi TVL</div>
+          <div id="dash-defi-tvl" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">--</div>
+          <div id="dash-defi-tvl-detail" style="font-size:11px;color:var(--text3);">Loading...</div>
+        </div>
+        <div class="card" style="padding:14px 18px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Backend</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+            <span id="backend-status-dot" style="font-size:22px;color:var(--text3);">&#9679;</span>
+            <span id="backend-status-label" style="font-size:13px;font-weight:600;color:var(--text3);">Checking...</span>
+          </div>
+          <div id="backend-status-detail" style="font-size:11px;color:var(--text3);">Port 8888</div>
+        </div>
+      </div>
+
       <!-- Quick Actions -->
       <div class="card" style="margin-bottom:20px;padding:16px 20px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -820,6 +847,20 @@ tbody tr:hover { background: var(--bg3); }
             <span class="btn btn-sm btn-ghost" onclick="showPage('watchlist')" style="font-size:11px;padding:3px 8px;">View All →</span>
           </div>
           <div id="dash-projects"></div>
+        </div>
+      </div>
+
+      <!-- Auto-Discovery Feed (from backend) -->
+      <div class="card" id="dash-discovery-card" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="font-size:14px;color:var(--text2);margin:0;">&#128161; Auto-Discovery</h3>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11px;color:var(--text3);" id="dash-discovery-time"></span>
+            <button class="btn btn-sm btn-ghost" onclick="loadDashDiscovery(true)" style="font-size:11px;padding:3px 8px;">&#x21bb; Refresh</button>
+          </div>
+        </div>
+        <div id="dash-discovery-list">
+          <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Start backend to see auto-discovered opportunities</div>
         </div>
       </div>
 
@@ -962,8 +1003,18 @@ tbody tr:hover { background: var(--bg3); }
       </div>
       <div class="tabs" style="margin-bottom:16px;">
         <button class="tab active" onclick="alertsShowTab('alerts')" id="alerts-tab-alerts">Alerts</button>
+        <button class="tab" onclick="alertsShowTab('smart')" id="alerts-tab-smart">Smart Alerts</button>
         <button class="tab" onclick="alertsShowTab('signals')" id="alerts-tab-signals">Signals</button>
         <button class="tab" onclick="alertsShowTab('flows')" id="alerts-tab-flows">Flow Monitor</button>
+      </div>
+      <div id="alerts-panel-smart" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <span style="font-size:13px;color:var(--text3);">Portfolio-aware alerts from backend risk engine</span>
+          <button class="btn btn-sm btn-ghost" onclick="loadSmartAlerts()" style="font-size:11px;">&#x21bb; Refresh</button>
+        </div>
+        <div id="smart-alerts-list">
+          <div style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">Start backend to receive portfolio-aware alerts (stop proximity, drawdown, concentration).</div>
+        </div>
       </div>
       <div id="alerts-panel-alerts">
         <div class="alert-filters" id="alert-filters">
@@ -1286,6 +1337,28 @@ tbody tr:hover { background: var(--bg3); }
         </div>
       </div>
       <div id="market-detail" style="margin-top:0;"></div>
+
+      <!-- Auto-Discovery Scanner (Backend Phase 2) -->
+      <div class="card" style="padding:16px;margin-top:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="font-size:14px;color:var(--text2);margin:0;">&#128161; Auto-Discovery Scanner</h3>
+          <button class="btn btn-sm btn-ghost" onclick="loadDiscovery()" id="discovery-refresh-btn" style="font-size:11px;padding:3px 8px;">&#x21bb; Scan Now</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <h4 style="font-size:12px;color:var(--accent2);margin:0 0 10px 0;">Deep Value Coins</h4>
+            <div id="discovery-deep-value">
+              <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Click Scan to find undervalued gems</div>
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size:12px;color:var(--green);margin:0 0 10px 0;">Undervalued DeFi</h4>
+            <div id="discovery-defi">
+              <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Click Scan to find undervalued DeFi protocols</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ===== PORTFOLIO ===== -->
@@ -1317,11 +1390,35 @@ tbody tr:hover { background: var(--bg3); }
         </div>
       </div>
       <!-- Allocation breakdown -->
-      <div class="card" style="padding:16px;">
+      <div class="card" style="padding:16px;margin-bottom:20px;">
         <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Allocation Breakdown</h3>
         <div id="pf-allocation-container">
           <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">Add positions to see allocation breakdown.</div>
         </div>
+      </div>
+
+      <!-- Risk Dashboard (Backend Phase 3) -->
+      <div class="card" style="padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="font-size:14px;color:var(--text2);margin:0;">&#9888; Risk Dashboard</h3>
+          <button class="btn btn-sm btn-ghost" onclick="loadRiskDashboard()" id="risk-refresh-btn" style="font-size:11px;padding:3px 8px;">&#x21bb; Analyze Risk</button>
+        </div>
+        <div id="risk-dashboard-container">
+          <div style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">Click "Analyze Risk" to calculate VaR, correlations, and position sizing.<br>Requires backend server running on port 8888.</div>
+        </div>
+      </div>
+
+      <!-- Position Sizer (Backend Phase 3) -->
+      <div class="card" style="padding:16px;">
+        <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">&#127919; Position Sizer</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div class="form-group"><label style="font-size:11px;color:var(--text3);">Capital ($)</label><input type="number" id="ps-capital" value="10000" style="padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);width:100%;font-size:13px;"></div>
+          <div class="form-group"><label style="font-size:11px;color:var(--text3);">Risk Per Trade (%)</label><input type="number" id="ps-risk" value="1" step="0.1" style="padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);width:100%;font-size:13px;"></div>
+          <div class="form-group"><label style="font-size:11px;color:var(--text3);">Entry Price ($)</label><input type="number" id="ps-entry" step="any" style="padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);width:100%;font-size:13px;"></div>
+          <div class="form-group"><label style="font-size:11px;color:var(--text3);">Stop Loss ($)</label><input type="number" id="ps-stop" step="any" style="padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);width:100%;font-size:13px;"></div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="calcPositionSize()">Calculate Size</button>
+        <div id="ps-result" style="margin-top:14px;"></div>
       </div>
     </div>
 
@@ -1759,6 +1856,7 @@ tbody tr:hover { background: var(--bg3); }
         <button class="market-tab" onclick="taShowTab('playbooks')" id="ta-tab-playbooks">Playbooks</button>
         <button class="market-tab" onclick="taShowTab('confluence')" id="ta-tab-confluence">Confluence</button>
         <button class="market-tab" onclick="taShowTab('tradelog')" id="ta-tab-tradelog">Trade Log</button>
+        <button class="market-tab" onclick="taShowTab('performance')" id="ta-tab-performance">Performance</button>
       </div>
 
       <!-- MARKET REGIME -->
@@ -1986,6 +2084,39 @@ tbody tr:hover { background: var(--bg3); }
         <div class="card" style="padding:16px;">
           <div id="trade-log-container">
             <div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">No trades logged yet. Click "+ Log Trade" to record your first trade.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Analytics (Backend Phase 4) -->
+      <div id="ta-panel-performance" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-size:13px;color:var(--text3);">Powered by backend learning engine</span>
+          <button class="btn btn-sm btn-ghost" onclick="loadPerformance()" id="perf-refresh-btn" style="font-size:11px;padding:3px 8px;">&#x21bb; Refresh</button>
+        </div>
+        <!-- Performance stats -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Win Rate</div><div id="perf-wr" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">--</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Profit Factor</div><div id="perf-pf" style="font-size:22px;font-weight:700;color:var(--accent2);margin-top:4px;">--</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Expectancy</div><div id="perf-exp" style="font-size:22px;font-weight:700;color:var(--blue);margin-top:4px;">--</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Avg R</div><div id="perf-avg-r" style="font-size:22px;font-weight:700;color:var(--yellow);margin-top:4px;">--</div></div>
+          <div class="card" style="padding:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Best Streak</div><div id="perf-streak" style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px;">--</div></div>
+        </div>
+        <!-- By-setup breakdown -->
+        <div class="card" style="padding:16px;margin-bottom:20px;">
+          <h3 style="font-size:14px;color:var(--text2);margin:0 0 14px 0;">Performance by Setup</h3>
+          <div id="perf-by-setup">
+            <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Click Refresh to load performance analytics from backend.</div>
+          </div>
+        </div>
+        <!-- Calibration -->
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:14px;color:var(--text2);margin:0;">Score Calibration</h3>
+            <button class="btn btn-sm btn-primary" onclick="runCalibration()">Run Calibration</button>
+          </div>
+          <div id="perf-calibration">
+            <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Calibration adjusts scoring weights based on which factors predicted winners.</div>
           </div>
         </div>
       </div>
@@ -2659,6 +2790,17 @@ cd ~/deploy && git add . && git commit && git push
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Download a local JSON backup of all fund data.</p>
         <button class="btn btn-ghost" onclick="exportBackup()">Download Backup</button>
       </div>
+      <!-- ===== BACKEND SERVER ===== -->
+      <div class="card" style="max-width:560px;margin-top:20px;">
+        <h3 style="font-size:15px;margin-bottom:4px;">Backend Server</h3>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">FastAPI server for valuation, risk, performance analytics, and auto-discovery.</p>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+          <input type="text" id="settings-backend-url" value="" placeholder="http://localhost:8888" style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;">
+          <button class="btn btn-primary btn-sm" onclick="var u=document.getElementById('settings-backend-url').value.trim()||'http://localhost:8888';localStorage.setItem('fundHQ_backendUrl',u);location.reload();">Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="checkBackendStatus().then(function(ok){document.getElementById('backend-test-result').textContent=ok?'Online!':'Offline';document.getElementById('backend-test-result').style.color=ok?'var(--green)':'var(--red)';})">Test</button>
+        </div>
+        <div id="backend-test-result" style="font-size:11px;min-height:16px;"></div>
+      </div>
       <!-- ===== API KEYS SECTION ===== -->
       <div class="card admin-only" style="max-width:560px;margin-top:20px;">
         <h3 style="font-size:15px;margin-bottom:4px;">API Keys</h3>
@@ -3210,6 +3352,36 @@ function convictionBadge(score) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ===== BACKEND API LAYER =====
+const BACKEND_URL = localStorage.getItem('fundHQ_backendUrl') || 'http://localhost:8888';
+let backendOnline = false;
+
+async function backendFetch(path, opts = {}) {
+  try {
+    const url = BACKEND_URL + path;
+    const res = await fetch(url, { ...opts, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('Backend ' + res.status);
+    backendOnline = true;
+    return await res.json();
+  } catch(e) {
+    console.warn('Backend fetch failed:', path, e.message);
+    backendOnline = false;
+    return null;
+  }
+}
+
+async function backendPost(path, body) {
+  return backendFetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+async function checkBackendStatus() {
+  const data = await backendFetch('/health');
+  backendOnline = !!data;
+  const dot = document.getElementById('backend-status-dot');
+  if (dot) { dot.style.color = backendOnline ? 'var(--green)' : 'var(--red)'; dot.title = backendOnline ? 'Backend online' : 'Backend offline'; }
+  return backendOnline;
+}
 
 // ===== MARKET DATA API LAYER =====
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
@@ -5738,8 +5910,11 @@ function renderMarketDetail(data) {
     '<div class="mc-price-row"><span class="mc-big-price">$' + fmtNum(data.price) + '</span>' + changeHtml + '</div>' +
     scoreCardHtml +
     '<div class="metric-grid">' + metricsHtml + '</div>' +
+    '<div id="valuation-result"></div>' +
     '<div class="metric-actions">' +
     '<button class="btn btn-ghost btn-sm" onclick="createReportFromDetail()">&#128203; Create Report</button>' +
+    '<button class="btn btn-ghost btn-sm" onclick="runBackendValuation()">&#128200; Valuation</button>' +
+    '<button class="btn btn-ghost btn-sm" onclick="runBackendScore()">&#127919; Multi-Factor Score</button>' +
     '</div></div>';
 }
 
@@ -9617,12 +9792,13 @@ function fuzzyPageMatch(input) {
 let currentAlertFilter = 'all';
 
 function alertsShowTab(tab) {
-  ['alerts','signals','flows'].forEach(t => {
+  ['alerts','smart','signals','flows'].forEach(t => {
     var panel = document.getElementById('alerts-panel-' + t);
     var tabBtn = document.getElementById('alerts-tab-' + t);
     if (panel) panel.style.display = t === tab ? '' : 'none';
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  if (tab === 'smart') loadSmartAlerts();
   if (tab === 'signals') {
     // Clone signal feed content from on-chain panel
     var src = document.getElementById('oc-panel-signals');
@@ -11720,7 +11896,7 @@ function pfSetCash() {
 
 // ===== TECHNICAL ANALYSIS TAB NAVIGATION =====
 function taShowTab(tab) {
-  ['regime','setups','playbooks','confluence','tradelog'].forEach(function(t) {
+  ['regime','setups','playbooks','confluence','tradelog','performance'].forEach(function(t) {
     var panel = document.getElementById('ta-panel-' + t);
     if (panel) panel.style.display = t === tab ? '' : 'none';
     var tabBtn = document.getElementById('ta-tab-' + t);
@@ -11729,6 +11905,7 @@ function taShowTab(tab) {
   if (tab === 'regime') regimeRefresh();
   if (tab === 'setups') setupRender();
   if (tab === 'tradelog') tradeRender();
+  if (tab === 'performance') loadPerformance();
 }
 
 // ===== ON-CHAIN INTEL DIVISION NAVIGATION =====
@@ -13218,6 +13395,11 @@ function renderAll() {
   if (morInput && !morInput.value) morInput.value = localStorage.getItem('moralisKey') || '';
   const beInput = document.getElementById('settings-birdeye-key');
   if (beInput && !beInput.value) beInput.value = localStorage.getItem('birdeyeKey') || '';
+  // Backend URL setting
+  const buInput = document.getElementById('settings-backend-url');
+  if (buInput && !buInput.value) buInput.value = localStorage.getItem('fundHQ_backendUrl') || 'http://localhost:8888';
+  // Load macro data & check backend
+  loadDashMacro();
 }
 
 // ===== ARKHAM INTELLIGENCE INTEGRATION =====
@@ -14720,6 +14902,441 @@ if (!firebaseReady) {
   if (!DB.watchlist) DB.watchlist = [];
   renderAll();
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ===== BACKEND INTEGRATION FUNCTIONS =====
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// --- Dashboard Macro Data ---
+async function loadDashMacro() {
+  // Check backend status
+  var online = await checkBackendStatus();
+  var label = document.getElementById('backend-status-label');
+  if (label) { label.textContent = online ? 'Online' : 'Offline'; label.style.color = online ? 'var(--green)' : 'var(--red)'; }
+
+  if (online) {
+    // Try backend first
+    var macro = await backendFetch('/api/macro');
+    if (macro) {
+      renderDashMacro(macro);
+      loadDashDiscovery();
+      return;
+    }
+  }
+  // Fallback: direct API calls
+  try {
+    var [fngRes, globalRes] = await Promise.allSettled([
+      fetch('https://api.alternative.me/fng/?limit=1').then(r => r.json()),
+      fetch('https://api.coingecko.com/api/v3/global').then(r => r.json())
+    ]);
+    var macro = {};
+    if (fngRes.status === 'fulfilled' && fngRes.value?.data?.[0]) {
+      macro.fear_greed = { value: parseInt(fngRes.value.data[0].value), classification: fngRes.value.data[0].value_classification };
+    }
+    if (globalRes.status === 'fulfilled' && globalRes.value?.data) {
+      macro.btc_dominance = { btc_dominance: globalRes.value.data.market_cap_percentage?.btc };
+    }
+    renderDashMacro(macro);
+  } catch(e) { console.warn('Macro fallback failed:', e); }
+}
+
+function renderDashMacro(macro) {
+  if (macro.fear_greed) {
+    var fng = macro.fear_greed;
+    var fngEl = document.getElementById('dash-fng');
+    var fngLabel = document.getElementById('dash-fng-label');
+    if (fngEl) { fngEl.textContent = fng.value; fngEl.style.color = fng.value >= 60 ? 'var(--green)' : fng.value <= 40 ? 'var(--red)' : 'var(--yellow)'; }
+    if (fngLabel) fngLabel.textContent = fng.classification || '';
+  }
+  if (macro.btc_dominance) {
+    var dom = macro.btc_dominance;
+    var domEl = document.getElementById('dash-btc-dom');
+    var domDetail = document.getElementById('dash-btc-dom-detail');
+    if (domEl) domEl.textContent = (dom.btc_dominance || 0).toFixed(1) + '%';
+    if (domDetail) domDetail.textContent = dom.total_market_cap ? 'Total MCap $' + fmtBigNum(dom.total_market_cap) : '';
+  }
+  if (macro.defi_tvl) {
+    var tvl = macro.defi_tvl;
+    var tvlEl = document.getElementById('dash-defi-tvl');
+    var tvlDetail = document.getElementById('dash-defi-tvl-detail');
+    if (tvlEl) tvlEl.textContent = '$' + fmtBigNum(tvl.total_tvl || 0);
+    if (tvlDetail && tvl.tvl_change_7d != null) tvlDetail.textContent = (tvl.tvl_change_7d > 0 ? '+' : '') + tvl.tvl_change_7d.toFixed(1) + '% 7d';
+  }
+}
+
+// --- Dashboard Discovery Widget ---
+async function loadDashDiscovery(force) {
+  if (!backendOnline && !force) return;
+  var list = document.getElementById('dash-discovery-list');
+  var timeEl = document.getElementById('dash-discovery-time');
+  if (list) list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;">Scanning...</div>';
+  var data = await backendFetch('/api/discovery');
+  if (!data) { if (list) list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;">Backend offline — start server to see auto-discoveries</div>'; return; }
+  if (timeEl) timeEl.textContent = 'Scanned ' + new Date(data.scanned_at || Date.now()).toLocaleTimeString();
+  var items = (data.deep_value || []).slice(0, 5);
+  if (!items.length) { if (list) list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;">No deep value opportunities found right now.</div>'; return; }
+  if (list) list.innerHTML = items.map(function(c) {
+    var gradeColor = c.grade === 'A' ? 'var(--green)' : c.grade === 'B' ? 'var(--accent2)' : 'var(--yellow)';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">' +
+      '<div><span style="font-weight:600;color:var(--text);">' + esc(c.symbol || c.name) + '</span> <span style="color:var(--text3);font-size:11px;">' + esc(c.name || '') + '</span></div>' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span style="font-size:11px;color:' + (c.change_7d > 0 ? 'var(--green)' : 'var(--red)') + ';">' + (c.change_7d > 0 ? '+' : '') + (c.change_7d || 0).toFixed(1) + '% 7d</span>' +
+        '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + gradeColor + '22;color:' + gradeColor + ';font-weight:700;">' + (c.grade || '?') + '</span>' +
+        '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--accent2)22;color:var(--accent2);font-weight:600;">' + (c.signal || 'HOLD') + '</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+// --- Discovery Scanner (Market Data page) ---
+async function loadDiscovery() {
+  var dvEl = document.getElementById('discovery-deep-value');
+  var defiEl = document.getElementById('discovery-defi');
+  var btn = document.getElementById('discovery-refresh-btn');
+  if (btn) btn.textContent = 'Scanning...';
+  if (dvEl) dvEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text3);font-size:12px;">Scanning CoinGecko...</div>';
+  if (defiEl) defiEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text3);font-size:12px;">Scanning DeFiLlama...</div>';
+  var data = await backendFetch('/api/discovery');
+  if (btn) btn.textContent = '↻ Scan Now';
+  if (!data) { if (dvEl) dvEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--red);font-size:12px;">Backend offline</div>'; return; }
+
+  // Deep value
+  var items = (data.deep_value || []).slice(0, 8);
+  if (dvEl) dvEl.innerHTML = items.length ? items.map(function(c) {
+    var gradeColor = c.grade === 'A' ? 'var(--green)' : c.grade === 'B' ? 'var(--accent2)' : 'var(--yellow)';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">' +
+      '<div><span style="font-weight:600;">' + esc(c.symbol) + '</span> <span style="color:var(--text3);font-size:11px;">#' + (c.rank || '?') + '</span></div>' +
+      '<div style="display:flex;gap:8px;align-items:center;">' +
+        '<span>$' + fmtNum(c.price || 0) + '</span>' +
+        '<span style="color:' + (c.ath_change > -50 ? 'var(--yellow)' : 'var(--red)') + ';">' + (c.ath_change || 0).toFixed(0) + '% ATH</span>' +
+        '<span style="padding:1px 6px;border-radius:8px;background:' + gradeColor + '22;color:' + gradeColor + ';font-weight:700;font-size:10px;">' + (c.grade || '?') + '</span>' +
+      '</div></div>';
+  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px;">No opportunities found</div>';
+
+  // DeFi undervalued
+  var defi = (data.defi_undervalued || []).slice(0, 8);
+  if (defiEl) defiEl.innerHTML = defi.length ? defi.map(function(d) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">' +
+      '<div><span style="font-weight:600;">' + esc(d.symbol || d.name) + '</span> <span style="color:var(--text3);font-size:11px;">' + esc(d.category || '') + '</span></div>' +
+      '<div style="display:flex;gap:8px;align-items:center;">' +
+        '<span>TVL $' + fmtBigNum(d.tvl || 0) + '</span>' +
+        '<span style="color:var(--accent2);">MCap/TVL ' + (d.mcap_tvl || 0).toFixed(2) + '</span>' +
+        '<span style="padding:1px 6px;border-radius:8px;background:var(--green)22;color:var(--green);font-weight:600;font-size:10px;">' + (d.signal || 'WATCH') + '</span>' +
+      '</div></div>';
+  }).join('') : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px;">No undervalued DeFi found</div>';
+}
+
+// --- Risk Dashboard (Portfolio page) ---
+async function loadRiskDashboard() {
+  var container = document.getElementById('risk-dashboard-container');
+  var btn = document.getElementById('risk-refresh-btn');
+  if (btn) btn.textContent = 'Analyzing...';
+  if (!pfHoldings || !pfHoldings.length) {
+    if (container) container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Add portfolio positions first, then analyze risk.</div>';
+    if (btn) btn.textContent = '↻ Analyze Risk';
+    return;
+  }
+
+  // Build positions for backend
+  var positions = pfHoldings.map(function(h) {
+    var val = (parseFloat(h.currentPrice) || parseFloat(h.avgCost) || 0) * (parseFloat(h.quantity) || 0);
+    return { symbol: h.asset, value: val, coin_id: h.asset.toLowerCase() };
+  });
+
+  // Run VaR + Correlation in parallel
+  var [varRes, corrRes] = await Promise.allSettled([
+    backendPost('/api/risk/var', { positions: positions }),
+    backendPost('/api/risk/correlation', { symbols: positions.map(p => p.symbol) })
+  ]);
+  if (btn) btn.textContent = '↻ Analyze Risk';
+
+  var varData = varRes.status === 'fulfilled' ? varRes.value : null;
+  var corrData = corrRes.status === 'fulfilled' ? corrRes.value : null;
+
+  if (!varData && !corrData) {
+    if (container) container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red);font-size:12px;">Backend offline — start server on port 8888 to use risk analytics.</div>';
+    return;
+  }
+
+  var html = '';
+
+  // VaR Summary
+  if (varData) {
+    var riskColor = varData.risk_level === 'LOW' ? 'var(--green)' : varData.risk_level === 'HIGH' ? 'var(--red)' : 'var(--yellow)';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;">';
+    html += '<div style="padding:12px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Risk Level</div><div style="font-size:20px;font-weight:700;color:' + riskColor + ';margin-top:4px;">' + (varData.risk_level || 'N/A') + '</div></div>';
+    html += '<div style="padding:12px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Daily VaR (95%)</div><div style="font-size:20px;font-weight:700;color:var(--red);margin-top:4px;">$' + fmtNum(varData.var_1d_diversified || 0) + '</div></div>';
+    html += '<div style="padding:12px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">10-Day VaR</div><div style="font-size:20px;font-weight:700;color:var(--red);margin-top:4px;">$' + fmtNum(varData.var_10d_diversified || 0) + '</div></div>';
+    html += '<div style="padding:12px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">% at Risk</div><div style="font-size:20px;font-weight:700;color:var(--yellow);margin-top:4px;">' + (varData.var_pct_of_portfolio || 0).toFixed(1) + '%</div></div>';
+    html += '</div>';
+
+    // Per-position VaR table
+    if (varData.positions && varData.positions.length) {
+      html += '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;">Per-Position Risk</div>';
+      html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;border-collapse:collapse;">';
+      html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:6px;text-align:left;color:var(--text3);">Asset</th><th style="padding:6px;text-align:right;color:var(--text3);">Weight</th><th style="padding:6px;text-align:right;color:var(--text3);">Daily VaR</th><th style="padding:6px;text-align:right;color:var(--text3);">Std Dev</th></tr>';
+      varData.positions.forEach(function(p) {
+        html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px;font-weight:600;color:var(--accent2);">' + esc(p.symbol) + '</td><td style="padding:6px;text-align:right;">' + (p.weight || 0).toFixed(1) + '%</td><td style="padding:6px;text-align:right;color:var(--red);">$' + fmtNum(p.var_1d || 0) + '</td><td style="padding:6px;text-align:right;">' + (p.std_daily || 0).toFixed(1) + '%</td></tr>';
+      });
+      html += '</table></div>';
+    }
+  }
+
+  // Correlation Matrix
+  if (corrData && corrData.matrix) {
+    html += '<div style="font-size:12px;font-weight:600;color:var(--text2);margin:16px 0 8px 0;">Correlation Matrix</div>';
+    var syms = corrData.symbols || Object.keys(corrData.matrix);
+    html += '<div style="overflow-x:auto;"><table style="width:100%;font-size:11px;border-collapse:collapse;">';
+    html += '<tr><th style="padding:4px;"></th>' + syms.map(function(s) { return '<th style="padding:4px;color:var(--text3);">' + s + '</th>'; }).join('') + '</tr>';
+    syms.forEach(function(row) {
+      html += '<tr><td style="padding:4px;font-weight:600;color:var(--accent2);">' + row + '</td>';
+      syms.forEach(function(col) {
+        var val = corrData.matrix[row] && corrData.matrix[row][col] != null ? corrData.matrix[row][col] : 0;
+        var color = row === col ? 'var(--text3)' : val > 0.7 ? 'var(--red)' : val > 0.4 ? 'var(--yellow)' : 'var(--green)';
+        html += '<td style="padding:4px;text-align:center;color:' + color + ';">' + val.toFixed(2) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</table></div>';
+  }
+
+  if (container) container.innerHTML = html || '<div style="color:var(--text3);font-size:12px;">No risk data returned.</div>';
+}
+
+// --- Position Sizer ---
+async function calcPositionSize() {
+  var capital = parseFloat(document.getElementById('ps-capital')?.value || 0);
+  var riskPct = parseFloat(document.getElementById('ps-risk')?.value || 1) / 100;
+  var entry = parseFloat(document.getElementById('ps-entry')?.value || 0);
+  var stop = parseFloat(document.getElementById('ps-stop')?.value || 0);
+  var resultEl = document.getElementById('ps-result');
+  if (!entry || !stop || !capital) { if (resultEl) resultEl.innerHTML = '<div style="color:var(--red);font-size:12px;">Fill in all fields.</div>'; return; }
+
+  // Try backend first
+  var data = await backendPost('/api/risk/position-size', { capital: capital, risk_per_trade: riskPct, entry: entry, stop_loss: stop });
+  if (!data) {
+    // Fallback: client-side calc
+    var riskAmt = capital * riskPct;
+    var riskDist = Math.abs(entry - stop);
+    var riskDistPct = (riskDist / entry) * 100;
+    var posSize = riskAmt / riskDist * entry;
+    var units = riskAmt / riskDist;
+    data = { capital: capital, risk_amount: riskAmt, risk_distance: riskDist, risk_pct: riskDistPct.toFixed(2) + '%', position_size_usd: posSize, num_units: units, r_multiples: { '1R': riskAmt, '2R': riskAmt*2, '3R': riskAmt*3, '5R': riskAmt*5 } };
+  }
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;">';
+  html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Risk Amount</div><div style="font-size:18px;font-weight:700;color:var(--red);margin-top:4px;">$' + fmtNum(data.risk_amount || 0) + '</div></div>';
+  html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Position Size</div><div style="font-size:18px;font-weight:700;color:var(--green);margin-top:4px;">$' + fmtNum(data.position_size_usd || 0) + '</div></div>';
+  html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Units</div><div style="font-size:18px;font-weight:700;color:var(--accent2);margin-top:4px;">' + (data.num_units || 0).toFixed(4) + '</div></div>';
+  html += '<div style="padding:10px;background:var(--bg2);border-radius:8px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Risk Distance</div><div style="font-size:18px;font-weight:700;color:var(--yellow);margin-top:4px;">' + (data.risk_pct || '0%') + '</div></div>';
+  html += '</div>';
+  if (data.r_multiples) {
+    html += '<div style="display:flex;gap:12px;margin-top:10px;font-size:12px;">';
+    ['1R','2R','3R','5R'].forEach(function(r) { html += '<span style="color:var(--text3);">' + r + ': <strong style="color:var(--green);">$' + fmtNum(data.r_multiples[r] || 0) + '</strong></span>'; });
+    html += '</div>';
+  }
+  if (resultEl) resultEl.innerHTML = html;
+}
+
+// --- Performance Analytics (Trading page) ---
+var perfCache = null;
+async function loadPerformance() {
+  if (perfCache) { renderPerformance(perfCache); return; }
+  var data = await backendFetch('/api/performance');
+  if (!data) {
+    // Fallback: compute from local trade log
+    if (typeof tradeLog !== 'undefined' && tradeLog.length > 0) {
+      data = computeLocalPerformance();
+    } else {
+      var el = document.getElementById('perf-by-setup');
+      if (el) el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Backend offline. Log trades to see local stats.</div>';
+      return;
+    }
+  }
+  perfCache = data;
+  renderPerformance(data);
+}
+
+function computeLocalPerformance() {
+  var closed = tradeLog.filter(function(t) { return t.result === 'win' || t.result === 'loss'; });
+  var wins = closed.filter(function(t) { return t.result === 'win'; });
+  var losses = closed.filter(function(t) { return t.result === 'loss'; });
+  var totalPnl = closed.reduce(function(s,t) { return s + (parseFloat(t.pnl) || 0); }, 0);
+  var avgWin = wins.length ? wins.reduce(function(s,t) { return s + (parseFloat(t.pnl) || 0); }, 0) / wins.length : 0;
+  var avgLoss = losses.length ? Math.abs(losses.reduce(function(s,t) { return s + (parseFloat(t.pnl) || 0); }, 0) / losses.length) : 1;
+  var bySetup = {};
+  closed.forEach(function(t) {
+    var pb = t.playbook || 'Unknown';
+    if (!bySetup[pb]) bySetup[pb] = { wins: 0, losses: 0, total_pnl: 0, trades: 0 };
+    bySetup[pb].trades++;
+    if (t.result === 'win') bySetup[pb].wins++; else bySetup[pb].losses++;
+    bySetup[pb].total_pnl += parseFloat(t.pnl) || 0;
+  });
+  Object.keys(bySetup).forEach(function(k) { bySetup[k].win_rate = bySetup[k].trades ? (bySetup[k].wins/bySetup[k].trades*100) : 0; bySetup[k].avg_pnl = bySetup[k].trades ? bySetup[k].total_pnl/bySetup[k].trades : 0; });
+  return {
+    total_trades: tradeLog.length, closed_trades: closed.length, open_trades: tradeLog.length - closed.length,
+    win_rate: closed.length ? (wins.length/closed.length*100) : 0,
+    total_pnl: totalPnl, avg_win: avgWin, avg_loss: avgLoss,
+    profit_factor: avgLoss > 0 ? (avgWin * wins.length) / (avgLoss * losses.length) : 0,
+    expectancy: closed.length ? totalPnl / closed.length : 0,
+    by_setup: bySetup
+  };
+}
+
+function renderPerformance(data) {
+  var set = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+  set('perf-wr', (data.win_rate || 0).toFixed(1) + '%');
+  set('perf-pf', (data.profit_factor || 0).toFixed(2));
+  set('perf-exp', '$' + fmtNum(data.expectancy || 0));
+  set('perf-avg-r', (data.avg_r || 0).toFixed(2) + 'R');
+  set('perf-streak', data.max_win_streak || '--');
+
+  // By-setup table
+  var container = document.getElementById('perf-by-setup');
+  var bySetup = data.by_setup || {};
+  var keys = Object.keys(bySetup);
+  if (!keys.length) { if (container) container.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:16px;">No setup data yet.</div>'; return; }
+
+  var html = '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+  html += '<tr style="border-bottom:1px solid var(--border);"><th style="padding:6px;text-align:left;color:var(--text3);">Setup</th><th style="padding:6px;text-align:right;color:var(--text3);">Trades</th><th style="padding:6px;text-align:right;color:var(--text3);">Win Rate</th><th style="padding:6px;text-align:right;color:var(--text3);">P&L</th><th style="padding:6px;text-align:right;color:var(--text3);">Avg P&L</th></tr>';
+  keys.sort(function(a,b) { return (bySetup[b].total_pnl || 0) - (bySetup[a].total_pnl || 0); });
+  keys.forEach(function(k) {
+    var s = bySetup[k];
+    var wr = s.win_rate || (s.trades ? s.wins/s.trades*100 : 0);
+    var wrColor = wr >= 60 ? 'var(--green)' : wr >= 45 ? 'var(--yellow)' : 'var(--red)';
+    html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px;font-weight:600;color:var(--text);">' + esc(k) + '</td>';
+    html += '<td style="padding:6px;text-align:right;">' + (s.trades || 0) + '</td>';
+    html += '<td style="padding:6px;text-align:right;color:' + wrColor + ';">' + wr.toFixed(1) + '%</td>';
+    html += '<td style="padding:6px;text-align:right;color:' + ((s.total_pnl||0) >= 0 ? 'var(--green)' : 'var(--red)') + ';">$' + fmtNum(s.total_pnl || 0) + '</td>';
+    html += '<td style="padding:6px;text-align:right;">$' + fmtNum(s.avg_pnl || 0) + '</td></tr>';
+  });
+  html += '</table>';
+  if (container) container.innerHTML = html;
+}
+
+// --- Score Calibration ---
+async function runCalibration() {
+  var container = document.getElementById('perf-calibration');
+  if (container) container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);">Running calibration...</div>';
+  var data = await backendPost('/api/calibration/run', {});
+  if (!data) { if (container) container.innerHTML = '<div style="color:var(--red);font-size:12px;text-align:center;padding:16px;">Backend offline</div>'; return; }
+
+  var html = '<div style="font-size:12px;margin-bottom:12px;color:var(--green);">Calibrated on ' + (data.trades_analyzed || 0) + ' trades (' + (data.winners || 0) + 'W / ' + (data.losers || 0) + 'L)</div>';
+  if (data.new_weights) {
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;">';
+    Object.keys(data.new_weights).forEach(function(f) {
+      var change = data.weight_changes ? data.weight_changes[f] : 0;
+      var changeStr = change > 0 ? '+' + (change*100).toFixed(0) + '%' : (change*100).toFixed(0) + '%';
+      var changeColor = change > 0 ? 'var(--green)' : change < 0 ? 'var(--red)' : 'var(--text3)';
+      html += '<div style="padding:8px;background:var(--bg2);border-radius:6px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:capitalize;">' + f + '</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-top:2px;">' + ((data.new_weights[f] || 0)*100).toFixed(0) + '%</div><div style="font-size:10px;color:' + changeColor + ';">' + changeStr + '</div></div>';
+    });
+    html += '</div>';
+  }
+  if (container) container.innerHTML = html;
+}
+
+// --- Smart Alerts ---
+async function loadSmartAlerts() {
+  var container = document.getElementById('smart-alerts-list');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;">Loading smart alerts...</div>';
+  var data = await backendFetch('/api/smart-alerts');
+  if (!data || !Array.isArray(data)) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">Backend offline — start server to receive portfolio-aware alerts.</div>';
+    return;
+  }
+  if (!data.length) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">No smart alerts right now. Your portfolio looks healthy.</div>';
+    return;
+  }
+  container.innerHTML = data.map(function(a) {
+    var sevColor = a.severity === 'warning' ? 'var(--yellow)' : a.severity === 'opportunity' ? 'var(--green)' : 'var(--blue)';
+    var icon = a.type === 'stop_proximity' ? '&#9888;' : a.type === 'target_proximity' ? '&#127919;' : a.type === 'concentration' ? '&#9878;' : a.type === 'unrealized_loss' ? '&#128308;' : a.type === 'unrealized_gain' ? '&#128994;' : '&#128276;';
+    return '<div class="card" style="padding:14px 18px;margin-bottom:10px;border-left:3px solid ' + sevColor + ';">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span style="font-size:16px;">' + icon + '</span>' +
+          '<div><div style="font-size:13px;font-weight:600;color:var(--text);">' + esc(a.symbol || '') + ' <span style="font-size:11px;color:var(--text3);font-weight:400;">' + esc(a.type || '').replace(/_/g,' ') + '</span></div>' +
+          '<div style="font-size:12px;color:var(--text2);margin-top:2px;">' + esc(a.message || '') + '</div></div>' +
+        '</div>' +
+        '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + sevColor + '22;color:' + sevColor + ';font-weight:600;text-transform:uppercase;">' + esc(a.severity || 'info') + '</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+// --- Backend Valuation (Watchlist detail) ---
+async function runBackendValuation() {
+  if (!selectedMarketDetail || !selectedMarketDetail.data) { alert('Select an asset first'); return; }
+  var d = selectedMarketDetail.data;
+  var resultEl = document.getElementById('valuation-result');
+  if (resultEl) resultEl.innerHTML = '<div style="padding:12px;color:var(--text3);font-size:12px;">Running valuation model...</div>';
+
+  var body = { revenue: d.volume24h ? d.volume24h * 0.003 : 0, tvl: 0, mcap: d.marketCap || 0, sector: 'General', growth_rate: 0.3 };
+  var data = await backendPost('/api/valuation', body);
+  if (!data) { if (resultEl) resultEl.innerHTML = '<div style="padding:12px;color:var(--red);font-size:12px;">Backend offline — cannot run valuation</div>'; return; }
+
+  var html = '<div style="padding:14px;background:var(--bg2);border-radius:8px;margin:12px 0;">';
+  html += '<div style="font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:10px;">Backend Valuation</div>';
+  if (data.composite) {
+    var verdictColor = data.composite.verdict === 'STRONG BUY' ? 'var(--green)' : data.composite.verdict === 'UNDERVALUED' ? 'var(--green)' : data.composite.verdict === 'FAIR' ? 'var(--yellow)' : 'var(--red)';
+    html += '<div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;"><span style="font-size:18px;font-weight:800;color:' + verdictColor + ';">' + esc(data.composite.verdict) + '</span>';
+    html += '<span style="font-size:12px;color:var(--text3);">Avg premium/discount: ' + (data.composite.avg_premium_discount || 0).toFixed(1) + '% | ' + (data.composite.methods_used || 0) + ' methods</span></div>';
+  }
+  if (data.revenue_multiple) {
+    html += '<div style="font-size:12px;color:var(--text2);margin-bottom:4px;"><strong>Revenue Multiple:</strong> Fair MCap $' + fmtBigNum(data.revenue_multiple.fair_value_mcap || 0) + ' (' + (data.revenue_multiple.premium_discount_pct || 0).toFixed(1) + '%)</div>';
+  }
+  if (data.dcf) {
+    html += '<div style="font-size:12px;color:var(--text2);margin-bottom:4px;"><strong>DCF:</strong> Fair MCap $' + fmtBigNum(data.dcf.fair_value_mcap || 0) + '</div>';
+  }
+  html += '</div>';
+  if (resultEl) resultEl.innerHTML = html;
+}
+
+// --- Backend Multi-Factor Score (Watchlist detail) ---
+async function runBackendScore() {
+  if (!selectedMarketDetail || !selectedMarketDetail.data) { alert('Select an asset first'); return; }
+  var d = selectedMarketDetail.data;
+  var resultEl = document.getElementById('valuation-result');
+  if (resultEl) resultEl.innerHTML = '<div style="padding:12px;color:var(--text3);font-size:12px;">Running multi-factor scorer...</div>';
+
+  var body = {
+    symbol: d.symbol || '', change_24h: d.change24h || 0, change_7d: d.change7d || 0,
+    ath_change: d.athChangePercent || 0, volume_24h: d.volume24h || 0, market_cap: d.marketCap || 0,
+    fdv: d.fdv || 0, fear_greed: 50
+  };
+  var data = await backendPost('/api/score', body);
+  if (!data) { if (resultEl) resultEl.innerHTML = '<div style="padding:12px;color:var(--red);font-size:12px;">Backend offline — cannot run scorer</div>'; return; }
+
+  var gradeColor = data.grade === 'A' ? 'var(--green)' : data.grade === 'B' ? 'var(--accent2)' : data.grade === 'C' ? 'var(--yellow)' : 'var(--red)';
+  var html = '<div style="padding:14px;background:var(--bg2);border-radius:8px;margin:12px 0;">';
+  html += '<div style="font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:10px;">Multi-Factor Score</div>';
+  html += '<div style="display:flex;gap:16px;align-items:center;margin-bottom:10px;">';
+  html += '<span style="font-size:28px;font-weight:800;color:' + gradeColor + ';">' + (data.composite_score || 0).toFixed(2) + '</span>';
+  html += '<span style="font-size:16px;font-weight:700;padding:4px 12px;border-radius:8px;background:' + gradeColor + '22;color:' + gradeColor + ';">' + (data.grade || '?') + '</span>';
+  html += '<span style="font-size:14px;font-weight:600;color:var(--text2);">' + (data.signal || '') + '</span>';
+  html += '</div>';
+  if (data.factors) {
+    var factorColors = { fundamental: 'var(--green)', technical: 'var(--accent2)', onchain: 'var(--blue)', sentiment: 'var(--yellow)', valuation: 'var(--purple,#a855f7)' };
+    Object.keys(data.factors).forEach(function(f) {
+      var val = data.factors[f] || 0;
+      var color = factorColors[f] || 'var(--text2)';
+      html += '<div style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span style="color:var(--text2);text-transform:capitalize;">' + f + '</span><span style="font-weight:700;">' + val.toFixed(1) + '/5</span></div>';
+      html += '<div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden;"><div style="width:' + (val/5*100) + '%;height:100%;background:' + color + ';border-radius:4px;"></div></div></div>';
+    });
+  }
+  html += '</div>';
+  if (resultEl) resultEl.innerHTML = html;
+}
+
+// --- Add Backend to API Status Grid ---
+var origRefreshApiStatus = refreshApiStatus;
+refreshApiStatus = function() {
+  origRefreshApiStatus();
+  var grid = document.getElementById('api-status-grid');
+  if (!grid) return;
+  var dot = backendOnline ? '<span style="color:var(--green);">&#9679;</span>' : '<span style="color:var(--text3);">&#9675;</span>';
+  grid.innerHTML = '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:6px;">' + dot + ' <span style="font-weight:600;color:' + (backendOnline ? 'var(--text)' : 'var(--text3)') + ';">Backend</span><span style="margin-left:auto;color:var(--text3);font-size:10px;">Phases 1-5</span></div>' + grid.innerHTML;
+};
+
 </script>
 </body>
 </html>
