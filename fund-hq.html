@@ -3049,7 +3049,7 @@ var DB = { deals: [], projects: [], research: [], reports: [], tasks: [], watchl
 window.DB = DB;
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function fmtDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+function fmtDate(d) { if (!d) return ''; var dt = new Date(d); return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); }
 function today() { return new Date().toISOString().slice(0,10); }
 
 // ===== NUMBER FORMATTERS =====
