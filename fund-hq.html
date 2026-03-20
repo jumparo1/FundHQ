@@ -3645,7 +3645,7 @@ async function searchStocks(query) {
   if (!resp.ok) throw new Error('FMP search failed');
   const data = await resp.json();
   const results = (data || []).map(s => ({
-    symbol: s.symbol, name: s.name, exchange: s.exchangeShortName, type: 'stock'
+    symbol: s.symbol, name: s.name, exchange: s.exchangeShortName || s.exchange, type: 'stock'
   }));
   marketCache.set('searches', 'stock:' + query, results);
   return results;
@@ -3656,15 +3656,21 @@ async function fetchStockData(symbol) {
   if (!key) return null;
   const cached = marketCache.get('stocks', symbol);
   if (cached) return cached;
-  const [profileResp, metricsResp] = await Promise.all([
-    fetch('https://financialmodelingprep.com/stable/profile?symbol=' + symbol + '&apikey=' + key),
-    fetch('https://financialmodelingprep.com/stable/key-metrics-ttm?symbol=' + symbol + '&apikey=' + key)
-  ]);
+  const profileResp = await fetch('https://financialmodelingprep.com/stable/profile?symbol=' + symbol + '&apikey=' + key);
+  if (!profileResp.ok) return null;
   const profileData = await profileResp.json();
-  const metricsData = await metricsResp.json();
   const profile = Array.isArray(profileData) ? profileData[0] : profileData;
-  const metrics = Array.isArray(metricsData) ? metricsData[0] : (metricsData?.Error ? null : metricsData);
-  if (!profile || profile.Error) return null;
+  if (!profile || profile.Error || typeof profile === 'string') return null;
+  // Metrics is premium — fetch gracefully, skip if unavailable
+  let metrics = null;
+  try {
+    const metricsResp = await fetch('https://financialmodelingprep.com/stable/key-metrics-ttm?symbol=' + symbol + '&apikey=' + key);
+    if (metricsResp.ok) {
+      const metricsData = await metricsResp.json();
+      if (Array.isArray(metricsData) && metricsData[0]) metrics = metricsData[0];
+      else if (metricsData && !metricsData.Error && typeof metricsData !== 'string') metrics = metricsData;
+    }
+  } catch {}
   const p = profile; const m = metrics || {};
   const data = {
     symbol: p.symbol, name: p.companyName, type: 'stock',
