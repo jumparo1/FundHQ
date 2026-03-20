@@ -288,6 +288,36 @@ PEER COMPARISON TABLE:
 | [Peer2] | [$] | [$]         | [x] | [x] | [x]     | [?]  |
 | [Peer3] | [$] | [$]         | [x] | [x] | [x]     | [?]  |
 
+VALUATION SCOREBOARD (1-10, higher = more attractive):
+| Dimension         | [This] | [Peer1] | [Peer2] | [Peer3] |
+|-------------------|--------|---------|---------|---------|
+| Upside (ATH)      | [x]    | [x]     | [x]     | [x]     |
+| Valuation (MCap)  | [x]    | [x]     | [x]     | [x]     |
+| Team/Backers      | [x]    | [x]     | [x]     | [x]     |
+| Product Shipping  | [x]    | [x]     | [x]     | [x]     |
+| Token Design      | [x]    | [x]     | [x]     | [x]     |
+| Momentum (7d/30d) | [x]    | [x]     | [x]     | [x]     |
+| Volume/Liquidity  | [x]    | [x]     | [x]     | [x]     |
+| Narrative Fit     | [x]    | [x]     | [x]     | [x]     |
+| Risk Profile      | [x]    | [x]     | [x]     | [x]     |
+| Catalyst Pipeline | [x]    | [x]     | [x]     | [x]     |
+| **TOTAL**         | [/100] | [/100]  | [/100]  | [/100]  |
+
+Verdict: [Why this project scores highest/lowest. Which dimensions drive the edge.]
+
+NON-CRYPTO COMPARISON:
+Compare the project's sector to traditional/centralized equivalents.
+| Company     | Valuation     | Revenue    | What [This] is X% of |
+|-------------|---------------|------------|----------------------|
+| [TradFi/Web2 leader 1] | [$] | [$] | [X%] |
+| [TradFi/Web2 leader 2] | [$] | [$] | [X%] |
+| [TradFi/Web2 leader 3] | [$] | [$] | [X%] |
+| [Private co if relevant] | [$] | [$] | [X%] |
+
+The Gap: [Total industry spend in this sector: $X. If decentralized protocols capture 0.1% of that,
+it equals $Y — which is [more/less] than the entire crypto sector market cap for this narrative.
+At $[MCap] FDV, you are buying [This] for X% of [Biggest Comparable].]
+
 VALUATION VERDICT:
 * P/S vs peers: [cheap / fair / expensive]
 * P/E vs peers: [cheap / fair / expensive / N/A if unprofitable]
@@ -538,11 +568,21 @@ End with narrative fit for current cycle.]
 
 ---
 
+## Valuation Scoreboard
+
+[Comparison table: This project vs 3 crypto peers, scored 1-10 across 10 dimensions]
+[Total score out of 100, with verdict on who wins and why]
+
+[Non-crypto comparison: This project's FDV as a % of the equivalent TradFi/Web2 giants]
+[The Gap: total industry spend vs crypto sector MCap — the asymmetric framing]
+
+---
+
 ## On-Chain & Market Context
 
 [Whale positioning, smart money activity, perp data if available]
-[Competitive positioning — where this sits vs peers]
-[Valuation comparison table if relevant]
+[Honest verdict: is accumulation confirmed or mixed? Rate conviction X/10]
+[Perp positioning: OI, funding rate, L/S ratio, taker flow]
 
 ---
 
@@ -611,6 +651,24 @@ End with a clear action: buy/wait/avoid and WHY.]
 15. Write section 18 Substack one-pager in Asymmetric Jump voice
 16. Save to Fund HQ via Firebase (`fundHQ/reports/{id}`)
 17. Open report in view mode for review
+
+## Data-Driven Report Rules
+Reports must be DATA-DRIVEN, not AI-generated opinion pieces. Every claim must be backed by a specific number, API result, or verifiable data point.
+
+**Required data per section:**
+- Section 1 (Overview): Live CoinGecko API numbers (price, mcap, fdv, volume, supply)
+- Section 7 (Tokenomics): Exact supply figures, FDV/MCap ratio, unlock dates from token.unlocks.app
+- Section 9 (Valuation): Live peer comparison table with real MCap/FDV/Volume from CoinGecko API, scoreboard with explicit scoring rationale, non-crypto comparison with real company valuations
+- Section 10 (Revenue): Token Terminal or DeFiLlama actual fee/revenue data, not estimates
+- Section 12 (Whales): Binance Futures API data (OI, funding, L/S ratio, taker flow), Hyperliquid API data, DEX buy/sell counts from Dexscreener — with explicit BULLISH/BEARISH signal list and honest conviction rating
+- Section 13 (Chart): TradingView link, specific S/R levels with prices, position sizing with exact R-multiples
+
+**Format rules for data:**
+- Always show the raw number first, then interpretation: "$148M volume (29% of MCap — HIGH)"
+- Use comparison framing: "FET at $510M = 0.06% of OpenAI's $850B"
+- Rate conviction honestly on a scale: "Whale accumulation conviction: 6.5/10"
+- When data is mixed, say so: list BULLISH signals and BEARISH signals separately
+- Never make claims without citing the data source and timestamp
 
 ## Report Storage
 - Firebase RTDB: `https://fundhq-8feae-default-rtdb.europe-west1.firebasedatabase.app/fundHQ/reports/{id}`
