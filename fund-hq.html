@@ -5742,6 +5742,7 @@ async function doMarketSearch(q) {
       results = await searchStocks(q);
     }
     if (!results.length) { el.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text3);">No results found</div>'; return; }
+    const isWlPage = _activeSearchCtx === 'wl';
     el.innerHTML = results.map(r => {
       const inWatchlist = DB.watchlist.some(w => (w.coingeckoId === r.id && r.type === 'crypto') || (w.fmpSymbol === r.symbol && r.type === 'stock'));
       const inDump = DB.projects.some(p => p.name.toLowerCase() === r.name.toLowerCase());
@@ -5749,11 +5750,19 @@ async function doMarketSearch(q) {
       const rank = r.marketCapRank ? '<span class="rank">#' + r.marketCapRank + '</span>' : (r.exchange ? '<span class="rank">' + r.exchange + '</span>' : '');
       const typeStr = r.type === 'crypto' ? 'crypto' : 'stock';
       const idStr = r.type === 'crypto' ? r.id : r.symbol;
-      const watchLabel = inWatchlist ? 'Watching' : '+ Watch';
+      const watchLabel = inWatchlist ? '&#10003; Added' : '+ Add';
       const watchDis = inWatchlist ? ' disabled' : '';
       const dumpLabel = inDump ? 'In Dump' : '+ Dump';
       const dumpDis = inDump ? ' disabled' : '';
-      const adm = isAdmin() ? '' : ' style="display:none;"';
+      // On watchlist page: always show Add button prominently; on market data page: show all actions
+      if (isWlPage) {
+        const addBtn = '<button style="padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;' +
+          (inWatchlist ? 'background:var(--bg4);color:var(--text3);cursor:default;"' : 'background:var(--accent);color:#fff;"') +
+          watchDis + ' onclick="event.stopPropagation();addToWatchlist(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\');this.textContent=\'\\u2713 Added\';this.disabled=true;this.style.background=\'var(--bg4)\';this.style.color=\'var(--text3)\';" title="Add to watchlist">' + watchLabel + '</button>';
+        return '<div class="market-search-item" style="display:flex;align-items:center;justify-content:space-between;">' +
+          '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;" onclick="selectSearchResult(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')">' + img + '<div><div class="name">' + esc(r.name) + '</div><div class="symbol">' + r.symbol + '</div></div>' + rank + '</div>' +
+          addBtn + '</div>';
+      }
       const actions = '<div class="search-actions">' +
         '<button class="act-btn act-watch admin-only"' + watchDis + ' onclick="event.stopPropagation();addToWatchlist(\'' + typeStr + '\',\'' + idStr + '\',\'' + r.symbol + '\',\'' + esc(r.name) + '\',\'' + (r.thumb || '') + '\')" title="Add to watchlist">' + watchLabel + '</button>' +
         '<button class="act-btn act-pipeline admin-only"' + dumpDis + ' onclick="event.stopPropagation();addToDump(\'' + typeStr + '\',\'' + esc(r.name) + '\',\'' + r.symbol + '\')" title="Add to Project Dump">' + dumpLabel + '</button>' +
@@ -5968,6 +5977,11 @@ function renderMarketDetail(data) {
     '<div class="metric-grid">' + metricsHtml + '</div>' +
     '<div id="valuation-result"></div>' +
     '<div class="metric-actions">' +
+    (function() {
+      var inWl = DB.watchlist.some(function(w) { return (data.type === 'crypto' && w.coingeckoId === selectedMarketDetail.id) || (data.type === 'stock' && w.fmpSymbol === selectedMarketDetail.id); });
+      if (inWl) return '<button class="btn btn-sm" style="background:var(--bg4);color:var(--text3);border:1px solid var(--border);cursor:default;" disabled>&#10003; In Watchlist</button>';
+      return '<button class="btn btn-sm" id="detail-add-wl-btn" style="background:var(--accent);color:#fff;border:none;font-weight:600;" onclick="addToWatchlist(\'' + data.type + '\',\'' + selectedMarketDetail.id + '\',\'' + data.symbol + '\',\'' + esc(data.name) + '\',\'' + (data.image || '') + '\');this.textContent=\'\\u2713 In Watchlist\';this.disabled=true;this.style.background=\'var(--bg4)\';this.style.color=\'var(--text3)\';this.style.cursor=\'default\';">+ Add to Watchlist</button>';
+    })() +
     '<button class="btn btn-ghost btn-sm" onclick="createReportFromDetail()">&#128203; Create Report</button>' +
     '<button class="btn btn-ghost btn-sm" onclick="runBackendValuation()">&#128200; Valuation</button>' +
     '<button class="btn btn-ghost btn-sm" onclick="runBackendScore()">&#127919; Multi-Factor Score</button>' +
